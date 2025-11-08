@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .register-wrapper {
+    width: 420px;
+    margin: 90px auto;
+    background: #faf6ef;
+    padding: 35px;
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .register-wrapper h2 {
+    margin-bottom: 18px;
+    color: #2e4d40;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .reg-input {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid #dcd4c7;
+    border-radius: 10px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: 0.25s;
+  }
+
+  .reg-input:focus {
+    border-color: #2e4d40;
+    box-shadow: 0 0 0 2px rgba(46,77,64,0.1);
+  }
+
+  .reg-btn {
+    width: 100%;
+    padding: 12px;
+    background: #d1a054;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: 0.3s;
+  }
+
+  .reg-btn:hover {
+    background: #b88439;
+  }
+
+  .reg-text {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #2e4d40;
+  }
+
+  .reg-text a {
+    color: #2e4d40;
+    font-weight: 600;
+  }
+
+  .error-line {
+    color: #cc2b2b;
+    font-size: 13px;
+    text-align: left;
+    margin-bottom: -5px;
+  }
+
+  @media (max-width: 480px) {
+    .register-wrapper {
+      width: 92%;
+      margin-top: 60px;
+    }
+  }
+</style>
+
+
+<div class="register-wrapper">
+  <h2>Tạo tài khoản</h2>
+
+  <form method="POST">
+    {% csrf_token %}
+
+    <input class="reg-input" name="username" placeholder="Tên đăng nhập" required>
+
+    <input class="reg-input" type="email" name="email" placeholder="Email" required>
+
+    <input class="reg-input" name="sdt" placeholder="Số điện thoại">
+
+    <input class="reg-input" type="password" name="password1" placeholder="Mật khẩu" required>
+
+    <input class="reg-input" type="password" name="password2" placeholder="Nhập lại mật khẩu" required>
+
+    {% if messages %}
+      {% for m in messages %}
+        <p class="error-line">{{ m }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <button type="submit" class="reg-btn">Đăng ký</button>
+
+  </form>
+
+  <p class="reg-text">
+    Đã có tài khoản?
+    <a href="{% url 'login' %}">Đăng nhập</a>
+  </p>
+</div>
+
+{% endblock %}

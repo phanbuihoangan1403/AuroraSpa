@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div style="max-width:900px;margin:40px auto;text-align:center;">
+    <h1 style="color:#2e4d40;">Chào mừng đến Aurora Spa</h1>
+    <p style="margin-top:10px; font-size:18px;">
+        Hệ thống spa chăm sóc sức khỏe & sắc đẹp chuyên nghiệp
+    </p>
+
+    {% if user.is_authenticated %}
+        <p style="margin-top:20px;">Xin chào <b>{{ user.username }}</b>! Bạn đã đăng nhập thành công.</p>
+    {% else %}
+        <p style="margin-top:20px;">Bạn chưa đăng nhập. Vui lòng chọn đăng nhập hoặc đăng ký.</p>
+    {% endif %}
+</div>
+
+{% endblock %}

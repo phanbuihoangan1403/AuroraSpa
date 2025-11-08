@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="width:400px;margin:60px auto;padding:30px;border-radius:12px;background:#f8f5ef;">
+  <h2 style="text-align:center;color:#2e4d40;margin-bottom:20px;">Đăng nhập</h2>
+  <form method="POST">{% csrf_token %}
+    <input name="username" placeholder="Tài khoản" required
+      style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #ddd;">
+    <input type="password" name="password" placeholder="Mật khẩu" required
+      style="width:100%;padding:10px;margin-bottom:12px;border-radius:8px;border:1px solid #ddd;">
+    <button type="submit"
+      style="width:100%;padding:12px;background:#2e4d40;color:#fff;border:none;border-radius:10px;">Đăng nhập</button>
+  </form>
+  <p style="text-align:center;margin-top:10px">
+    Chưa có tài khoản? <a href="{% url 'register' %}" style="color:#d1a054">Đăng ký</a>
+  </p>
+  <p style="text-align:right;margin-top:6px;">
+    <a href="{% url 'password_reset' %}" style="color:#d1a054;">Quên mật khẩu?</a>
+  </p>
+
+</div>
+{% endblock %}
