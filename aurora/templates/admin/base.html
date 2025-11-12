@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8">
+    <title>{% block title %}{% endblock %}</title>
+    {% block extrastyle %}{% endblock %}
+  </head>
+
+  <body class="app-admin">
+    <header id="header">
+      {% block branding %}{% endblock %}
+    </header>
+
+    <div id="main">
+      {% block content %}{% endblock %}
+    </div>
+
+    {% block footer %}
+      <footer id="footer">
+        <p style="text-align:center;color:#666;">© 2025 Aurora Spa</p>
+      </footer>
+    {% endblock %}
+  </body>
+</html>

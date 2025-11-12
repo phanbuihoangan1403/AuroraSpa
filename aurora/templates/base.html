@@ -86,6 +86,7 @@
 
 
   </style>
+  {% block extra_css %}{% endblock %}
 </head>
 <body>
 <header>
@@ -93,12 +94,12 @@
     <a href="{% url 'home' %}"><img src="https://i.ibb.co/67CYk7vv/image-removebg-preview-12.png" alt="Aurora"></a>
   </div>
   <nav>
-    <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %} ">Trang chủ</a>
-    <a href="{% url 'dichvu' %}" class="{% if request.resolver_match.url_name == 'dichvu' %}active{% endif %}">Dịch vụ</a>
-    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}">Blog</a>
-    <a href="{% url 'lichhen' %}" class="{% if request.resolver_match.url_name == 'lichhen' %}active{% endif %}">Lịch hẹn</a>
+    <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %} ">TRANG CHỦ</a>
+    <a href="{% url 'dichvu' %}" class="{% if request.resolver_match.url_name == 'dichvu' %}active{% endif %}">DỊCH VỤ</a>
+    <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}">BLOG</a>
+    <a href="{% url 'lichhen' %}" class="{% if request.resolver_match.url_name == 'lichhen' %}active{% endif %}">LỊCH HẸN</a>
     <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}">FAQ</a>
-    <a href="{% url 'lienhe' %}" class="{% if request.resolver_match.url_name == 'lienhe' %}active{% endif %}">Liên hệ</a>
+    <a href="{% url 'lienhe' %}" class="{% if request.resolver_match.url_name == 'lienhe' %}active{% endif %}">LIÊN HỆ</a>
   </nav>
   <div class="btns">
     {% if user.is_authenticated %}
@@ -212,22 +213,22 @@
             </h3>
             <ul style="list-style: none; padding: 0; margin: 0;">
                 <li style="margin-bottom: 13px;">
-                    <a href="#" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
+                    <a href="{% url 'home' %}" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
                         <span style="color: #b08a57; margin-right: 8px; font-size: 14px; font-weight: bold;">▸</span>Trang chủ
                     </a>
                 </li>
                 <li style="margin-bottom: 13px;">
-                    <a href="#" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
+                    <a href="{% url 'dichvu' %}" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
                         <span style="color: #b08a57; margin-right: 8px; font-size: 14px; font-weight: bold;">▸</span>Dịch vụ
                     </a>
                 </li>
                 <li style="margin-bottom: 13px;">
-                    <a href="#" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
+                    <a href="{% url 'blog' %}" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
                         <span style="color: #b08a57; margin-right: 8px; font-size: 14px; font-weight: bold;">▸</span>Blog
                     </a>
                 </li>
                 <li style="margin-bottom: 13px;">
-                    <a href="#dat-lich" onclick="showPage('dat-lich')" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
+                    <a href="{% url 'lichhen' %}" onclick="showPage('lichhen')" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
                         <span style="color: #b08a57; margin-right: 8px; font-size: 14px; font-weight: bold;">▸</span>Lịch hẹn
                     </a>
                 </li>
@@ -243,7 +244,7 @@
             <p style="margin-bottom: 12px; font-weight: 300; color: #e8f2f0; font-size: 14.8px; line-height: 1.6;">
                 Trải nghiệm dịch vụ chăm sóc chuyên nghiệp và thư giãn tuyệt vời tại Aurora Spa.
             </p>
-            <a href="#dat-lich" onclick="showPage('dat-lich')" style="display: inline-block; background: linear-gradient(135deg, #b08a57 0%, #d4af37 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.4s ease; box-shadow: 0 4px 15px rgba(176, 138, 87, 0.3); border: 2px solid transparent; margin-top: 15px;">
+            <a href="{% url 'lichhen' %}" onclick="showPage('lichhen')" style="display: inline-block; background: linear-gradient(135deg, #b08a57 0%, #d4af37 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.4s ease; box-shadow: 0 4px 15px rgba(176, 138, 87, 0.3); border: 2px solid transparent; margin-top: 15px;">
                 ĐẶT LỊCH NGAY
             </a>
         </div>

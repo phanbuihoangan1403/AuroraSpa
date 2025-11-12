@@ -1,10 +1,95 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!-- templates/profile.html -->
+{% extends "base.html" %}
+{% block title %}Hồ sơ cá nhân - Aurora Spa{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<style>
+    body {
+    background-color: #f8f5ef !important;
+    }
+
+    .profile-container {
+        max-width: 900px;
+        margin: 40px auto;
+        padding: 0 20px;
+        font-family: 'Inter', sans-serif;
+        color: #333;
+    }
+
+    .profile-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .profile-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #395947;
+        margin-bottom: 8px;
+        font-style: italic;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .profile-header p {
+        font-size: 16px;
+        color: #666;
+        margin: 0;
+    }
+
+    .profile-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .info-details h3 {
+        font-size: 20px;
+        font-weight: 600;
+        color: #2c3a2a;
+        margin: 0 0 16px 0;
+    }
+
+    .info-item {
+        margin-bottom: 12px;
+        font-size: 15.5px;
+        color: #444;
+        line-height: 1.5;
+    }
+
+    .info-item strong {
+        color: #2c3a2a;
+        min-width: 120px;
+        display: inline-block;
+        font-weight: 600;
+    }
+
+    @media (max-width: 600px) {
+        .info-item strong {
+            display: block;
+            min-width: auto;
+        }
+    }
+</style>
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h1>Hồ sơ cá nhân</h1>
+        <p>Thông tin cá nhân của bạn.</p>
+    </div>
+
+    <div class="profile-card">
+        <div class="info-details">
+            <h3>Thông tin cá nhân</h3>
+            <div class="info-item"><strong>Họ và tên:</strong> {{ khachhang.HoTen|default:"Chưa cập nhật"|upper }}</div>
+            <div class="info-item"><strong>Email:</strong> {{ khachhang.Email|default:"Chưa cập nhật" }}</div>
+            <div class="info-item"><strong>SĐT:</strong> {{ khachhang.SDT|default:"Chưa cập nhật" }}</div>
+            <div class="info-item"><strong>Ngày sinh:</strong> {{ khachhang.NgaySinh|date:"d/m/Y"|default:"Chưa cập nhật" }}</div>
+            <div class="info-item"><strong>Địa chỉ:</strong> {{ khachhang.DiaChi|default:"Chưa cập nhật" }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

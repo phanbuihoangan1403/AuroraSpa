@@ -1,10 +1,144 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+<!-- templates/faq.html -->
+{% extends "base.html" %}
+{% block title %}Câu hỏi thường gặp - Aurora Spa{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<!-- Thêm Google Fonts: Playfair Display -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+<style>
+    body {
+        background-color: #f8f5ef !important;
+    }
+
+    .faq-container {
+        max-width: 850px;
+        width: 100%;
+        margin: 60px auto 0;
+        text-align: center;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Áp dụng Playfair Display cho tiêu đề */
+    .faq-container h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 42px;
+        font-weight: 700;
+        color: #395947;
+        text-transform: uppercase;
+        margin-bottom: 40px;
+    }
+
+    .faq-list {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        align-items: center;
+        width: 100%;
+    }
+
+    .faq-item {
+        background-color: #fff;
+        border-radius: 12px;
+        width: 100%;
+        padding: 24px 30px;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+        position: relative;
+        text-align: left;
+        transition: background-color 0.3s;
+    }
+
+    .faq-item:hover {
+        background-color: #f7f6f3;
+    }
+
+    .faq-question {
+        font-size: 22px;
+        font-weight: 500;
+        color: #2c3a2a;
+        padding-left: 40px;
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    .faq-item::before {
+        content: '+';
+        position: absolute;
+        left: 20px;
+        top: 22px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #395947;
+        transition: all 0.2s;
+    }
+
+    .faq-item.active::before {
+        content: '−';
+        color: #b25c3d;
+        top: 18px;
+    }
+
+    .faq-answer {
+        display: none;
+        font-size: 18px;
+        color: #4a4a4a;
+        line-height: 1.8;
+        margin-top: 15px;
+        padding-left: 40px;
+        text-align: justify;
+    }
+
+    .faq-item.active .faq-answer {
+        display: block;
+    }
+
+    .faq-footer-note {
+        margin-top: 60px;
+        color: #5b5b5b;
+        font-size: 18px;
+        text-align: center;
+        padding-bottom: 70px;
+        line-height: 1.6;
+    }
+
+    .chat-btn:hover {
+        background-color: #395947;
+    }
+</style>
+
+<main class="faq-container">
+    <h1>CÂU HỎI THƯỜNG GẶP</h1>
+
+    <div class="faq-list">
+        {% for faq in faqs %}
+            {% if faq.TrangThaiHienThi %}
+            <div class="faq-item">
+                <div class="faq-question">{{ faq.CauHoi }}</div>
+                <div class="faq-answer">{{ faq.CauTraLoi|linebreaks }}</div>
+            </div>
+            {% endif %}
+        {% empty %}
+            <p style="color:#777; text-align:center; font-size:18px;">Chưa có câu hỏi nào được thêm.</p>
+        {% endfor %}
+    </div>
+
+    <div class="faq-footer-note">
+        Nếu thắc mắc của bạn nằm ngoài những câu hỏi trên thì bấm vào boxchat ngay góc phải bên dưới để<br>
+        chat với nhân viên nhé!!!
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const items = document.querySelectorAll('.faq-item');
+
+        items.forEach(item => {
+            item.addEventListener('click', function () {
+                this.classList.toggle('active');
+            });
+        });
+    });
+</script>
+
+{% endblock %}

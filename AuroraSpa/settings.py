@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'aurora',
+    'ckeditor',
 ]
 
 MIDDLEWARE = [
@@ -73,7 +74,7 @@ LOGOUT_REDIRECT_URL = 'login'
 
 
 WSGI_APPLICATION = 'AuroraSpa.wsgi.application'
-
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
