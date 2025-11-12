@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from .views import (
-    home_view, blog_view, dichvu_view, lichhen_view,
+    home_view, blog_view, chitietblog_view, chitietdichvu_view, dichvu_view, lichhen_view,
     faq_view, lienhe_view, profile_view, diem_view,
     login_view, logout_view, register_view
 )
@@ -9,7 +9,9 @@ from .views import (
 urlpatterns = [
     path('', home_view, name='home'),
     path('blog/', blog_view, name='blog'),
-    path('dich-vu/', dichvu_view, name='dichvu'),
+    path('blog/<str:pk>/', chitietblog_view, name='chitietblog'),
+    path('dichvu/', dichvu_view, name='dichvu'),
+    path('dichvu/<str:madanhmuc>/<str:madichvu>/', chitietdichvu_view, name='chitietdichvu'),
     path('lich-hen/', lichhen_view, name='lichhen'),
     path('faq/', faq_view, name='faq'),
     path('lien-he/', lienhe_view, name='lienhe'),

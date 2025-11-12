@@ -1,10 +1,197 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}{{ danh_muc.TenDanhMuc }} - Aurora Spa{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+    /* === NỀN TOÀN TRANG === */
+    body {
+        background-color: #f8f5ef !important;
+        margin: 0;
+        padding: 0;
+    }
+    .page-wrapper {
+        background-color: #f8f5ef;
+        min-height: 100vh;
+        padding-bottom: 60px;
+    }
+
+    /* === TIÊU ĐỀ DANH MỤC === */
+    .section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 3.0rem;
+        font-weight: 700;
+        color: #2d6a4f;
+        text-align: center;
+        margin: 90px 0 70px;
+        letter-spacing: 1.8px;
+        line-height: 1.2;
+        text-transform: uppercase;
+    }
+
+        /* === GRID: 3 CỘT - CÁCH LỀ ~5CM === */
+        .service-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr); /* HIỂN THỊ 4 ẢNH MỖI DÒNG */
+        gap: 3rem;
+        padding: 0 80px;
+        max-width: 1600px; /* có thể tăng nhẹ để đủ không gian 4 cột */
+        margin: 0 auto;
+    }
+
+    .service-card {
+        position: relative;
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        transition: all 0.4s ease;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .service-card:hover {
+        transform: translateY(-12px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* === ẢNH DÀI HƠN: 280px === */
+    .service-image {
+        height: 280px;                 /* TĂNG TỪ 250px → 280px */
+        overflow: hidden;
+        position: relative;
+    }
+
+    .service-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .service-card:hover .service-image img {
+        transform: scale(1.1);
+    }
+
+    /* === TÊN DỊCH VỤ GHI ĐÈ LÊN ẢNH === */
+    .service-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 1.5rem 1rem;
+        background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .service-name {
+        color: white;
+        font-weight: 600;
+        font-size: 1.3rem;
+        margin: 0;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    /* === HOVER: NỀN ĐEN ĐẬM HƠN === */
+    .service-card:hover .service-overlay {
+        background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    }
+
+    /* === BỎ GẠCH CHÂN HOÀN TOÀN === */
+    .service-card a {
+        text-decoration: none !important;
+        color: inherit;
+        display: block;
+    }
+
+    /* === RESPONSIVE === */
+    @media (max-width: 992px) {
+        .service-grid {
+            grid-template-columns: repeat(2, 1fr);
+            padding: 0 50px;
+            gap: 2rem;
+        }
+        .section-title {
+            font-size: 3.2rem;
+            margin: 70px 0 50px;
+        }
+        .service-image {
+            height: 240px;            /* Dài hơn 1 chút trên tablet */
+        }
+        .service-name {
+            font-size: 1.2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .section-title {
+            font-size: 2.8rem;
+            margin: 60px 0 45px;
+        }
+        .service-image {
+            height: 220px;
+        }
+        .service-grid {
+            padding: 0 30px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .service-grid {
+            grid-template-columns: 1fr;
+            padding: 0 20px;
+            gap: 1.5rem;
+        }
+        .section-title {
+            font-size: 2.3rem;
+            margin: 50px 0 35px;
+        }
+        .service-image {
+            height: 200px;            /* Mobile vẫn dài hơn 1 chút */
+        }
+        .service-name {
+            font-size: 1.1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-wrapper">
+
+    {% for item in data %}
+        <h1 class="section-title">{{ item.danhmuc.TenDanhMuc|upper }}</h1>
+
+        <div class="service-grid">
+            {% for dichvu in item.dichvu %}
+                <a href="{% url 'chitietdichvu' dichvu.MaDanhMuc.MaDanhMuc dichvu.MaDichVu %}">
+                    <div class="service-card">
+                        <div class="service-image">
+                            {% if dichvu.HinhAnh %}
+                                <img src="{{ dichvu.HinhAnh.url }}" alt="{{ dichvu.TenDichVu }}">
+                            {% else %}
+                                <img src="{% static 'images/dichvu-placeholder.jpg' %}" alt="{{ dichvu.TenDichVu }}">
+                            {% endif %}
+
+                            <!-- TÊN DỊCH VỤ GHI ĐÈ LÊN ẢNH -->
+                            <div class="service-overlay">
+                                <h3 class="service-name">{{ dichvu.TenDichVu }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            {% empty %}
+                <p class="text-center text-muted py-3" style="grid-column: 1 / -1;">
+                    Chưa có dịch vụ trong danh mục này.
+                </p>
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

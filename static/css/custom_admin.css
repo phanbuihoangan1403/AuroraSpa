@@ -1,0 +1,61 @@
+:root{
+  --green:#2e4d40;
+  --green-2:#3c5c4a;
+  --bg:#f7f8f5;
+  --card:#ffffff;
+  --muted:#9aa8a1;
+  --gold:#f5d979;
+  --row:#f9faf9;
+  --line:#edf0ec;
+  --text:#27332d;
+}
+
+html,body{background:var(--bg) !important; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial !important;}
+
+/* Header */
+#header{background:var(--green) !important; border:none; box-shadow:none; min-height:60px; align-items:center;}
+#branding a{color:var(--gold) !important;}
+#user-tools a{color:#fff !important}
+
+/* Bố cục content */
+#content{padding:24px 28px !important;}
+.breadcrumbs{background:#e7eee9 !important; color:var(--green) !important}
+
+/* Sidebar mặc định của Django */
+#nav-sidebar{background:var(--green) !important; width:230px !important; border:none !important;}
+#content-main{padding-left:0 !important;}
+#nav-sidebar .module{background:transparent !important;}
+#nav-sidebar h2{display:none;} /* ẩn tiêu đề app để sidebar “phẳng” */
+#nav-sidebar .app-auth, #nav-sidebar .app-aurora{margin:0;}
+#nav-sidebar li a{color:#dbe6df !important; padding:10px 14px !important; border-radius:8px; display:block;}
+#nav-sidebar li a:hover{background:var(--green-2); color:#fff !important;}
+#nav-sidebar .current-model a{background:#405e50 !important; color:#fff !important}
+
+/* Khối “card” danh sách */
+.change-list .module{background:var(--card) !important; border-radius:10px; overflow:hidden; border:1px solid var(--line);}
+.change-list .changelist-form-container{background:transparent !important}
+
+/* Thanh công cụ tùy biến ở đầu danh sách */
+.aurora-toolbar{display:flex; gap:10px; align-items:center; margin:6px 0 14px 0;}
+.aurora-toolbar .btn-primary{
+  background:var(--green); color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;
+}
+.aurora-toolbar select, .aurora-toolbar input[type="search"]{
+  height:36px; border:1px solid #dfe6e2; border-radius:8px; padding:0 10px; background:#fff;
+}
+
+/* Bảng */
+#changelist-form table{border-collapse:separate; border-spacing:0; width:100%; background:#fff;}
+#changelist-form thead th{background:#f1f4f2; color:var(--green); font-weight:700; border-bottom:1px solid var(--line);}
+#changelist-form tbody tr:hover{background:var(--row);}
+#changelist-form td, #changelist-form th{padding:12px 14px; border-bottom:1px solid var(--line);}
+#changelist-form .action-col{width:90px; text-align:right}
+
+/* Nút nhỏ hành động */
+a.icon-edit, a.icon-trash{margin-left:8px; text-decoration:none; font-weight:700;}
+a.icon-edit{color:#f39c12;}
+a.icon-trash{color:#e74c3c;}
+
+/* Phân trang */
+.paginator{display:flex; justify-content:center; gap:8px; padding:12px 0;}
+.paginator a, .paginator span{border:1px solid #dfe6e2; padding:6px 10px; border-radius:8px; background:#fff;}

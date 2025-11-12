@@ -1,10 +1,242 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}{{ dichvu.TenDichVu }} - Aurora Spa{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* === NỀN & WRAPPER === */
+    .service-detail-wrapper {
+        background: #f8f5ef;
+        min-height: 100vh;
+        padding: 40px 0 60px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .service-detail-container {
+        display: flex;
+        gap: 60px;
+        align-items: stretch;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 128px;
+    }
+
+    /* ====== ẢNH BÊN TRÁI - NGẮN LẠI 1 CHÚT ====== */
+    .left-images {
+        flex: 1;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+        max-height: 600px;           /* NGẮN LẠI 1 CHÚT */
+        align-self: flex-start;      /* KHÔNG KÉO DÀI THEO NỘI DUNG */
+    }
+
+    .left-images img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* ====== NỘI DUNG BÊN PHẢI ====== */
+    .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        color: #2e5e42;
+        justify-content: flex-start;
+    }
+
+    .back {
+        font-size: 24px;
+        color: #2e5e42;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: color 0.2s;
+    }
+
+    .back::before {
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .back:hover {
+        color: #b5a45b;
+    }
+
+    .back span {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .title {
+        font-size: 32px;
+        font-weight: bold;
+        color: #2e5e42;
+        margin-bottom: 20px;
+        font-family: 'Playfair Display', serif;
+        line-height: 1.2;
+    }
+
+    .subtitle {
+        color: #9c7b2f;
+        font-weight: bold;
+        font-size: 1.3rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        line-height: 1.4;
+        margin-bottom: 20px;
+    }
+
+    .details {
+        font-size: 18px;
+        line-height: 1.9;
+        color: #444;
+        margin-bottom: 1rem;
+        flex-grow: 1;
+    }
+
+    .btn-book-now {
+        background-color: #2e5e42;
+        color: white;
+        font-weight: 600;
+        padding: 12px 32px;
+        border-radius: 50px;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+        align-self: flex-start;
+    }
+
+    .btn-book-now:hover {
+        background-color: #1f3d2f;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(46, 94, 66, 0.3);
+    }
+
+    /* ====== RESPONSIVE ====== */
+    @media (max-width: 1200px) {
+        .service-detail-container {
+            padding: 0 100px;
+        }
+        .left-images {
+            max-height: 440px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .service-detail-container {
+            padding: 0 80px;
+            gap: 40px;
+        }
+        .title {
+            font-size: 28px;
+        }
+        .back::before {
+            font-size: 24px;
+        }
+        .details {
+            font-size: 17px;
+            line-height: 1.85;
+            margin-bottom: 0.9rem;
+        }
+        .left-images {
+            max-height: 400px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .service-detail-container {
+            flex-direction: column;
+            padding: 0 50px;
+            gap: 30px;
+        }
+        .left-images, .content {
+            width: 100%;
+        }
+        .left-images {
+            height: 350px;
+            max-height: none;
+        }
+        .btn-book-now {
+            align-self: center;
+            width: 100%;
+            max-width: 280px;
+            text-align: center;
+        }
+        .back {
+            font-size: 20px;
+        }
+        .back::before {
+            font-size: 22px;
+        }
+        .details {
+            font-size: 16.5px;
+            line-height: 1.8;
+            margin-bottom: 0.8rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .service-detail-container {
+            padding: 0 30px;
+        }
+        .title {
+            font-size: 22px;
+        }
+        .left-images {
+            height: 280px;
+        }
+        .back::before {
+            font-size: 20px;
+        }
+        .details {
+            font-size: 16px;
+            line-height: 1.75;
+            margin-bottom: 0.7rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="service-detail-wrapper">
+    <div class="service-detail-container">
+
+        <!-- ẢNH TRÁI - NGẮN LẠI 1 CHÚT -->
+        <div class="left-images">
+            {% if dichvu.HinhAnh %}
+                <img src="{{ dichvu.HinhAnh.url }}" alt="{{ dichvu.TenDichVu }}">
+            {% else %}
+                <img src="{% static 'images/dichvu-placeholder.jpg' %}" alt="{{ dichvu.TenDichVu }}">
+            {% endif %}
+        </div>
+
+        <!-- NỘI DUNG PHẢI -->
+        <div class="content">
+            <a href="{% url 'dichvu' %}" class="back">←</a>
+
+            <div class="title">{{ dichvu.MaDanhMuc.TenDanhMuc }}</div>
+
+            <div class="subtitle">{{ dichvu.TenDichVu|upper }}</div>
+
+            <div class="details">
+                {{ dichvu.MoTa|safe }}
+            </div>
+
+            <a href="{% url 'lichhen' %}" class="btn-book-now">Đặt lịch ngay</a>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

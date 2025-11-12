@@ -6,8 +6,8 @@ from django.dispatch import receiver
 from django.core.validators import MinLengthValidator, EmailValidator
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import User
-
-
+from ckeditor.fields import RichTextField
+from django.db import transaction
 class QuyDoiDiem(models.Model):
     MaQuyDoi = models.CharField(
         primary_key=True,   # thêm khóa chính
@@ -38,10 +38,12 @@ class QuyDoiDiem(models.Model):
             self.MaQuyDoi = f"QD{so:03d}"
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return self.MaQuyDoi
 
 class LichSuTichDiem(models.Model):
     MaGiaoDich = models.CharField(
-        primary_key=True,   # thêm khóa chính
+        primary_key=True,
         max_length=5,
         help_text='Mã giao dịch'
     )
@@ -65,14 +67,14 @@ class LichSuTichDiem(models.Model):
         help_text='Ngày giao dịch'
     )
     MaQuyDoi = models.ForeignKey(
-        QuyDoiDiem,
+        'QuyDoiDiem',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         help_text="Chính sách quy đổi được áp dụng (nếu có)"
     )
     MaKhachHang = models.ForeignKey(
-        "KhachHang",  # giữ dạng chuỗi để tránh lỗi import
+        'KhachHang',
         on_delete=models.CASCADE,
         help_text="Khách hàng thực hiện giao dịch"
     )
@@ -81,32 +83,50 @@ class LichSuTichDiem(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        from .models import DiemTichLuy  # import cục bộ để tránh vòng lặp
+        from .models import DiemTichLuy
 
-        # TẠO MÃ TỰ ĐỘNG
+        # === 1. Tạo mã tự động ===
         if not self.MaGiaoDich:
             last = LichSuTichDiem.objects.order_by('-MaGiaoDich').first()
-            if last:
-                # Lấy phần số từ mã cuối + 1
-                so = int(last.MaGiaoDich.replace("GD", "")) + 1
-            else:
-                so = 1
-            self.MaGiaoDich = f"GD{so:03d}"  # => GD001, GD002,...
+            so = int(last.MaGiaoDich.replace("GD", "")) + 1 if last else 1
+            self.MaGiaoDich = f"GD{so:03d}"
 
-        # Lấy ví điểm hiện tại
-        diem_tl = DiemTichLuy.objects.get(MaKhachHang=self.MaKhachHang)
+        # === 2. Tính delta (chênh lệch điểm so với lần trước) ===
+        old_value = 0
+        if self.pk:  # nếu đang sửa bản ghi
+            try:
+                old_obj = LichSuTichDiem.objects.get(pk=self.pk)
+                old_value = old_obj.SoDiemThayDoi
+            except LichSuTichDiem.DoesNotExist:
+                old_value = 0
 
-        # Kiểm tra không trừ quá số điểm hiện có
-        if self.SoDiemThayDoi < 0 and diem_tl.SoDiemHienTai + self.SoDiemThayDoi < 0:
-            raise ValidationError("Không thể trừ quá số điểm hiện có!")
+        delta = self.SoDiemThayDoi - old_value
 
-        # Lưu bản ghi
-        super().save(*args, **kwargs)
+        # === 3. Cập nhật ví điểm theo delta ===
+        with transaction.atomic():
+            wallet, _ = DiemTichLuy.objects.select_for_update().get_or_create(
+                MaKhachHang=self.MaKhachHang,
+                defaults={"SoDiemHienTai": 0}
+            )
 
-        # Cập nhật tổng điểm
-        DiemTichLuy.objects.filter(MaKhachHang=self.MaKhachHang).update(
-            SoDiemHienTai=F('SoDiemHienTai') + self.SoDiemThayDoi
-        )
+            # Kiểm tra không trừ quá số điểm hiện có
+            if delta < 0 and wallet.SoDiemHienTai + delta < 0:
+                raise ValidationError("Không thể trừ quá số điểm hiện có!")
+
+            # Lưu lịch sử giao dịch
+            super().save(*args, **kwargs)
+
+            # Cập nhật ví điểm
+            DiemTichLuy.objects.filter(MaKhachHang=self.MaKhachHang).update(
+                SoDiemHienTai=F('SoDiemHienTai') + delta
+            )
+
+    def clean(self):
+        # Ràng buộc giá trị hợp lệ theo loại giao dịch
+        if self.LoaiGiaoDich == 'Tích điểm' and self.SoDiemThayDoi < 0:
+            raise ValidationError("Giao dịch 'Tích điểm' phải là số dương.")
+        if self.LoaiGiaoDich == 'Quy đổi điểm' and self.SoDiemThayDoi > 0:
+            raise ValidationError("Giao dịch 'Quy đổi điểm' phải là số âm.")
 
     class Meta:
         db_table = 'LichSuTichDiem'
@@ -118,12 +138,15 @@ class LichSuTichDiem(models.Model):
         return f"{self.MaGiaoDich} ({sign}{self.SoDiemThayDoi} điểm)"
 
 
-# Mỗi khách hàng đăng ký tài khoản đều có điểm tích lũy (tự động tạo khi KhachHang được tạo)
-@receiver(post_save, sender="aurora.KhachHang")  # thay 'your_app_name' = tên app thật
+# === Signal tạo ví điểm tự động khi có Khách hàng mới ===
+@receiver(post_save, sender='aurora.KhachHang')  # thay 'aurora' bằng đúng tên app của bạn
 def tao_diem_tich_luy(sender, instance, created, **kwargs):
     from .models import DiemTichLuy
     if created:
-        DiemTichLuy.objects.create(MaKhachHang=instance, SoDiemHienTai=0)
+        DiemTichLuy.objects.get_or_create(
+            MaKhachHang=instance,
+            defaults={"SoDiemHienTai": 0}
+        )
 
 
 class FAQ (models.Model):
@@ -160,6 +183,8 @@ class FAQ (models.Model):
                 so = 1
             self.MaCauHoi = f"CH{so:03d}"
         super().save(*args, **kwargs)
+    def __str__(self):
+        return f"{self.MaCauHoi} - {self.CauHoi}"
 
 
 # MODEL: KHÁCH HÀNG
@@ -173,14 +198,15 @@ class KhachHang(models.Model):
         # bỏ MinLengthValidator(5) nếu muốn gọn
         help_text="VD: KH001"
     )
-
+    HoTen=models.CharField(max_length=200)
     SDT = models.CharField(max_length=10)
     Email = models.EmailField(
         max_length=255,
         blank=True,
         null=True
     )
-
+    DiaChi=models.CharField(max_length=300)
+    NgaySinh=models.DateField(null=True, blank=True)
     class Meta:
         db_table = 'KhachHang'
         verbose_name = 'Khách Hàng'
@@ -300,6 +326,8 @@ class DanhMucDichVu(models.Model):
                 so = 1
             self.MaDanhMuc = f"DM{so:03d}"
         super().save(*args, **kwargs)
+    def __str__(self):
+        return f"{self.MaDanhMuc} - {self.TenDanhMuc}"
 
 
 # MODEL: DỊCH VỤ
@@ -324,10 +352,7 @@ class DichVu(models.Model):
         help_text="Tên dịch vụ Spa (VD: 'Massage đá nóng', 'Trị mụn chuyên sâu')"
     )
 
-    MoTa = models.TextField(
-        null=False,
-        help_text="Mô tả nội dung, liệu trình, sản phẩm sử dụng, giá và thời gian dịch vụ"
-    )
+    MoTa = RichTextField()
 
     TrangThaiHienThi = models.BooleanField(
         default=True,
@@ -349,6 +374,8 @@ class DichVu(models.Model):
                 so = 1
             self.MaDichVu = f"DV{so:03d}"
         super().save(*args, **kwargs)
+    def __str__(self):
+        return f"{self.MaDichVu} - {self.TenDichVu}"
 
 
 # MODEL: ĐIỂM TÍCH LŨY
@@ -406,7 +433,7 @@ class Blog(models.Model):
         help_text='Nhân viên đăng bài viết'
     )
     TieuDeBaiViet = models.CharField(max_length=200)
-    NoiDungBaiViet = models.TextField()
+    NoiDungBaiViet = RichTextField()
     NgayDang = models.DateTimeField()
     TrangThaiHienThi = models.BooleanField(default=True)
     HinhAnh = models.ImageField(upload_to='blog/', blank=True, null=True)
@@ -426,6 +453,7 @@ class Blog(models.Model):
             self.MaBaiViet = f"BV{so:03d}"
         super().save(*args, **kwargs)
 
-
+    def __str__(self):
+        return f"{self.MaBaiViet} - {self.TieuDeBaiViet}"
 
 # Create your models here.

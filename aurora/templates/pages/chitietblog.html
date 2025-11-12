@@ -1,10 +1,163 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
+{% load static %}
 
-</body>
-</html>
+{% block title %}{{ blog.TieuDeBaiViet }} - Blog Spa{% endblock %}
+
+{% block extra_css %}
+<style>
+    .blog-detail-wrapper {
+        background: #f8f5ef;
+        min-height: 100vh;
+        padding-top: 40px;
+        padding-bottom: 60px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .blog-detail-container {
+        display: flex;
+        gap: 60px;
+        align-items: stretch; /* QUAN TRỌNG: giúp ảnh cao bằng nội dung */
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 60px;
+    }
+
+    /* ====== ẢNH BÊN TRÁI ====== */
+    .left-images {
+        flex: 1;
+        display: flex;
+        align-items: stretch;   /* Chiều cao co giãn theo content phải */
+    }
+
+    .left-images .main-img {
+        width: 100%;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+
+        display: flex;
+        align-items: stretch;
+    }
+
+    .left-images .main-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ảnh tự phóng to – không méo, không dư trắng */
+        display: block;
+    }
+
+    /* ====== NỘI DUNG BÊN PHẢI ====== */
+    .content {
+        flex: 1.3;
+        display: flex;
+        flex-direction: column;
+        color: #2e5e42;
+    }
+
+    .back {
+        font-size: 24px;
+        color: #2e5e42;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 12px;
+        display: inline-block;
+        transition: color 0.2s;
+    }
+
+    .back:hover { color: #b5a45b; }
+
+    .title {
+        font-size: 32px;
+        font-weight: bold;
+        color: #2e5e42;
+        margin-bottom: 20px;
+        font-family: 'Playfair Display', serif;
+        line-height: 1.2;
+    }
+
+    .subtitle {
+        color: #9c7b2f;
+        font-weight: bold;
+        font-size: 1.3rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        line-height: 1.4;
+        margin-bottom: 20px;
+    }
+
+    .details {
+        font-size: 16px;
+        line-height: 1.7;
+        color: #444;
+    }
+
+    .info-meta {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 2rem;
+        font-style: italic;
+    }
+
+    /* ====== RESPONSIVE ====== */
+    @media (max-width: 992px) {
+        .blog-detail-container { padding: 0 40px; gap: 40px; }
+        .title { font-size: 28px; }
+    }
+
+    @media (max-width: 768px) {
+        .blog-detail-container {
+            flex-direction: column;
+            padding: 0 30px;
+            gap: 30px;
+        }
+        .left-images, .content { width: 100%; }
+        .left-images .main-img { height: auto; }
+    }
+
+    @media (max-width: 576px) {
+        .blog-detail-container { padding: 0 20px; }
+        .title { font-size: 22px; }
+        .back { font-size: 20px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="blog-detail-wrapper">
+
+    <div class="blog-detail-container">
+
+        <!-- HÌNH TRÁI -->
+        <div class="left-images">
+            <div class="main-img">
+                {% if blog.HinhAnh %}
+                    <img src="{{ blog.HinhAnh.url }}" alt="{{ blog.TieuDeBaiViet }}">
+                {% else %}
+                    <img src="{% static 'images/blog-placeholder.jpg' %}" alt="Hình bài viết">
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- NỘI DUNG PHẢI -->
+        <div class="content">
+            <a href="{% url 'blog' %}" class="back">←</a>
+            <div class="title">BLOG SPA</div>
+            <div class="subtitle">{{ blog.TieuDeBaiViet|upper }}</div>
+
+            <div class="details">
+                {{ blog.NoiDungBaiViet|safe }}
+            </div>
+
+            <div class="info-meta">
+                Đăng ngày: {{ blog.NgayDang|date:"d/m/Y" }}
+                {% if blog.MaNhanVien %}
+                • {{ blog.MaNhanVien.HoTen }}
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
