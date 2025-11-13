@@ -239,46 +239,36 @@ class LichHen(models.Model):
         help_text="Mã định danh duy nhất cho từng lịch hẹn (LH001, LH002,...)"
     )
 
-    MaKhachHang = models.ForeignKey(
-        KhachHang,
-        on_delete=models.CASCADE,
-        db_column='MaKhachHang',
-        help_text="Mã duy nhất đại diện cho mỗi khách hàng"
-    )
+    # Thông tin khách hàng (tách FK hoặc lưu trực tiếp)
+    HoTen = models.CharField("Họ và tên", max_length=100,null=True, blank=True)
+    Email = models.EmailField("Email",null=True, blank=True)
+    DienThoai = models.CharField("SĐT di động", max_length=15,null=True, blank=True)
 
-    MaNhanVien = models.ForeignKey(
-        'NhanVien', on_delete=models.CASCADE, db_column='MaNhanVien'
-    )
-    MaDichVu = models.ForeignKey(
-        'DichVu', on_delete=models.CASCADE, db_column='MaDichVu'
-    )
+    # Dịch vụ
+    DanhMucDichVu = models.ForeignKey('DanhMucDichVu', on_delete=models.PROTECT, null=True, blank=True)
+    DichVu = models.ForeignKey('DichVu', on_delete=models.PROTECT, related_name='lichhen_dichvu', null=True,
+    blank=True)
 
-    NgayDatLich = models.DateTimeField(
-        help_text="Ngày và giờ khách thực hiện đặt lịch"
-    )
+    # Thời gian
+    NgayHen = models.DateField("Ngày đặt")
+    KhungGio = models.CharField("Khung giờ", max_length=10,null=True, blank=True)  # có thể thêm choices nếu muốn
 
-    NgayHen = models.DateTimeField(
-        help_text="Ngày và giờ hẹn thực tế để thực hiện dịch vụ"
-    )
+    # Mã giảm giá & trạng thái
+    MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
+    TrangThai = models.CharField("Trạng thái", max_length=25, choices=TRANG_THAI_CHOICES, default='Đang chờ')
 
-    TrangThai = models.CharField(
-        max_length=25,
-        choices=TRANG_THAI_CHOICES,
-        help_text="Mô tả trạng thái hiện tại của lịch hẹn"
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,  # nếu xóa user thì xóa luôn lịch hẹn của họ
+        related_name='KhachHang_LichHen',
+        null=True,
+        blank=True
     )
 
     class Meta:
         db_table = 'LichHen'
         verbose_name = 'Lịch Hẹn'
         verbose_name_plural = 'Lịch Hẹn'
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(TrangThai__in=[
-                    'Đang chờ', 'Đang thực hiện', 'Hoàn thành', 'Đã hủy'
-                ]),
-                name='chk_trangthai_lichhen'
-            )
-        ]
 
     def save(self, *args, **kwargs):
         if not self.MaLichHen:

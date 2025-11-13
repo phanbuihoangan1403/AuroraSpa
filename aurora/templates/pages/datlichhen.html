@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #faf6f0;
+        margin: 0;
+        padding: 0;
+        color: #333;
+    }
+
+    /* --- Container --- */
+    .container {
+        max-width: 1000px;
+        margin: 40px auto 80px;
+        background: #fffdf8;
+        border: 1px solid #eee;
+        padding: 30px 40px;
+        border-radius: 12px;
+        min-height: 500px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+        font-size: 26px;
+        margin-bottom: 10px;
+        font-style: italic;
+        color: #2e4f46;
+        transition: color 0.3s ease;
+    }
+
+    h2:hover { color: #b08a57; }
+
+    p.subtitle {
+        color: #666;
+        font-style: italic;
+        margin-bottom: 30px;
+        font-size: 16px;
+    }
+
+    /* --- Form --- */
+    form { text-align: left; }
+
+    form label {
+        font-weight: 500;
+        display: block;
+        margin: 12px 0 6px;
+        color: #444;
+    }
+
+    form input, form select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 15px;
+        box-sizing: border-box;
+    }
+
+    form button {
+        background-color: #b08a57;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+        width: 100%;
+        font-size: 16px;
+        transition: background-color 0.3s ease;
+    }
+
+    form button:hover {
+        background-color: #8c6b3e;
+    }
+
+</style>
+
+<!-- ======================= NỘI DUNG CHÍNH ======================= -->
+<div class="container">
+
+    <section id="dat-lich">
+        <h2>Đặt lịch</h2>
+        <p class="subtitle">Chỉ một bước đặt lịch, bạn sẽ có ngay trải nghiệm tuyệt vời tại Aurora Spa</p>
+
+        <form id="appointment-form" method="POST">
+            {% csrf_token %}
+
+            <!-- Hàng 1 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 18px;">
+                <div>
+                    <label for="hoten">Họ và tên *</label>
+                    <input type="text" id="hoten" name="hoten" required>
+                </div>
+
+                <div>
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div>
+                    <label for="sdt">SĐT di động *</label>
+                    <input type="text" id="sdt" name="sdt" required>
+                </div>
+            </div>
+
+            <!-- Hàng 2 -->
+            <div style="display: grid; grid-template-columns: 2.1fr 1fr; gap: 20px; margin-bottom: 18px;">
+                <div>
+                    <label for="dat-lich-danhmuc">Danh mục dịch vụ *</label>
+                    <select id="dat-lich-danhmuc" name="danhmuc" required>
+                        <option value="">-- Chọn danh mục --</option>
+                        {% for dm in danh_muc_list %}
+                            <option value="{{ dm.MaDanhMuc }}">{{ dm.TenDanhMuc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="dat-lich-dichvu">Dịch vụ *</label>
+                    <select id="dat-lich-dichvu" name="dichvu" required>
+                        <option value="">-- Chọn dịch vụ --</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Hàng 3 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 18px;">
+                <div>
+                    <label for="ngay-dat-lich">Ngày đặt *</label>
+                    <input type="date" id="ngay-dat-lich" name="ngay" required>
+                </div>
+
+                <div>
+                    <label for="khung-gio-dat-lich">Khung giờ *</label>
+                    <select id="khung-gio-dat-lich" name="khunggio" required>
+                        <option value="">-- Chọn khung giờ --</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="magiamgia">Mã giảm giá</label>
+                    <input type="text" id="magiamgia" name="magiamgia" placeholder="Nhập mã (nếu có)">
+                </div>
+            </div>
+
+            <button type="button" onclick="submitAppointment()">ĐẶT LỊCH</button>
+        </form>
+    </section>
+
+</div>
+
+<!-- ======================= SCRIPT ======================= -->
+
+<script>
+// Load dịch vụ theo danh mục
+document.getElementById('dat-lich-danhmuc').addEventListener('change', function() {
+    const maDanhMuc = this.value;
+    const dichvuSelect = document.getElementById('dat-lich-dichvu');
+
+    dichvuSelect.innerHTML = '<option value="">-- Chọn dịch vụ --</option>';
+
+    if (!maDanhMuc) return;
+
+    fetch(`/ajax/get-service-by-category/?ma_danh_muc=${maDanhMuc}`)
+        .then(response => response.json())
+        .then(data => {
+            data.dich_vu_list.forEach(dv => {
+                const option = document.createElement('option');
+                option.value = dv.ma_dich_vu;
+                option.textContent = dv.ten_dich_vu;
+                dichvuSelect.appendChild(option);
+            });
+        });
+});
+</script>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+// Load khung giờ trống
+$(document).ready(function() {
+    $('#ngay-dat-lich').on('change', function() {
+        var selectedDate = $(this).val();
+        if (!selectedDate) return;
+
+        $.ajax({
+            url: '{% url "available_times" %}',
+            data: { 'date': selectedDate },
+            dataType: 'json',
+            success: function(response) {
+                var $select = $('#khung-gio-dat-lich');
+                $select.empty();
+
+                if (response.available_times.length === 0) {
+                    $select.append('<option value="">Không còn khung giờ trống</option>');
+                } else {
+                    $select.append('<option value="">--Chọn khung giờ--</option>');
+                    response.available_times.forEach(function(time) {
+                        $select.append('<option value="' + time + '">' + time + '</option>');
+                    });
+                }
+            }
+        });
+    });
+});
+</script>
+
+<script>
+// Hàm submit đặt lịch
+function submitAppointment() {
+    alert("Xử lý đặt lịch (bạn bổ sung AJAX hoặc POST theo backend của bạn).");
+}
+</script>
+
+{% endblock %}
