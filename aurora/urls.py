@@ -3,8 +3,9 @@ from django.contrib.auth import views as auth_views
 from .views import (
     home_view, blog_view, chitietblog_view, chitietdichvu_view, dichvu_view, lichhen_view,
     faq_view, lienhe_view, profile_view, diem_view,
-    login_view, logout_view, register_view
+    login_view, logout_view, register_view,LayDichVuView
 )
+from . import views
 
 urlpatterns = [
     path('', home_view, name='home'),
@@ -39,4 +40,8 @@ urlpatterns = [
     path('dat-lai-mat-khau/xong/', auth_views.PasswordResetCompleteView.as_view(
         template_name='auth/password_reset_complete.html'
     ), name='password_reset_complete'),
+# THÊM DÒNG NÀY: AJAX LẤY DỊCH VỤ
+    path('ajax/lay-dich-vu/', LayDichVuView.as_view(), name='lay_dich_vu'),
+    path('ajax/available-times/', views.available_time_slots, name='available_times'),
+    path('ajax/save-appointment/',views.save_appointment, name='save_appointment'),
 ]

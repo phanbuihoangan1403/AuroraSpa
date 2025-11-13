@@ -106,16 +106,44 @@ class QuyDoiDiemAdmin(admin.ModelAdmin):
 @admin.register(LichHen)
 class LichHenAdmin(admin.ModelAdmin):
     list_display = (
-        "MaLichHen", "MaKhachHang", "MaNhanVien", "MaDichVu",
-        "NgayDatLich", "NgayHen", "TrangThai", action_icons
+        "MaLichHen",
+        "HoTen",
+        "Email",
+        "DienThoai",
+        "get_danh_muc",
+        "get_dich_vu",
+        "NgayHen",
+        "KhungGio",
+        "TrangThai",
+        "action_icons",
     )
+
     list_display_links = ("MaLichHen",)
     list_editable = ("TrangThai",)
-    search_fields = ("MaLichHen", "MaKhachHang__HoTen", "MaDichVu__TenDichVu")
-    list_filter = ("TrangThai", "NgayHen")
+    search_fields = ("MaLichHen", "HoTen", "Email", "DienThoai")
+    list_filter = ("TrangThai", "NgayHen", "DanhMucDichVu")
     ordering = ("-NgayHen",)
     date_hierarchy = "NgayHen"
     list_per_page = 15
+
+    # === Hiển thị tên danh mục ===
+    def get_danh_muc(self, obj):
+        return obj.DanhMucDichVu.TenDanhMuc if obj.DanhMucDichVu else "—"
+    get_danh_muc.short_description = "Danh mục"
+
+    # === Hiển thị tên dịch vụ ===
+    def get_dich_vu(self, obj):
+        return obj.DichVu.TenDichVu
+    get_dich_vu.short_description = "Dịch vụ"
+
+    # === Nếu bạn có action icons trong model ===
+    def action_icons(self, obj):
+        try:
+            return obj.action_icons()
+        except:
+            return ""
+    action_icons.short_description = ""
+    action_icons.allow_tags = True
 
 
 #ĐIỂM TÍCH LŨY

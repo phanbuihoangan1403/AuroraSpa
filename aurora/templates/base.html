@@ -15,76 +15,126 @@
     nav a:hover::after, nav a.active::after {
       content:""; position:absolute; left:0; bottom:-4px; width:100%; height:2px; background:#2d2d2d;
     }
+
+    /* MENU LỊCH HẸN THẢ XUỐNG – ĐÃ FIX KHÔNG BỊ MẤT */
+    .lichhen-menu {
+      position: relative;
+      display: inline-block;
+    }
+    .lichhen-btn {
+      text-decoration:none;
+      color:#2d2d2d;
+      font-weight:500;
+      cursor: pointer;
+      padding: 0 5px;
+    }
+    .lichhen-btn:hover::after,
+    .lichhen-btn.active::after {
+      content:""; position:absolute; left:0; bottom:-4px; width:100%; height:2px; background:#2d2d2d;
+    }
+    .lichhen-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      min-width: 190px;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      z-index: 999;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .lichhen-dropdown a {
+      display: block;
+      padding: 12px 16px;
+      color: #2e4d40;
+      font-size: 14px;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .lichhen-dropdown a:hover {
+      background: #f1eadb;
+    }
+    .lichhen-menu::before {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      height: 12px;
+      background: transparent;
+    }
+    .lichhen-menu:hover .lichhen-dropdown,
+    .lichhen-dropdown:hover {
+      display: block;
+    }
+
     .btns { display:flex; gap:10px; }
     .btn { border:none; padding:10px 18px; border-radius:20px; cursor:pointer; font-weight:600; font-size:14px; transition:.3s; }
     .btn-login  { background:#2e4d40; color:#fff; } .btn-login:hover { background:#446b59; }
     .btn-register { background:#d1a054; color:#fff; } .btn-register:hover { background:#b88439; }
-  .user-menu {
-    position: relative;
-    display: inline-block;
-}
 
-.user-btn {
-    background:#2e4d40;
-    color:white;
-    padding:8px 14px;
-    border:none;
-    border-radius:20px;
-    cursor:pointer;
-    font-size:14px;
-    font-weight:600;
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-
-.avatar-circle {
-    width:28px;
-    height:28px;
-    border-radius:50%;
-    background:#55806c;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:white;
-    font-size:14px;
-    font-weight:600;
-}
-
-.dropdown {
-    display:none;
-    position:absolute;
-    right:0;
-    background:white;
-    min-width:165px;
-    border-radius:10px;
-    margin-top:1px;
-    box-shadow:0 4px 12px rgba(0,0,0,0.15);
-    z-index:999;
-    overflow:hidden;
-}
-
-.dropdown li { list-style:none; }
-
-.dropdown li a {
-    display:block;
-    padding:10px 14px;
-    color:#2e4d40;
-    font-size:14px;
-    text-decoration:none;
-}
-
-.dropdown li a:hover {
-    background:#f1eadb;
-}
-
-/* GIỮ MENU KHI RÊ CHUỘT XUỐNG */
-.user-menu:hover .dropdown,
-.user-menu:focus-within .dropdown {
-    display:block;
-}
-
-
+    .user-menu { position: relative; display: inline-block; }
+    .user-btn {
+      background:#2e4d40;
+      color:white;
+      padding:8px 14px;
+      border:none;
+      border-radius:20px;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .avatar-circle {
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      background:#55806c;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:white;
+      font-size:14px;
+      font-weight:600;
+    }
+    .dropdown {
+      display:none;
+      position:absolute;
+      right:0;
+      background:white;
+      min-width:165px;
+      border-radius:10px;
+      margin-top:1px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.15);
+      z-index:999;
+      overflow:hidden;
+    }
+    .dropdown li { list-style:none; }
+    .dropdown li a {
+      display:block;
+      padding:10px 14px;
+      color:#2e4d40;
+      font-size:14px;
+      text-decoration:none;
+    }
+    .dropdown li a:hover {
+      background:#f1eadb;
+    }
+    .user-menu:hover .dropdown,
+    .user-menu:focus-within .dropdown {
+      display:block;
+    }
+      .lichhen-dropdown a::after {
+      display: none !important;
+    }
+    .lichhen-dropdown a:hover::after {
+      display: none !important;
+    }
   </style>
   {% block extra_css %}{% endblock %}
 </head>
@@ -97,10 +147,29 @@
     <a href="{% url 'home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %} ">TRANG CHỦ</a>
     <a href="{% url 'dichvu' %}" class="{% if request.resolver_match.url_name == 'dichvu' %}active{% endif %}">DỊCH VỤ</a>
     <a href="{% url 'blog' %}" class="{% if request.resolver_match.url_name == 'blog' %}active{% endif %}">BLOG</a>
-    <a href="{% url 'lichhen' %}" class="{% if request.resolver_match.url_name == 'lichhen' %}active{% endif %}">LỊCH HẸN</a>
+
+    <!-- MENU LỊCH HẸN THẢ XUỐNG -->
+    <div class="lichhen-menu">
+      <span class="lichhen-btn
+        {% if request.resolver_match.url_name == 'lichhen' or request.resolver_match.url_name == 'lichsu' %}active{% endif %}">
+        LỊCH HẸN
+      </span>
+
+      <div class="lichhen-dropdown">
+        <!-- THAY LINK ĐẶT LỊCH Ở ĐÂY -->
+        <a href="{% url 'lichhen' %}">ĐẶT LỊCH</a>
+        <!-- NOTE: name='lichhen' trong urls.py -->
+
+        <!-- THAY LINK LỊCH SỬ Ở ĐÂY -->
+        <a href="{% url 'lichhen' %}">LỊCH SỬ LỊCH HẸN</a>
+        <!-- NOTE: name='lichsu' trong urls.py -->
+      </div>
+    </div>
+
     <a href="{% url 'faq' %}" class="{% if request.resolver_match.url_name == 'faq' %}active{% endif %}">FAQ</a>
     <a href="{% url 'lienhe' %}" class="{% if request.resolver_match.url_name == 'lienhe' %}active{% endif %}">LIÊN HỆ</a>
   </nav>
+
   <div class="btns">
     {% if user.is_authenticated %}
         <div class="user-menu">
@@ -109,7 +178,7 @@
                     {{ user.username|first|upper }}
                 </div>
                 {{ user.username|upper }}
-                <span class="arrow-down">▾</span>
+                <span class="arrow-down">▾</span>   <!-- ĐÃ SỬA LẠI ĐÚNG KÝ TỰ MŨI TÊN -->
             </button>
 
             <ul class="dropdown">
@@ -118,14 +187,11 @@
                 <li><a href="{% url 'logout' %}">Đăng xuất</a></li>
             </ul>
         </div>
-
-        {% else %}
-            <button class="btn btn-login" onclick="location.href='{% url 'login' %}'">ĐĂNG NHẬP</button>
-            <button class="btn btn-register" onclick="location.href='{% url 'register' %}'">ĐĂNG KÝ</button>
-        {% endif %}
-    </div>
-
-
+    {% else %}
+        <button class="btn btn-login" onclick="location.href='{% url 'login' %}'">ĐĂNG NHẬP</button>
+        <button class="btn btn-register" onclick="location.href='{% url 'register' %}'">ĐĂNG KÝ</button>
+    {% endif %}
+  </div>
 </header>
 
 {% if messages %}
@@ -297,6 +363,20 @@
             closeModal();
             showPage('lich-su');
         }
+    </script>
+    <script>
+    function showPage(pageId) {
+        const contents = document.querySelectorAll('.tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+
+        const lichHenBtn = document.querySelector('.lichhen-btn');
+        if (pageId === 'dat-lich' || pageId === 'lich-su') {
+            lichHenBtn.classList.add('active');
+        } else {
+            lichHenBtn.classList.remove('active');
+        }
+    }
     </script>
 </body>
 </html>
