@@ -8,13 +8,16 @@ from .forms import RegisterForm
 from django.utils.timezone import localtime
 from aurora.models import Blog, DichVu, KhachHang, DiemTichLuy, LichSuTichDiem, FAQ, DanhMucDichVu
 
+from datetime import datetime
+import json
 from django.http import JsonResponse #JAVA
 from django.views import View #JAVA
 from .models import DichVu, KhachHang, LichHen  # JAVA
 from .forms import DatLichForm #ĐẶT LỊCH
 
+
 ### LICH HEN
-## Lưu lịch hẹn
+## 1. Lưu lịch hẹn
 def save_appointment(request):
     if request.method == 'POST':
         try:
@@ -24,28 +27,29 @@ def save_appointment(request):
             HoTen = data.get('hoten')
             Email = data.get('email')
             DienThoai = data.get('sdt')
-            DanhMucDichVu = data.get('danhmuc')
-            DichVu = data.get('dichvu')
+            MaDanhMuc = data.get('danhmuc')
+            MaDichVu = data.get('dichvu')
             NgayHen = data.get('ngay')  # định dạng "YYYY-MM-DD"
             KhungGio = data.get('gio')
             MaGiamGia = data.get('magiamgia', '')
 
             # Kiểm tra bắt buộc
-            if not all([ho_ten, email, sdt, dich_vu_id, ngay, khung_gio]):
+            if not all([HoTen, Email, DienThoai, MaDichVu, NgayHen, KhungGio]):
                 return JsonResponse({'success': False, 'error': 'Thiếu dữ liệu bắt buộc'})
 
             # Lấy dịch vụ và danh mục
-            dich_vu = DichVu.objects.get(id=dich_vu_id)
-            danh_muc = DanhMucDichVu.objects.get(id=danh_muc_id) if danh_muc_id else None
+            dich_vu = DichVu.objects.get(MaDichVu=MaDichVu)
+            danh_muc = DanhMucDichVu.objects.get(MaDanhMuc=MaDanhMuc) if MaDanhMuc else None
 
             # Lưu lịch hẹn
             lich_hen = LichHen.objects.create(
+                user=request.user,
                 HoTen=HoTen,
                 Email=Email,
                 DienThoai=DienThoai,
-                DanhMucDichVu=DanhMucDichVu,
-                DichVu=DichVu,
-                NgayHen=NgayHen.strptime(ngay, "%Y-%m-%d").date(),
+                DanhMucDichVu=danh_muc,
+                DichVu=dich_vu,
+                NgayHen=datetime.strptime(NgayHen, "%Y-%m-%d").date(),
                 KhungGio=KhungGio,
                 MaGiamGia=MaGiamGia
             )
@@ -61,8 +65,11 @@ def save_appointment(request):
 
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
-## Lấy khung giờ còn trống
-ALL_TIME_SLOTS = ["08:00 - 10:00","10:00 - 12:00", "13:00 - 15:00", "15:00 - 17:00", "17:00 - 19:00", "19:00 - 21:00"]
+
+## 2. Lấy khung giờ còn trống
+ALL_TIME_SLOTS = ["08:00 - 10:00", "10:00 - 12:00", "13:00 - 15:00", "15:00 - 17:00", "17:00 - 19:00", "19:00 - 21:00"]
+
+
 def available_time_slots(request):
     selected_date = request.GET.get('date')
 
@@ -71,39 +78,63 @@ def available_time_slots(request):
 
     # Lấy danh sách giờ đã đặt cho ngày đó
     booked_times = LichHen.objects.filter(NgayHen=selected_date).values_list('KhungGio', flat=True)
-    booked_times_str = [t.strftime("%H:%M") for t in booked_times]
 
     # Lọc ra các khung giờ còn trống
-    available_times = [t for t in ALL_TIME_SLOTS if t not in booked_times_str]
+    available_times = [t for t in ALL_TIME_SLOTS if t not in booked_times]
 
     return JsonResponse({'available_times': available_times})
 
-def lichhen_view(request):
-    khachhang, created = KhachHang.objects.get_or_create(user=request.user)
-    if request.method == 'POST':
-        form = DatLichForm(request.POST)
-        if form.is_valid():
-            lich = form.save(commit=False)
-            kh = KhachHang.objects.get(user=request.user)
-            lich.MaKhachHang = kh
-            lich.MaDichVu = form.cleaned_data['dich_vu']
-            lich.MaNhanVien = None  # tạm để None, admin sẽ gán sau
-            lich.NgayDatLich = request.POST.get('ngay_dat') + ' 00:00:00'  # hoặc dùng datetime
-            lich.NgayHen = request.POST.get('ngay_dat') + ' ' + request.POST.get('khung_gio')
-            lich.save()
-            messages.success(request, "Đặt lịch thành công!")
-            return redirect('lichhen')
-        else:
-            messages.error(request, "Vui lòng kiểm tra lại thông tin.")
-    else:
-        form = DatLichForm()
 
+## 3. Lấy dịch vụ theo danh mục (AJAX)
+def get_service_by_category(request):
+    ma_danh_muc = request.GET.get('ma_danh_muc')
+    dich_vu_list = DichVu.objects.filter(MaDanhMuc=ma_danh_muc)
+
+    data = [
+        {
+            'ma_dich_vu': dv.MaDichVu,
+            'ten_dich_vu': dv.TenDichVu
+        }
+        for dv in dich_vu_list
+    ]
+    return JsonResponse({'dich_vu_list': data})
+
+
+### 4. Đặt lịch hẹn
+def datlichhen_view(request):
+    khachhang, created = KhachHang.objects.get_or_create(user=request.user)
+
+    form = DatLichForm()
     danh_muc_list = DanhMucDichVu.objects.all()
-    return render(request, 'pages/lichhen.html', {
+    dich_vu_list = DichVu.objects.all()
+
+    return render(request, 'pages/datlichhen.html', {
         'form': form,
         'danh_muc_list': danh_muc_list,
+        'dich_vu_list': dich_vu_list,
         'ma_khach_hang': KhachHang.objects.get(user=request.user).MaKhachHang
     })
+
+
+### 5. Chi tiết lịch sử lịch hẹn
+def api_chi_tiet_lich_hen(request, ma_lichhen):
+    lich = LichHen.objects.select_related('DichVu').get(MaLichHen=ma_lichhen)
+    data = {
+        'ten_dichvu': lich.DichVu.TenDichVu,
+        'mota_dichvu': lich.DichVu.MoTa,
+        'ngayhen': lich.NgayHen.strftime("%d/%m/%Y"),
+        'khunggio': lich.KhungGio,
+        'trangthai': lich.TrangThai,
+        'thoigian_dat': lich.NgayHen.strftime("%Hh %d/%m/%Y"),
+    }
+    return JsonResponse(data)
+
+
+@login_required
+def lichsulichhen_view(request):
+    appointments = LichHen.objects.filter(user=request.user).select_related('DichVu')
+    return render(request, 'pages/lichsulichhen.html', {'appointments': appointments})
+
 
 def register_view(request):
     if request.method == 'POST':
@@ -113,6 +144,7 @@ def register_view(request):
             login(request, user)  # đăng nhập luôn sau khi tạo
             return redirect('home')
         else:
+            print(form.errors)
             messages.error(request, "Thông tin chưa hợp lệ, vui lòng kiểm tra.")
     else:
         form = RegisterForm()
@@ -235,12 +267,6 @@ def diem_view(request):
     }
 
     return render(request, "pages/diem.html", context)
-
-@login_required
-def lichsu_lichhen_view(request):
-    # appointments = LichHen.objects.filter(user=request.user).order_by('-ngay_dat')
-    appointments = []
-    return render(request, 'lichsu_lichhen.html', {'appointments': appointments})
 
 #THÊM AJAX VIEW
 class LayDichVuView(View):

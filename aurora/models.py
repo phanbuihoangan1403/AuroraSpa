@@ -257,6 +257,14 @@ class LichHen(models.Model):
     MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
     TrangThai = models.CharField("Trạng thái", max_length=25, choices=TRANG_THAI_CHOICES, default='Đang chờ')
 
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,  # nếu xóa user thì xóa luôn lịch hẹn của họ
+        related_name='KhachHang_LichHen',
+        null=True,
+        blank=True
+    )
+
     class Meta:
         db_table = 'LichHen'
         verbose_name = 'Lịch Hẹn'

@@ -6,29 +6,35 @@ from .models import LichHen, DanhMucDichVu, DichVu #ĐẶT LỊCH
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField(required=True, label="Email")
-    sdt = forms.CharField(max_length=10, required=False, label="Số điện thoại")
+    sdt = forms.CharField(max_length=10, required=True, label="Số điện thoại")
+    HoTen = forms.CharField(max_length=200, required=True, label="Họ và tên")
+    DiaChi = forms.CharField(max_length=300, required=True, label="Địa chỉ")
+    NgaySinh = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Ngày sinh"
+    )
 
     class Meta:
         model = User
-        fields = ['username','email', 'sdt','password1', 'password2']
+        fields = ['username', 'HoTen', 'email', 'sdt', 'DiaChi', 'NgaySinh', 'password1', 'password2']
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.email = self.cleaned_data.get('email')
+        user.email = self.cleaned_data['email']
 
         if commit:
             user.save()
-
-            # tạo khách hàng
             KhachHang.objects.create(
                 user=user,
-                HoTen=self.cleaned_data.get('HoTen'),
-                SDT=self.cleaned_data.get('sdt'),
-                Email=user.email,
-                NgaySinh=self.cleaned_data.get('NgaySinh'),
-                DiaChi=self.cleaned_data.get('DiaChi')
+                HoTen=self.cleaned_data['HoTen'],
+                SDT=self.cleaned_data['sdt'],
+                Email=self.cleaned_data['email'],
+                DiaChi=self.cleaned_data['DiaChi'],
+                NgaySinh=self.cleaned_data.get('NgaySinh')
             )
         return user
+
 
 #FORM: ĐẶT LỊCH
 class DatLichForm(forms.ModelForm):

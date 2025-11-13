@@ -157,11 +157,11 @@
 
       <div class="lichhen-dropdown">
         <!-- THAY LINK ĐẶT LỊCH Ở ĐÂY -->
-        <a href="{% url 'lichhen' %}">ĐẶT LỊCH</a>
+        <a href="{% url 'dat-lich-hen' %}">ĐẶT LỊCH</a>
         <!-- NOTE: name='lichhen' trong urls.py -->
 
         <!-- THAY LINK LỊCH SỬ Ở ĐÂY -->
-        <a href="{% url 'lichhen' %}">LỊCH SỬ LỊCH HẸN</a>
+        <a href="{% url 'lich-su-lich-hen' %}">LỊCH SỬ LỊCH HẸN</a>
         <!-- NOTE: name='lichsu' trong urls.py -->
       </div>
     </div>
@@ -294,7 +294,7 @@
                     </a>
                 </li>
                 <li style="margin-bottom: 13px;">
-                    <a href="{% url 'lichhen' %}" onclick="showPage('lichhen')" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
+                    <a href="{% url 'lich-su-lich-hen' %}" style="color: #e8f2f0; text-decoration: none; transition: all 0.35s ease; padding-left: 5px; display: inline-block;">
                         <span style="color: #b08a57; margin-right: 8px; font-size: 14px; font-weight: bold;">▸</span>Lịch hẹn
                     </a>
                 </li>
@@ -310,7 +310,7 @@
             <p style="margin-bottom: 12px; font-weight: 300; color: #e8f2f0; font-size: 14.8px; line-height: 1.6;">
                 Trải nghiệm dịch vụ chăm sóc chuyên nghiệp và thư giãn tuyệt vời tại Aurora Spa.
             </p>
-            <a href="{% url 'lichhen' %}" onclick="showPage('lichhen')" style="display: inline-block; background: linear-gradient(135deg, #b08a57 0%, #d4af37 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.4s ease; box-shadow: 0 4px 15px rgba(176, 138, 87, 0.3); border: 2px solid transparent; margin-top: 15px;">
+            <a href="{% url 'dat-lich-hen' %}" style="display: inline-block; background: linear-gradient(135deg, #b08a57 0%, #d4af37 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; font-size: 16px; transition: all 0.4s ease; box-shadow: 0 4px 15px rgba(176, 138, 87, 0.3); border: 2px solid transparent; margin-top: 15px;">
                 ĐẶT LỊCH NGAY
             </a>
         </div>
@@ -335,24 +335,82 @@
                 lichHenLink.classList.remove('active');
             }
         }
-        function openModal(modalType) {
-            if (modalType.startsWith('detail')) {
-                document.getElementById('detailModal').classList.add('active');
-            } else if (modalType.startsWith('cancel')) {
-                document.getElementById('cancelModal').classList.add('active');
-            } else if (modalType.startsWith('edit')) {
-                document.getElementById('editModal').classList.add('active');
-            }
-        }
+        // function openModal(modalType) {
+        //     if (modalType.startsWith('detail')) {
+        //         document.getElementById('detailModal').classList.add('active');
+        //     } else if (modalType.startsWith('cancel')) {
+        //         document.getElementById('cancelModal').classList.add('active');
+        //     } else if (modalType.startsWith('edit')) {
+        //         document.getElementById('editModal').classList.add('active');
+        //     }
+        // }
         function closeModal() {
             document.getElementById('detailModal').classList.remove('active');
             document.getElementById('cancelModal').classList.remove('active');
             document.getElementById('editModal').classList.remove('active');
         }
-        function submitAppointment() {
-            alert('Đặt lịch thành công!');
-            showPage('lich-su');
+
+        function getCookie(name) {
+          let cookieValue = null;
+          if (document.cookie && document.cookie !== '') {
+              const cookies = document.cookie.split(';');
+              for (let i = 0; i < cookies.length; i++) {
+                  const cookie = cookies[i].trim();
+                  // Kiểm tra cookie có bắt đầu bằng tên mình cần không
+                  if (cookie.startsWith(name + '=')) {
+                      cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                      break;
+                  }
+              }
+          }
+          return cookieValue;
         }
+
+        function submitAppointment() {
+            const form = document.getElementById('appointment-form');
+            if (!form.checkValidity()) {
+                alert('Vui lòng điền đầy đủ các trường bắt buộc!');
+                return;
+            }
+
+            const data = {
+                ngay: document.getElementById('ngay-dat-lich').value,
+                gio: document.getElementById('khung-gio-dat-lich').value,
+                hoten: document.getElementById('hoten').value,
+                email: document.getElementById('email').value,
+                sdt: document.getElementById('sdt').value,
+                danhmuc: document.getElementById('dat-lich-danhmuc').options[document.getElementById('dat-lich-danhmuc').selectedIndex].value,
+                dichvu: document.getElementById('dat-lich-dichvu').value,
+                magiamgia: document.getElementById('magiamgia').value || 'Không có'
+            };
+
+            // Lưu lịch
+            fetch("{% url 'save_appointment' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")  // nếu dùng Django form có CSRF
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(`✅ Đặt lịch thành công!\n${data.dichvu}\nNgày: ${data.ngay} | Giờ: ${data.gio}`);
+                    form.reset();
+                } else {
+                    alert("❌ Lỗi khi lưu lịch: " + result.error);
+                }
+            })
+            .catch(error => {
+                alert("⚠️ Lỗi kết nối: " + error);
+            });
+
+            // Làm rỗng form và chuyển sang page Lịch sử đã đặt
+            form.reset();
+            window.location.href = "/lich-su-lich-hen/"
+        }
+
         function confirmCancel() {
             alert('Hủy lịch thành công!');
             closeModal();
