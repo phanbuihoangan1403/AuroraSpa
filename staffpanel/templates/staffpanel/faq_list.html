@@ -1,0 +1,59 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Danh sách FAQ{% endblock %}
+{% block nav_faq %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">DANH SÁCH FAQ</h1>
+    <div style="display:flex;gap:8px;">
+        <form method="get" style="display:flex;gap:6px;align-items:center;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo câu hỏi..."
+                   style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;font-size:13px;min-width:220px;">
+            <button class="btn btn-outline" type="submit">Tìm</button>
+        </form>
+        <a href="{% url 'staff_faq_add' %}">
+            <button class="btn btn-primary" type="button">+ Tạo mới FAQ</button>
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+        <tr>
+            <th style="width:40px;"><input type="checkbox"></th>
+            <th style="width:80px;">ID</th>
+            <th>Chủ đề / Câu hỏi</th>
+            <th style="width:120px;">Hiển thị</th>
+            <th style="width:170px;">Thời gian cập nhật</th>
+            <th style="width:140px;">Nhân viên</th>
+            <th style="width:120px;">Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for faq in faqs %}
+            <tr>
+                <td><input type="checkbox"></td>
+                <td>{{ faq.MaCauHoi }}</td>
+                <td>{{ faq.CauHoi }}</td>
+                <td>
+                    {% if faq.TrangThaiHienThi %}
+                        <span class="badge badge-success">Hiển thị</span>
+                    {% else %}
+                        <span class="badge badge-muted">Đang ẩn</span>
+                    {% endif %}
+                </td>
+                <td>{{ faq.NgayCapNhat|date:"H:i d/m/Y" }}</td>
+                <td>{{ faq.MaNhanVien.user.username }}</td>
+                <td>
+                    <a href="{% url 'staff_faq_edit' faq.MaCauHoi %}">Sửa</a> |
+                    <a href="{% url 'staff_faq_delete' faq.MaCauHoi %}" style="color:#b3261e;">Xóa</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" style="text-align:center;">Chưa có FAQ nào.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

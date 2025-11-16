@@ -1,0 +1,53 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Danh sách Lịch hẹn{% endblock %}
+{% block nav_appointment %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">LỊCH HẸN</h1>
+
+    <form method="get" style="display:flex;gap:8px;">
+        <select name="trang_thai" style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;">
+            <option value="">Tất cả trạng thái</option>
+            <option value="Chờ" {% if trang_thai == "Chờ" %}selected{% endif %}>Chờ xác nhận</option>
+            <option value="Đã xác nhận" {% if trang_thai == "Đã xác nhận" %}selected{% endif %}>Đã xác nhận</option>
+            <option value="Đã hủy" {% if trang_thai == "Đã hủy" %}selected{% endif %}>Đã hủy</option>
+            <option value="Hoàn thành" {% if trang_thai == "Hoàn thành" %}selected{% endif %}>Hoàn thành</option>
+        </select>
+        <button class="btn btn-outline">Lọc</button>
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+        <tr>
+            <th>Mã LH</th>
+            <th>Khách hàng</th>
+            <th>Dịch vụ</th>
+            <th>Ngày</th>
+            <th>Giờ</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for lh in lich_hen %}
+            <tr>
+                <td>{{ lh.MaLichHen }}</td>
+                <td>{{ lh.HoTen }}</td>
+                <td>{{ lh.DichVu.TenDichVu }}</td>
+                <td>{{ lh.NgayHen|date:"d/m/Y" }}</td>
+                <td>{{ lh.KhungGio }}</td>
+                <td>{{ lh.TrangThai }}</td>
+                <td>
+                    <a href="{% url 'staff_appointment_edit' lh.MaLichHen %}">Cập nhật</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7" style="text-align:center;">Không có lịch hẹn.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

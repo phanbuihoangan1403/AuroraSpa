@@ -1,0 +1,13 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Xác nhận xóa{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;">
+    <h3>Xóa {{ title }}</h3>
+    <p>Bạn có chắc chắn muốn xóa mục này?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Xóa</button>
+        <a href="javascript:history.back();" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+    </form>
+</div>
+{% endblock %}

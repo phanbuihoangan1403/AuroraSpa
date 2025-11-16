@@ -1,0 +1,23 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}{{ dv.MaDichVu|default:"Tạo dịch vụ" }}{% endblock %}
+{% block nav_service %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{% if dv.MaDichVu %}Chỉnh sửa dịch vụ{% else %}Tạo dịch vụ mới{% endif %}</h1>
+</div>
+
+<div class="card" style="max-width:820px;">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px;">{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary">Lưu</button>
+        <a href="{% url 'staff_service_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+    </form>
+</div>
+{% endblock %}

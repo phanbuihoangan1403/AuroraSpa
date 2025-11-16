@@ -1,0 +1,57 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Danh sách Blog{% endblock %}
+{% block nav_blog %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">DANH SÁCH BLOG</h1>
+    <div style="display:flex;gap:8px;">
+        <form method="get" style="display:flex;gap:6px;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Tìm tiêu đề..."
+                   style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;">
+            <button class="btn btn-outline">Tìm</button>
+        </form>
+        <a href="{% url 'staff_blog_add' %}">
+            <button class="btn btn-primary">+ Tạo bài viết</button>
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tiêu đề</th>
+            <th>Hiển thị</th>
+            <th>Ngày cập nhật</th>
+            <th>Nhân viên</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for blog in blogs %}
+            <tr>
+                <td>{{ blog.MaBaiViet }}</td>
+                <td>{{ blog.TieuDeBaiViet }}</td>
+                <td>
+                    {% if blog.TrangThaiHienThi %}
+                        <span class="badge badge-success">Hiển thị</span>
+                    {% else %}
+                        <span class="badge badge-muted">Ẩn</span>
+                    {% endif %}
+                </td>
+                <td>{{ blog.NgayCapNhat|date:"H:i d/m/Y" }}</td>
+                <td>{{ blog.MaNhanVien.user.username }}</td>
+                <td>
+                    <a href="{% url 'staff_blog_edit' blog.MaBaiViet %}">Sửa</a> |
+                    <a href="{% url 'staff_blog_delete' blog.MaBaiViet %}" style="color:#b3261e;">Xóa</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" style="text-align:center;">Chưa có blog nào.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

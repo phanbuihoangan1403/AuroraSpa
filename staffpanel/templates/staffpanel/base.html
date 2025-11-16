@@ -1,0 +1,94 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Aurora Spa – Staff{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+               background:#f6f4f0; color:#2d2a26; }
+        .layout { display:flex; min-height:100vh; }
+        .sidebar { width:220px; background:#214134; color:#f6f4f0;
+                   display:flex; flex-direction:column; padding:20px 16px; }
+        .brand { font-weight:700; font-size:20px; margin-bottom:30px; }
+        .nav-section-title { font-size:11px; text-transform:uppercase;
+                             letter-spacing:1px; color:#9fb1a7; margin:12px 0 6px; }
+        .nav-link { display:block; padding:8px 10px; border-radius:8px; margin-bottom:4px;
+                    font-size:14px; text-decoration:none; color:#e8f2f0; transition:background .2s; }
+        .nav-link:hover, .nav-link.active { background:#2f5c48; }
+        .main { flex:1; display:flex; flex-direction:column; }
+        .topbar { height:56px; padding:0 24px; display:flex; align-items:center;
+                  justify-content:space-between; background:#fff; border-bottom:1px solid #e4ded4; }
+        .topbar-right { display:flex; align-items:center; gap:16px; font-size:14px; }
+        .avatar { width:32px; height:32px; border-radius:999px; background:#d7e2de;
+                  display:inline-flex; align-items:center; justify-content:center;
+                  font-weight:600; color:#214134; font-size:14px; }
+        .content { padding:24px 32px 40px; }
+        .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+        .page-title { font-size:24px; font-weight:700; letter-spacing:.5px; }
+        .btn { border:none; border-radius:8px; padding:8px 14px; font-size:14px; cursor:pointer; }
+        .btn-primary { background:#2f5c48; color:#fff; }
+        .btn-outline { background:transparent; border:1px solid #d6cbbd; color:#4b463c; }
+        .card { background:#fff; border-radius:12px; border:1px solid #eadfd0;
+                box-shadow:0 4px 18px rgba(0,0,0,.03); padding:16px 20px; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        thead tr { background:#f6f3ee; }
+        th, td { padding:10px 8px; text-align:left; border-bottom:1px solid #f0e7dc; }
+        th { font-weight:600; color:#7b6c5d; font-size:13px; }
+        tr:hover td { background:#faf7f2; }
+        .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; }
+        .badge-success { background:#e3f4eb; color:#256c3b; }
+        .badge-muted { background:#f0ede7; color:#7a6f62; }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">Aurora Spa</div>
+
+        <div class="nav-section-title">Tổng quan</div>
+        <a href="{% url 'staff_dashboard' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Dashboard</a>
+
+        <div class="nav-section-title">Nội dung</div>
+        <a href="{% url 'staff_blog_list' %}" class="nav-link {% block nav_blog %}{% endblock %}">Blog</a>
+        <a href="{% url 'staff_service_list' %}" class="nav-link {% block nav_service %}{% endblock %}">Dịch vụ</a>
+        <a href="{% url 'staff_faq_list' %}" class="nav-link {% block nav_faq %}{% endblock %}">FAQ</a>
+
+        <div class="nav-section-title">Vận hành</div>
+        <a href="{% url 'staff_appointment_list' %}" class="nav-link {% block nav_appointment %}{% endblock %}">Lịch hẹn</a>
+        <a href="{% url 'staff_customer_list' %}" class="nav-link {% block nav_customer %}{% endblock %}">Khách hàng</a>
+        <a href="{% url 'staff_loyalty_list' %}" class="nav-link {% block nav_loyalty %}{% endblock %}">Điểm tích lũy</a>
+
+        <div class="nav-section-title">Nhân sự</div>
+        <a href="{% url 'staff_employee_list' %}" class="nav-link {% block nav_employee %}{% endblock %}">Nhân viên</a>
+        <a href="{% url 'staff_log_list' %}" class="nav-link {% block nav_logs %}{% endblock %}">Nhật ký</a>
+
+        <div class="nav-section-title">Tài khoản</div>
+        <a href="{% url 'staff_profile' %}" class="nav-link">Hồ sơ</a>
+        <a href="{% url 'staff_logout' %}" class="nav-link">Đăng xuất</a>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div>Cổng quản trị Aurora Spa</div>
+            <div class="topbar-right">
+                <span>{{ request.user.username }}</span>
+                <div class="avatar">{{ request.user.username|first|upper }}</div>
+            </div>
+        </header>
+
+        <main class="content">
+            {% if messages %}
+                {% for m in messages %}
+                    <div style="font-size:13px;margin-bottom:4px;">{{ m }}</div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Danh sách Dịch vụ{% endblock %}
+{% block nav_service %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">DANH SÁCH DỊCH VỤ</h1>
+    <div style="display:flex;gap:8px;">
+        <form method="get" style="display:flex;gap:6px;">
+            <input type="text" name="q" value="{{ q }}" placeholder="Tìm dịch vụ..."
+                   style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;">
+            <button class="btn btn-outline">Tìm</button>
+        </form>
+        <a href="{% url 'staff_service_add' %}">
+            <button class="btn btn-primary">+ Thêm dịch vụ</button>
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Tên dịch vụ</th>
+            <th>Danh mục</th>
+            <th>Giá</th>
+            <th>Trạng thái</th>
+            <th>Hành động</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for dv in services %}
+        <tr>
+            <td>{{ dv.MaDichVu }}</td>
+            <td>{{ dv.TenDichVu }}</td>
+            <td>{{ dv.MaDanhMuc.TenDanhMuc }}</td>
+            <td>{{ dv.GiaTien|floatformat:"0" }} đ</td>
+            <td>
+                {% if dv.TrangThai %}
+                    <span class="badge badge-success">Hoạt động</span>
+                {% else %}
+                    <span class="badge badge-muted">Ẩn</span>
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'staff_service_edit' dv.MaDichVu %}">Sửa</a> |
+                <a href="{% url 'staff_service_delete' dv.MaDichVu %}" style="color:#b3261e;">Xóa</a>
+            </td>
+        </tr>
+        {% empty %}
+            <tr><td colspan="6" style="text-align:center;">Không có dịch vụ.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

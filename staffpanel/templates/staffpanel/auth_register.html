@@ -1,0 +1,24 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Tạo tài khoản nhân viên{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Tạo tài khoản nhân viên</h1>
+</div>
+<div class="card" style="max-width:520px;">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        {% for field in form %}
+            <div style="margin-bottom:10px;">
+                <label style="font-size:13px;">{{ field.label }}</label>
+                {{ field }}
+                {% for err in field.errors %}
+                    <div style="font-size:12px;color:#b3261e;">{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Tạo tài khoản</button>
+    </form>
+</div>
+{% endblock %}
