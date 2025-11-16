@@ -1,0 +1,44 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Nhân viên{% endblock %}
+{% block nav_employee %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">NHÂN VIÊN</h1>
+
+    <a href="{% url 'staff_register' %}">
+        <button class="btn btn-primary">+ Thêm nhân viên</button>
+    </a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+        <tr>
+            <th>Mã NV</th>
+            <th>Tài khoản</th>
+            <th>Vai trò</th>
+            <th>Online</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for e in employees %}
+            <tr>
+                <td>{{ e.MaNhanVien }}</td>
+                <td>{{ e.user.username }}</td>
+                <td>{{ e.get_VaiTro_display }}</td>
+                <td>
+                    {% if e.is_online %}
+                        <span class="badge badge-success">Online</span>
+                    {% else %}
+                        <span class="badge badge-muted">Offline</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">Không có nhân viên.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

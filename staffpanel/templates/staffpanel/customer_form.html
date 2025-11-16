@@ -1,0 +1,23 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Chỉnh sửa khách hàng{% endblock %}
+{% block nav_customer %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Chỉnh sửa khách hàng</h1>
+</div>
+
+<div class="card" style="max-width:700px;">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px;">{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary">Lưu</button>
+        <a href="{% url 'staff_customer_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+    </form>
+</div>
+{% endblock %}

@@ -219,7 +219,7 @@
                 <h3>{{ post.TieuDeBaiViet }}</h3>
                 <p>{{ post.NoiDungBaiViet|truncatewords_html:35|safe }}</p>
                 <div class="meta">
-                    <small><i class="far fa-calendar-alt me-1"></i> {{ post.NgayDang|date:"d/m/Y" }}</small>
+                    <small><i class="far fa-calendar-alt me-1"></i> {{ post.NgayCapNhat|date:"d/m/Y" }}</small>
                     <a href="{% url 'chitietblog' post.MaBaiViet %}" class="btn btn-view-more">
                         XEM THÊM
                     </a>

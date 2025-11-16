@@ -26,23 +26,23 @@ class KhachHangAdmin(admin.ModelAdmin):
 @admin.register(NhanVien)
 class NhanVienAdmin(admin.ModelAdmin):
     readonly_fields = ('MaNhanVien',)
-    list_display = ("MaNhanVien", "user", "ChucVu", "NgayVaoLam", action_icons)
+    list_display = ("MaNhanVien", "user", "VaiTro", "NgayVaoLam", action_icons)
     list_display_links = ("MaNhanVien",)
-    search_fields = ("MaNhanVien", "user__username", "ChucVu")
-    list_filter = ("ChucVu",)
+    search_fields = ("MaNhanVien", "user__username", "VaiTro")
+    list_filter = ("VaiTro",)
     ordering = ("MaNhanVien",)
     date_hierarchy = "NgayVaoLam"
 
 @admin.register(Blog)
 class BlogAdmin(admin.ModelAdmin):
     readonly_fields = ('MaBaiViet',)  # Ẩn trong form (chỉ đọc)
-    list_display = ("MaBaiViet", "TieuDeBaiViet", "MaNhanVien", "TrangThaiHienThi", "NgayDang", action_icons)
+    list_display = ("MaBaiViet", "TieuDeBaiViet", "MaNhanVien", "TrangThaiHienThi", "NgayCapNhat", action_icons)
     list_display_links = ("MaBaiViet",)
     list_editable = ("TrangThaiHienThi",)
     search_fields = ("MaBaiViet", "TieuDeBaiViet")
     list_filter = ("TrangThaiHienThi",)
-    ordering = ("-NgayDang",)
-    date_hierarchy = "NgayDang"
+    ordering = ("-NgayCapNhat",)
+    date_hierarchy = "NgayCapNhat"
     list_per_page = 10
 
 @admin.register(DichVu)

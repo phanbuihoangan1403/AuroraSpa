@@ -1,0 +1,27 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}{{ faq.MaCauHoi|default:"Tạo FAQ" }}{% endblock %}
+{% block nav_faq %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">
+        {% if faq.MaCauHoi %}Chỉnh sửa FAQ {{ faq.MaCauHoi }}{% else %}Tạo mới FAQ{% endif %}
+    </h1>
+</div>
+<div class="card" style="max-width:720px;">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px;">{{ field.label }}</label>
+                {{ field }}
+                {% for err in field.errors %}
+                    <div style="font-size:12px;color:#b3261e;">{{ err }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Lưu</button>
+        <a href="{% url 'staff_faq_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+    </form>
+</div>
+{% endblock %}

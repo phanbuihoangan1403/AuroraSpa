@@ -1,0 +1,40 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Nhật ký hệ thống{% endblock %}
+{% block nav_logs %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">NHẬT KÝ HOẠT ĐỘNG</h1>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+        <tr>
+            <th>Thời gian</th>
+            <th>Nhân viên</th>
+            <th>Hành động</th>
+            <th>Đối tượng</th>
+            <th>ID</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for log in logs %}
+            <tr>
+                <td>{{ log.thoi_gian|date:"H:i d/m/Y" }}</td>
+                <td>
+                    {% if log.nhan_vien %}
+                        {{ log.nhan_vien.MaNhanVien }} – {{ log.nhan_vien.user.username }}
+                    {% else %}N/A{% endif %}
+                </td>
+                <td>{{ log.hanh_dong }}</td>
+                <td>{{ log.doi_tuong }}</td>
+                <td>{{ log.object_id }}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="5">Không có dữ liệu.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

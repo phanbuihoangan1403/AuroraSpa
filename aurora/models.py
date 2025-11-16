@@ -164,7 +164,7 @@ class FAQ (models.Model):
         help_text='Câu trả lời'
     )
     NgayCapNhat=models.DateTimeField(
-        auto_now_add=True,
+        auto_now=True,
         help_text='Ngày cập nhật gần nhất'
     )
     TrangThaiHienThi=models.BooleanField(default=True, help_text="Trạng thái hiển thị")
@@ -341,7 +341,12 @@ class DichVu(models.Model):
         null=False,
         help_text="Tên dịch vụ Spa (VD: 'Massage đá nóng', 'Trị mụn chuyên sâu')"
     )
-
+    GiaTien = models.DecimalField(
+        max_digits=12,
+        decimal_places=0,
+        help_text="Giá tiền dịch vụ (VNĐ)",
+        default=0
+    )
     MoTa = RichTextField()
 
     TrangThaiHienThi = models.BooleanField(
@@ -394,10 +399,16 @@ class DiemTichLuy(models.Model):
 
 
 class NhanVien(models.Model):
+    ROLE_CHOICES = [
+        ('MANAGER', 'Quản lý'),
+        ('CONTENT', 'Nhân viên nội dung'),
+        ('RECEPTION', 'Nhân viên lễ tân'),
+    ]
+    VaiTro = models.CharField(max_length=20, choices=ROLE_CHOICES, default='RECEPTION')
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     MaNhanVien = models.CharField(max_length=5, primary_key=True, blank=True)
-    ChucVu = models.CharField(max_length=100)
     NgayVaoLam = models.DateField(auto_now_add=True)
+    is_online = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'NhanVien'
@@ -424,7 +435,8 @@ class Blog(models.Model):
     )
     TieuDeBaiViet = models.CharField(max_length=200)
     NoiDungBaiViet = RichTextField()
-    NgayDang = models.DateTimeField()
+    NgayDang = models.DateTimeField(auto_now_add=True)
+    NgayCapNhat = models.DateTimeField(auto_now=True)
     TrangThaiHienThi = models.BooleanField(default=True)
     HinhAnh = models.ImageField(upload_to='blog/', blank=True, null=True)
 

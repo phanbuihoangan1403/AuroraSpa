@@ -1,0 +1,23 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}{{ blog.MaBaiViet|default:"Tạo Blog" }}{% endblock %}
+{% block nav_blog %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{% if blog.MaBaiViet %}Chỉnh sửa Blog{% else %}Tạo mới Blog{% endif %}</h1>
+</div>
+
+<div class="card" style="max-width:820px;">
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px;">{{ field.label }}</label>
+                {{ field }}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary">Lưu</button>
+        <a href="{% url 'staff_blog_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+    </form>
+</div>
+{% endblock %}

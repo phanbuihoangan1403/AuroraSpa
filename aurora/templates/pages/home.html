@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 {% block title %}Aurora Spa – Chạm đến bình yên giữa lòng Đà Nẵng{% endblock %}
+
 {% block extra_css %}
 <style>
 /* ==== CHỈ ÁP DỤNG CHO TRANG HOME ==== */
@@ -25,7 +26,7 @@
 .home-page .btn-viewmore:hover { background: #2e4d40; transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 35px rgba(26,51,40,0.6); }
 
 /* ===== WHY AURORA ===== */
-.home-page .why-section { padding: 100px 0 60px; background: var(--light); } /* giảm padding-bottom */
+.home-page .why-section { padding: 100px 0 60px; background: var(--light); }
 .home-page .section-title { text-align: center; font-family: 'Playfair Display', serif; font-size: 42px; color: var(--green); margin-bottom: 60px; }
 
 .home-page .why-grid {
@@ -53,39 +54,131 @@
 .home-page .why-icon { font-size: 18px; font-weight: 600; color: var(--gold); margin-bottom: 16px; line-height: 1.4; min-height: 50px; display: flex; align-items: center; justify-content: center; }
 .home-page .why-card p { font-size: 15px; color: #444; line-height: 1.75; margin: 0; flex-grow: 1; }
 
-/* ===== BANNER DỊCH VỤ – RÚT NGẮN KHOẢNG CÁCH XUỐNG CÒN ~30PX ===== */
+/* ===== BANNER DỊCH VỤ – BO GÓC TRÒN NHƯ CÁC CARD KHÁC ===== */
 .home-page .service-intro-banner {
     position: relative;
     width: 2000px;
     height: 600px;
     max-width: 100vw;
-    margin: 0 auto 30px !important; /* ← CHỈ CÒN 30PX */
+    margin: 0 auto 30px !important;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2;
+    border-radius: 24px;          /* BO GÓC TRÒN */
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12); /* ĐỒNG BỘ ĐỔ BÓNG */
 }
-.home-page .service-intro-banner .banner-bg { position: absolute; inset: 0; z-index: -1; }
-.home-page .service-intro-banner .banner-bg img { width: 100%; height: 100%; object-fit: cover; }
-.home-page .banner-content { position: relative; color: white; text-align: center; max-width: 1100px; padding: 20px; z-index: 1; }
-.home-page .banner-content h2 { font-family: 'Playfair Display', serif; font-size: 4.2rem; font-weight: 800; margin-bottom: 20px; line-height: 1.1; text-shadow: 0 4px 12px rgba(0,0,0,0.8); letter-spacing: 1px; }
-.home-page .banner-content p { font-size: 1.5rem; line-height: 1.7; margin-bottom: 36px; font-weight: 500; text-shadow: 0 2px 8px rgba(0,0,0,0.7); }
-.home-page .banner-buttons { display: flex; justify-content: center; gap: 28px; }
-.home-page .btn-outline, .home-page .btn-solid { display: inline-block; padding: 18px 48px; border-radius: 50px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; text-decoration: none; transition: all 0.3s ease; font-size: 1.1rem; }
-.home-page .btn-outline { border: 3px solid var(--gold); color: var(--gold); background: transparent; }
-.home-page .btn-outline:hover { background: var(--gold); color: white; transform: translateY(-3px); }
-.home-page .btn-solid { background: white; color: var(--green); }
-.home-page .btn-solid:hover { background: #f0f0f0; transform: translateY(-3px); }
+.home-page .service-intro-banner .banner-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: 24px;          /* BO GÓC CHO ẢNH NỀN */
+    overflow: hidden;
+}
+.home-page .service-intro-banner .banner-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.home-page .banner-content {
+    position: relative;
+    color: white;
+    text-align: center;
+    max-width: 1100px;
+    padding: 20px;
+    z-index: 1;
+}
+.home-page .banner-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 4.2rem;
+    font-weight: 800;
+    margin-bottom: 20px;
+    line-height: 1.1;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    letter-spacing: 1px;
+}
+.home-page .banner-content p {
+    font-size: 1.5rem;
+    line-height: 1.7;
+    margin-bottom: 36px;
+    font-weight: 500;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+}
+.home-page .banner-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+}
+.home-page .btn-outline, .home-page .btn-solid {
+    display: inline-block;
+    padding: 18px 48px;
+    border-radius: 50px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+.home-page .btn-outline {
+    border: 3px solid var(--gold);
+    color: var(--gold);
+    background: transparent;
+}
+.home-page .btn-outline:hover {
+    background: var(--gold);
+    color: white;
+    transform: translateY(-3px);
+}
+.home-page .btn-solid {
+    background: white;
+    color: var(--green);
+}
+.home-page .btn-solid:hover {
+    background: #f0f0f0;
+    transform: translateY(-3px);
+}
 
 /* CAROUSEL */
-.home-page .scroll-container { display: flex; overflow-x: auto; gap: 24px; scroll-snap-type: x mandatory; padding: 0 20px; }
-.home-page .scroll-item { flex: 0 0 300px; scroll-snap-align: start; }
-.home-page .card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 8px 25px rgba(0,0,0,0.08); transition: all 0.3s ease; text-align: center; }
-.home-page .card:hover { transform: translateY(-6px); box-shadow: 0 15px 35px rgba(0,0,0,0.15); }
-.home-page .card img { width: 100%; height: 200px; object-fit: cover; }
-.home-page .card h3 { font-size: 1.1rem; color: var(--green); margin: 16px 0; }
-.home-page .card p { font-size: 0.9rem; color: var(--gray); margin-bottom: 20px; }
+.home-page .scroll-container {
+    display: flex;
+    overflow-x: auto;
+    gap: 24px;
+    scroll-snap-type: x mandatory;
+    padding: 0 20px;
+}
+.home-page .scroll-item {
+    flex: 0 0 300px;
+    scroll-snap-align: start;
+}
+.home-page .card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    text-align: center;
+}
+.home-page .card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+.home-page .card img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
+.home-page .card h3 {
+    font-size: 1.1rem;
+    color: var(--green);
+    margin: 16px 0;
+}
+.home-page .card p {
+    font-size: 0.9rem;
+    color: var(--gray);
+    margin-bottom: 20px;
+}
 
 /* ===== NỀN BE + KHÔNG ĐỘNG VÀO KHOẢNG CÁCH ===== */
 .home-page .why-section,
@@ -95,26 +188,41 @@
     padding: 100px 0;
 }
 .home-page .services-section {
-    padding-top: 0; /* banner đã có margin-bottom 30px */
+    padding-top: 0;
 }
 
-/* RESPONSIVE – GIỮ KHOẢNG CÁCH GẦN TRÊN MOBILE */
+/* RESPONSIVE */
 @media (max-width: 1600px) {
-    .home-page .service-intro-banner { width: 1400px; height: 420px; margin-bottom: 30px !important; }
+    .home-page .service-intro-banner {
+        width: 1400px;
+        height: 420px;
+        margin-bottom: 30px !important;
+    }
 }
 @media (max-width: 1200px) {
-    .home-page .service-intro-banner { width: 1000px; height: 300px; margin-bottom: 30px !important; }
+    .home-page .service-intro-banner {
+        width: 1000px;
+        height: 300px;
+        margin-bottom: 30px !important;
+    }
 }
 @media (max-width: 768px) {
     .home-page .hero-title-main { font-size: 42px; letter-spacing: 1px; }
     .home-page .hero-title-sub { font-size: 26px; margin-bottom: 24px; }
     .home-page .hero-subtitle { font-size: 16px; padding: 0 15px; margin-bottom: 40px; }
     .home-page .btn-viewmore { padding: 18px 50px; font-size: 18px; border-radius: 50px; }
-    .home-page .service-intro-banner { width: 100%; height: 400px; margin: 0 auto 20px !important; }
+
+    .home-page .service-intro-banner {
+        width: 100%;
+        height: 400px;
+        margin: 0 auto 20px !important;
+        border-radius: 20px; /* vẫn đẹp trên mobile */
+    }
     .home-page .banner-content h2 { font-size: 2.4rem; }
     .home-page .banner-content p { font-size: 1.1rem; margin-bottom: 24px; }
     .home-page .banner-buttons { flex-direction: column; gap: 16px; }
     .home-page .btn-outline, .home-page .btn-solid { width: 80%; margin: 0 auto; padding: 16px 32px; }
+
     .home-page .why-grid { grid-template-columns: 1fr; gap: 24px; }
     .home-page .why-card { padding: 32px 24px; }
     .home-page .why-section { padding-bottom: 40px; }
@@ -217,7 +325,7 @@
                                     <img src="{% static 'images/blog-placeholder.jpg' %}" alt="{{ blog.TieuDeBaiViet }}">
                                 {% endif %}
                                 <h3>{{ blog.TieuDeBaiViet }}</h3>
-                                <p>{{ blog.NgayDang|date:"d/m/Y" }}</p>
+                                <p>{{ blog.NgayCapNhat|date:"d/m/Y" }}</p>
                             </div>
                         </a>
                     </div>

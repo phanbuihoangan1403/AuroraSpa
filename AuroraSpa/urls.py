@@ -21,6 +21,7 @@ from django.conf import settings
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('aurora.urls')),
+    path('staff/', include('staffpanel.urls')),
 ]
 
 if settings.DEBUG:

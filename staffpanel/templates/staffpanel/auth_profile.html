@@ -1,0 +1,46 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Hồ sơ nhân viên{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Hồ sơ nhân viên</h1>
+</div>
+<div class="card" style="max-width:720px;display:grid;grid-template-columns:1.1fr 1fr;gap:24px;">
+    <div>
+        <h3>Thông tin tài khoản</h3>
+        <form method="post">
+            {% csrf_token %}
+            <h4 style="margin-bottom:8px;">Thông tin cá nhân</h4>
+            {% for field in user_form %}
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:13px;">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+            {% endfor %}
+
+            <h4 style="margin:16px 0 8px;">Thông tin nhân viên</h4>
+            {% for field in nv_form %}
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:13px;">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+        </form>
+    </div>
+
+    <div>
+        <h3>Vai trò & Trạng thái</h3>
+        <p>Mã nhân viên: <strong>{{ nv.MaNhanVien }}</strong></p>
+        <p>Vai trò: <strong>{{ nv.get_VaiTro_display }}</strong></p>
+        <p>Ngày vào làm: {{ nv.NgayVaoLam|date:"d/m/Y" }}</p>
+        <p>Trạng thái:
+            {% if nv.is_online %}
+                <span class="badge badge-success">Đang online</span>
+            {% else %}
+                <span class="badge badge-muted">Offline</span>
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}

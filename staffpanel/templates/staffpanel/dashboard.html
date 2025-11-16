@@ -1,0 +1,74 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Dashboard - Aurora Staff{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Tổng quan hệ thống</h1>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4, minmax(0,1fr));gap:16px;margin-bottom:24px;">
+    <div class="card">
+        <div>Blog</div>
+        <div style="font-size:26px;font-weight:700;">{{ tong_blog }}</div>
+    </div>
+    <div class="card">
+        <div>Dịch vụ</div>
+        <div style="font-size:26px;font-weight:700;">{{ tong_dich_vu }}</div>
+    </div>
+    <div class="card">
+        <div>Lịch hẹn</div>
+        <div style="font-size:26px;font-weight:700;">{{ tong_lich_hen }}</div>
+    </div>
+    <div class="card">
+        <div>Khách hàng</div>
+        <div style="font-size:26px;font-weight:700;">{{ tong_khach_hang }}</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:2fr 1.4fr;gap:20px;">
+    <div class="card">
+        <h3>Nhật ký hoạt động gần đây</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Thời gian</th>
+                <th>Nhân viên</th>
+                <th>Hành động</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for log in log_gan_day %}
+                <tr>
+                    <td>{{ log.thoi_gian|date:"H:i d/m" }}</td>
+                    <td>{{ log.nhan_vien.MaNhanVien }} – {{ log.nhan_vien.user.username }}</td>
+                    <td>{{ log.hanh_dong }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="3">Chưa có nhật ký.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Nhân viên đang online</h3>
+        <table>
+            <thead>
+            <tr><th>Mã NV</th><th>Tên</th><th>Vai trò</th></tr>
+            </thead>
+            <tbody>
+            {% for e in nhan_vien_online %}
+                <tr>
+                    <td>{{ e.MaNhanVien }}</td>
+                    <td>{{ e.user.username }}</td>
+                    <td>{{ e.get_VaiTro_display }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="3">Hiện chưa có ai online.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
