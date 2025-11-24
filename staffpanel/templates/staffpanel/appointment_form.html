@@ -1,23 +1,174 @@
 {% extends "staffpanel/base.html" %}
-{% block title %}Cập nhật lịch hẹn{% endblock %}
+{% block title %}{{ title|default:"Lịch hẹn" }}{% endblock %}
 {% block nav_appointment %}active{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">Cập nhật lịch hẹn</h1>
+    <h1 class="page-title">{{ title|default:"Cập nhật lịch hẹn" }}</h1>
 </div>
 
-<div class="card" style="max-width:640px;">
-    <form method="post">
+<div class="card" style="max-width:780px;">
+    <form method="post" action="{% if lh %}{% url 'staff_appointment_edit' lh.MaLichHen %}{% endif %}">
         {% csrf_token %}
+
         {% for field in form %}
-            <div style="margin-bottom:12px;">
-                <label style="font-size:13px;">{{ field.label }}</label>
-                {{ field }}
+            <div class="mb-4">
+                <label class="form-label pt-2">
+                    {{ field.label_tag }}
+                    {% if field.field.required %}<span style="color:red;">*</span>{% endif %}
+                </label>
+
+                <div class="input-wrapper">
+                    {{ field }}
+                </div>
+
+                {% if field.help_text %}
+                    <small class="text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% if field.errors %}
+                    <div class="text-danger small mt-1">{{ field.errors }}</div>
+                {% endif %}
             </div>
         {% endfor %}
-        <button class="btn btn-primary">Lưu</button>
-        <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+
+        <br>
+        <div class="mt-5"></div>
+        <div class="pt-5 border-top mt-5"></div>
+        <div class="pt-4 text-end">
+            {% if lh %}
+                <button type="submit" class="btn btn-success btn-lg px-5 py-3">💾 Lưu thay đổi</button>
+                <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">❌ Hủy</a>
+            {% else %}
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3">➕ Thêm lịch hẹn</button>
+                <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">❌ Hủy</a>
+            {% endif %}
+        </div>
     </form>
 </div>
+
+<style>
+    /* ĐÚNG Y CHANG FILE GỐC CỦA BẠN - KHÔNG SỬA GÌ HẾT */
+    .card .form-label,
+    .card .form-control,
+    .card .form-select,
+    .card textarea.form-control,
+    .card small,
+    .card .text-danger,
+    .card .btn {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 14px !important;
+    }
+
+    .input-wrapper {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .input-wrapper .form-control,
+    .input-wrapper .form-select,
+    .input-wrapper textarea.form-control {
+        width: 100% !important;
+        max-width: none !important;
+        box-sizing: border-box !important;
+        padding: 10px 14px !important;
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+        background: #fff;
+    }
+
+    .input-wrapper textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .btn-success {
+        background-color: #28a745 !important;
+        border: none !important;
+        border-radius: 8px !important;
+    }
+
+    .btn-outline-secondary {
+        border-radius: 8px !important;
+    }
+</style>
+
+<!-- ĐOẠN NÀY LÀ DUY NHẤT MÌNH THÊM - NHƯNG KHÔNG ĐỘNG GÌ VÀO GIAO DIỆN -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+$(function(){
+    // Django tự thêm id="id_TenField" sẵn rồi → mình dùng luôn, không cần sửa HTML
+    var $danhmuc = $('#id_DanhMucDichVu');
+    var $dichvu  = $('#id_DichVu');
+    var $ngay    = $('#id_NgayHen');
+    var $khunggio = $('#id_KhungGio');
+
+    // Load dịch vụ khi chọn danh mục
+    $danhmuc.change(function(){
+        var ma = $(this).val();
+        $dichvu.html('<option value="">-- Chọn dịch vụ --</option>');
+        if(ma){
+            $.get("{% url 'ajax_get_services' %}", {ma_danh_muc: ma}, function(data){
+                $.each(data, function(i, item){
+                    $dichvu.append('<option value="'+item.MaDichVu+'">'+item.TenDichVu+'</option>');
+                });
+            });
+        }
+    });
+
+    // Load khung giờ khi chọn ngày
+    $ngay.change(function(){
+        var date = $(this).val();
+        $khunggio.html('<option value="">-- Chọn khung giờ --</option>');
+        if(date){
+            var current = "{{ form.instance.KhungGio|default:''|escapejs }}";
+            $.get("{% url 'available_times' %}", {date: date}, function(data){
+                $.each(data.available_times, function(i, time){
+                    var sel = (time === current) ? 'selected' : '';
+                    $khunggio.append('<option value="'+time+'" '+sel+'>'+time+'</option>');
+                });
+            });
+        }
+    });
+
+    // Khi sửa lịch → tự động load lại dịch vụ + khung giờ cũ
+    if($danhmuc.val()){
+        $danhmuc.trigger('change');
+    }
+    if($ngay.val()){
+        $ngay.trigger('change');
+    }
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const requiredFields = [
+        "id_HoTen",            // Họ tên
+        "id_Email",            // Email
+        "id_DienThoai",        // SĐT đúng theo model
+        "id_DanhMucDichVu",    // Danh mục
+        "id_DichVu",           // Dịch vụ
+        "id_NgayHen",          // Ngày hẹn
+        "id_KhungGio"          // Khung giờ
+    ];
+
+     requiredFields.forEach(id => {
+        const el = document.getElementById(id);
+
+        if (el) {
+            // Thêm required vào input
+            el.setAttribute("required", "required");
+
+            // Tìm label tương ứng
+            const label = el.closest(".mb-4").querySelector("label");
+
+            if (label && !label.innerHTML.includes('*')) {
+                label.innerHTML += ' <span style="color:red;">*</span>';
+            }
+        }
+    });
+});
+</script>
+
+
 {% endblock %}

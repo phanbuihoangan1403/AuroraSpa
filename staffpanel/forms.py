@@ -157,6 +157,17 @@ class KhachHangForm(forms.ModelForm):
             'NgaySinh': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Nếu đang SỬA → thêm field MaKhachHang chỉ để hiển thị (readonly)
+        if self.instance and self.instance.pk:
+            self.fields['MaKhachHang'] = forms.CharField(
+                initial=self.instance.MaKhachHang,
+                disabled=True,
+                widget=forms.TextInput(attrs={'class': 'form-control', 'readonly': 'readonly'})
+            )
+
 
 # ========================================
 # ĐIỂM TÍCH LŨY FORM

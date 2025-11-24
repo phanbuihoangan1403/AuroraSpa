@@ -1,0 +1,18 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Xóa lịch hẹn{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Xóa lịch hẹn #{{ lh.MaLichHen }}?</h1>
+</div>
+
+<div class="card" style="max-width:600px;">
+    <p>Bạn có chắc chắn muốn <strong>xóa vĩnh viễn</strong> lịch hẹn của khách hàng <strong>{{ lh.HoTen }}</strong> vào ngày <strong>{{ lh.NgayHen|date:"d/m/Y" }} {{ lh.KhungGio }}</strong> không?</p>
+
+    <form method="post" style="display:inline;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Có, xóa luôn</button>
+    </form>
+    <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy, quay lại</a>
+</div>
+{% endblock %}

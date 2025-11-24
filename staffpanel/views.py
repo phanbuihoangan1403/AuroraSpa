@@ -5,10 +5,16 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-
+from django.http import JsonResponse
+from django.db import transaction, models
+from django.db.models import F
+from django.views.decorators.http import require_POST
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.db.models import Q
 from aurora.models import (
     NhanVien, FAQ, Blog, DichVu, LichHen,
-    KhachHang, DiemTichLuy
+    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu
 )
 from .models import NhatKyHoatDong
 from .forms import (
@@ -16,7 +22,10 @@ from .forms import (
     FAQForm, BlogForm, DichVuForm, LichHenForm,
     KhachHangForm, DiemTichLuyForm
 )
-from .permissions import manager_required, content_required, reception_required
+from .permissions import manager_required, content_required, reception_required, staff_required
+# ====================== THÊM 2 DÒNG IMPORT AJAX ======================
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
 
 
 # ========== AUTH ==========
@@ -290,21 +299,65 @@ def staff_service_delete(request, pk):
 
 @reception_required
 def staff_appointment_list(request):
+    ngay = request.GET.get('ngay')
     trang_thai = request.GET.get('trang_thai', '')
-    lich_hen = LichHen.objects.select_related('DanhMucDichVu', 'DichVu').order_by('-NgayHen')
+    dich_vu = request.GET.get('dich_vu', '')
 
+    lich_hen = LichHen.objects.select_related('DichVu').order_by('-MaLichHen')
+
+    if ngay:
+        lich_hen = lich_hen.filter(NgayHen=ngay)
     if trang_thai:
         lich_hen = lich_hen.filter(TrangThai=trang_thai)
+    if dich_vu:
+        lich_hen = lich_hen.filter(DichVu_id=dich_vu)
 
-    return render(request, 'staffpanel/appointment_list.html', {
+    context = {
         'lich_hen': lich_hen,
-        'trang_thai': trang_thai,
+        'form': LichHenForm(),  # để lấy choices trạng thái
+        'dich_vu_list': DichVu.objects.all(),  # để đổ dropdown dịch vụ
+    }
+    return render(request, 'staffpanel/appointment_list.html', context)
+
+
+# ========== THÊM MỚI, XEM CHI TIẾT, XÓA LỊCH HẸN ==========
+
+@reception_required
+def staff_appointment_create(request):
+    if request.method == 'POST':
+        form = LichHenForm(request.POST)
+        if form.is_valid():
+            lh = form.save(commit=False)
+            lh.save()
+
+            NhatKyHoatDong.objects.create(
+                nhan_vien=request.user.nhanvien,
+                hanh_dong="Tạo lịch hẹn mới",
+                doi_tuong='LichHen',
+                object_id=lh.MaLichHen,
+                mo_ta=f"{lh.HoTen} - {lh.NgayHen} {lh.KhungGio}"
+            )
+            messages.success(request, "Tạo lịch hẹn thành công!")
+            return redirect('staff_appointment_list')
+    else:
+        form = LichHenForm()
+
+    return render(request, 'staffpanel/appointment_form.html', {
+        'form': form,
+        'title': 'Tạo lịch hẹn mới',
+        'danh_muc_list': DanhMucDichVu.objects.all(),   # ← THÊM DÒNG NÀY
     })
 
 
 @reception_required
-def staff_appointment_edit(request, pk):
-    lh = get_object_or_404(LichHen, pk=pk)
+def staff_appointment_detail(request, ma_lich_hen):
+    lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
+    return render(request, 'staffpanel/appointment_detail.html', {'lh': lh})
+
+
+@reception_required
+def staff_appointment_edit(request, ma_lich_hen):
+    lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
     if request.method == 'POST':
         form = LichHenForm(request.POST, instance=lh)
         if form.is_valid():
@@ -316,82 +369,444 @@ def staff_appointment_edit(request, pk):
                 object_id=lh.MaLichHen,
                 mo_ta=f"{lh.HoTen} - {lh.NgayHen} {lh.KhungGio}"
             )
-            messages.success(request, "Cập nhật lịch hẹn thành công.")
+            messages.success(request, "Cập nhật lịch hẹn thành công!")
             return redirect('staff_appointment_list')
     else:
         form = LichHenForm(instance=lh)
 
-    return render(request, 'staffpanel/appointment_form.html', {'form': form, 'lh': lh})
+    return render(request, 'staffpanel/appointment_form.html', {
+        'form': form,
+        'lh': lh,
+        'title': f'Cập nhật lịch hẹn #{lh.MaLichHen}',
+        'danh_muc_list': DanhMucDichVu.objects.all(),   # ← THÊM DÒNG NÀY
+    })
 
 
+# ====================== XÓA HÀNG riêng lẻ ======================
+
+
+@reception_required  # lễ tân vẫn được vào trang confirm delete để xem
+def staff_appointment_delete(request, ma_lich_hen):
+    lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
+
+    # ---------- KIỂM TRA QUYỀN XÓA (chỉ MANAGER hoặc superuser) ----------
+    if not (request.user.is_superuser or
+            (hasattr(request.user, 'nhanvien') and request.user.nhanvien.VaiTro == 'MANAGER')):
+        messages.error(request, "Bạn không có quyền xóa lịch hẹn.")
+        return redirect('staff_appointment_list')
+    # -------------------------------------------------------------------
+
+    if request.method == 'POST':
+        ma = lh.MaLichHen
+        ten_khach = lh.HoTen or "Khách lẻ"
+        lh.delete()
+
+        NhatKyHoatDong.objects.create(
+            nhan_vien=request.user.nhanvien,
+            hanh_dong="Xóa lịch hẹn",
+            doi_tuong='LichHen',
+            object_id=ma,
+            mo_ta=f"{ten_khach} - {lh.NgayHen} {lh.KhungGio}"
+        )
+        messages.success(request, "Đã xóa lịch hẹn thành công!")
+        return redirect('staff_appointment_list')
+
+    return render(request, 'staffpanel/appointment_confirm_delete.html', {'lh': lh})
+
+# ====================== XÓA HÀNG LOẠT ======================
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+@require_POST
+@login_required
+@reception_required   # lễ tân vẫn tick chọn được trong danh sách
+def staff_appointment_bulk_delete(request):
+    # ---------- KIỂM TRA QUYỀN XÓA HÀNG LOẠT ----------
+    if not (request.user.is_superuser or
+            (hasattr(request.user, 'nhanvien') and request.user.nhanvien.VaiTro == 'MANAGER')):
+        messages.error(request, "Bạn không có quyền xóa lịch hẹn.")
+        return redirect('staff_appointment_list')
+    # -------------------------------------------------
+
+    ids = request.POST.getlist('ids')
+    if not ids:
+        messages.error(request, "Không có lịch hẹn nào được chọn.")
+        return redirect('staff_appointment_list')
+
+    deleted_count = 0
+    for ma_lich_hen in ids:
+        try:
+            lh = LichHen.objects.get(MaLichHen=ma_lich_hen)
+            NhatKyHoatDong.objects.create(
+                nhan_vien=request.user.nhanvien,
+                hanh_dong="Xóa lịch hẹn (hàng loạt)",
+                doi_tuong='LichHen',
+                object_id=lh.MaLichHen,
+                mo_ta=f"{lh.HoTen or 'Khách lẻ'} - {lh.NgayHen} {lh.KhungGio}"
+            )
+            lh.delete()
+            deleted_count += 1
+        except LichHen.DoesNotExist:
+            continue
+
+    if deleted_count > 0:
+        messages.success(request, f"Đã xóa thành công {deleted_count} lịch hẹn.")
+    else:
+        messages.warning(request, "Không thể xóa bất kỳ lịch hẹn nào.")
+
+    return redirect('staff_appointment_list')
+
+
+# ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
+
+@require_GET
+def ajax_get_services(request):
+    ma_danh_muc = request.GET.get('ma_danh_muc')
+    if not ma_danh_muc:
+        return JsonResponse([], safe=False)
+
+    services = DichVu.objects.filter(MaDanhMuc_id=ma_danh_muc).values('MaDichVu', 'TenDichVu')
+    return JsonResponse(list(services), safe=False)
+
+
+@require_GET
+def ajax_available_times(request):
+    date_str = request.GET.get('date')
+    if not date_str:
+        return JsonResponse({'available_times': []})
+
+    ALL_TIMES = [
+        "09:00 - 10:30", "10:30 - 12:00", "13:30 - 15:00",
+        "15:00 - 16:30", "16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"
+    ]
+
+    booked_times = LichHen.objects.filter(NgayHen=date_str).values_list('KhungGio', flat=True)
+    available = [t for t in ALL_TIMES if t not in booked_times]
+
+    return JsonResponse({'available_times': available})
 # ========== KHÁCH HÀNG + ĐIỂM TÍCH LŨY (RECEPTION + MANAGER) ==========
 
 @reception_required
 def staff_customer_list(request):
-    q = request.GET.get('q', '')
-    customers = KhachHang.objects.all()
-    if q:
-        customers = customers.filter(HoTen__icontains=q)
-    return render(request, 'staffpanel/customer_list.html', {'customers': customers, 'q': q})
+    q = request.GET.get('q', '').strip()
+    customer_type = request.GET.get('customer_type', '')  # online / offline / (rỗng = tất cả)
 
+    # Bắt đầu từ toàn bộ khách hàng
+    customers = KhachHang.objects.select_related('diemtichluy', 'user').all()
+
+    # 1. Tìm kiếm
+    if q:
+        customers = customers.filter(
+            models.Q(HoTen__icontains=q) |
+            models.Q(SDT__icontains=q) |
+            models.Q(Email__icontains=q) |
+            models.Q(MaKhachHang__icontains=q)
+        )
+
+    # 2. Lọc loại khách hàng
+    if customer_type == 'online':
+        customers = customers.exclude(user__isnull=True)   # có user → đăng ký web
+    elif customer_type == 'offline':
+        customers = customers.filter(user__isnull=True)     # không có user → tạo tại quầy
+
+    # Gắn điểm hiện tại để hiển thị
+    for kh in customers:
+        kh.diem_hien_tai = getattr(kh.diemtichluy, 'SoDiemHienTai', 0) if hasattr(kh, 'diemtichluy') else 0
+
+    return render(request, 'staffpanel/customer_list.html', {
+        'customers': customers,
+        'q': q,
+        'customer_type': customer_type,   # để giữ giá trị đã chọn
+    })
 
 @reception_required
-def staff_customer_edit(request, pk):
-    kh = get_object_or_404(KhachHang, pk=pk)
+def staff_customer_edit(request, pk=None):
+    # Nếu có pk → sửa, không có → thêm mới
+    if pk:
+        kh = get_object_or_404(KhachHang, MaKhachHang=pk)
+        title = f"Sửa khách hàng {pk}"
+    else:
+        kh = None
+        title = "Thêm khách hàng mới"
+
     if request.method == 'POST':
         form = KhachHangForm(request.POST, instance=kh)
         if form.is_valid():
-            form.save()
-            NhatKyHoatDong.objects.create(
-                nhan_vien=request.user.nhanvien,
-                hanh_dong="Cập nhật khách hàng",
-                doi_tuong='KhachHang',
-                object_id=kh.MaKhachHang,
-                mo_ta=kh.HoTen[:200]
-            )
-            messages.success(request, "Cập nhật thông tin khách hàng thành công.")
+            customer = form.save()
+            messages.success(request, "Lưu thông tin khách hàng thành công!")
             return redirect('staff_customer_list')
     else:
         form = KhachHangForm(instance=kh)
-    return render(request, 'staffpanel/customer_form.html', {'form': form, 'kh': kh})
+
+    return render(request, 'staffpanel/customer_form.html', {
+        'form': form,
+        'kh': kh,
+        'title': title,
+    })
 
 
-@reception_required
-def staff_loyalty_list(request):
-    ds = DiemTichLuy.objects.select_related('MaKhachHang').all()
-    return render(request, 'staffpanel/loyalty_list.html', {'items': ds})
 
-
-@reception_required
-def staff_loyalty_edit(request, pk):
-    diem = get_object_or_404(DiemTichLuy, pk=pk)
-    if request.method == 'POST':
-        form = DiemTichLuyForm(request.POST, instance=diem)
-        if form.is_valid():
-            form.save()
-            NhatKyHoatDong.objects.create(
-                nhan_vien=request.user.nhanvien,
-                hanh_dong="Điều chỉnh điểm tích lũy",
-                doi_tuong='DiemTichLuy',
-                object_id=str(diem.pk),
-                mo_ta=f"{diem.MaKhachHang.MaKhachHang} - {diem.SoDiemHienTai} điểm"
-            )
-            messages.success(request, "Cập nhật điểm tích lũy thành công.")
-            return redirect('staff_loyalty_list')
-    else:
-        form = DiemTichLuyForm(instance=diem)
-    return render(request, 'staffpanel/loyalty_form.html', {'form': form, 'diem': diem})
 
 
 # ========== NHÂN VIÊN + NHẬT KÝ (MANAGER) ==========
 
 @manager_required
 def staff_employee_list(request):
-    ds = NhanVien.objects.select_related('user').all()
-    return render(request, 'staffpanel/employee_list.html', {'employees': ds})
+    employees = NhanVien.objects.select_related('user').all().order_by('MaNhanVien')
 
+    # Tìm kiếm
+    q = request.GET.get('q', '').strip()
+    if q:
+        employees = employees.filter(
+            Q(MaNhanVien__icontains=q) |
+            Q(user__username__icontains=q) |
+            Q(user__first_name__icontains=q) |
+            Q(user__last_name__icontains=q) |
+            Q(user__email__icontains=q)
+        )
+
+    # Lọc theo vai trò
+    vai_tro = request.GET.get('vai_tro')
+    if vai_tro:
+        employees = employees.filter(VaiTro=vai_tro)
+
+    # Lọc theo trạng thái online
+    online = request.GET.get('online')
+    if online == '1':
+        employees = employees.filter(is_online=True)
+    elif online == '0':
+        employees = employees.filter(is_online=False)
+
+    return render(request, 'staffpanel/employee_list.html', {
+        'employees': employees,
+        'q': q,
+        'current_vai_tro': vai_tro,
+        'current_online': online,
+    })
+
+@manager_required
+def staff_employee_edit(request, pk):
+    nhanvien = get_object_or_404(NhanVien, MaNhanVien=pk)
+    user = nhanvien.user
+
+    if request.method == 'POST':
+        # Cập nhật User
+        user.first_name = request.POST.get('first_name', '').strip()
+        user.last_name = request.POST.get('last_name', '').strip()
+        user.email = request.POST.get('email', '').strip()
+        user.save()
+
+        # Cập nhật NhanVien
+        nhanvien.VaiTro = request.POST.get('vai_tro')
+        nhanvien.save()
+
+        # Đổi mật khẩu nếu có nhập
+        new_password = request.POST.get('new_password', '').strip()
+        if new_password:
+            user.set_password(new_password)
+            user.save()
+            messages.success(request, 'Đã đổi mật khẩu thành công!')
+
+        messages.success(request, f'Cập nhật nhân viên {nhanvien} thành công!')
+        return redirect('staff_employee_list')
+
+    return render(request, 'staffpanel/employee_form.html', {
+        'nhanvien': nhanvien,
+    })
+
+
+@manager_required
+def staff_employee_delete(request, pk):
+    nhanvien = get_object_or_404(NhanVien, MaNhanVien=pk)
+
+    if request.method == 'POST':
+        username = nhanvien.user.username if nhanvien.user else 'Không xác định'
+        nhanvien.user.delete()  # xóa luôn User liên kết
+        messages.success(request, f'Đã xóa nhân viên {username}')
+        return redirect('staff_employee_list')
+
+    return render(request, 'staffpanel/confirm_delete.html', {
+        'object': nhanvien,
+        'title': f'Xóa nhân viên {nhanvien.user.get_full_name() or nhanvien.user.username if nhanvien.user else nhanvien.MaNhanVien}?'
+    })
+
+@manager_required
+@require_POST
+def staff_employee_bulk_delete(request):
+    ids = request.POST.getlist('ids[]')
+    if not ids:
+        messages.error(request, 'Không có nhân viên nào được chọn!')
+    else:
+        # Xóa cả User liên kết
+        nhanvien_list = NhanVien.objects.filter(MaNhanVien__in=ids)
+        for nv in nhanvien_list:
+            if nv.user:
+                nv.user.delete()
+            nv.delete()
+        messages.success(request, f'Đã xóa thành công {len(ids)} nhân viên!')
+    return redirect('staff_employee_list')
 
 @manager_required
 def staff_log_list(request):
     logs = NhatKyHoatDong.objects.select_related('nhan_vien')[:100]
     return render(request, 'staffpanel/log_list.html', {'logs': logs})
+
+# ============== LOYALTY (RECEPTION + MANAGER) ==============
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+@reception_required
+def staff_loyalty_list(request):
+    q = request.GET.get('q', '')
+    items = DiemTichLuy.objects.select_related('MaKhachHang').all().order_by('-SoDiemHienTai')
+
+    if q:
+        items = items.filter(
+            models.Q(MaKhachHang__MaKhachHang__icontains=q) |
+            models.Q(MaKhachHang__HoTen__icontains=q)
+        )
+    return render(request, 'staffpanel/loyalty_list.html', {'items': items, 'q': q})
+
+
+@reception_required
+def staff_loyalty_history_ajax(request, makh):
+    # Trả về JSON của lịch sử cho một khách hàng
+    history = LichSuTichDiem.objects.filter(MaKhachHang__MaKhachHang=makh).order_by('-NgayGiaoDich')
+    latest = history.first()
+    items = []
+    for h in history:
+        items.append({
+            "magd": h.MaGiaoDich,
+            "ngay": h.NgayGiaoDich.strftime("%d/%m/%Y %H:%M"),
+            "loaigd": h.LoaiGiaoDich,
+            "diem": h.SoDiemThayDoi,
+            "chitiet": h.ChiTietGiaoDich or "—",
+            "is_latest": bool(latest and h.MaGiaoDich == latest.MaGiaoDich),
+        })
+
+    is_manager = request.user.nhanvien.VaiTro == 'MANAGER'
+    can_edit_delete = request.user.nhanvien.VaiTro in ['MANAGER', 'RECEPTION']
+
+    return JsonResponse({
+        "success": True,
+        "items": items,
+        "is_manager": is_manager,
+        "can_edit_delete": can_edit_delete
+    })
+
+
+@reception_required
+@require_POST
+def staff_loyalty_update_ajax(request):
+    """
+    Dùng cho:
+    - Thêm 1 giao dịch cho 1 khách (makh)
+    - Bulk (makh[] list)
+    """
+    try:
+        # nhận makh[] hoặc makh (single)
+        makh_list = request.POST.getlist('makh[]') or ([request.POST.get('makh')] if request.POST.get('makh') else [])
+        if not makh_list:
+            return JsonResponse({'success': False, 'error': 'Chưa chọn khách hàng'})
+
+        diem_raw = int(request.POST.get('diem', 0))
+        if diem_raw <= 0:
+            return JsonResponse({'success': False, 'error': 'Số điểm phải lớn hơn 0'})
+
+        loaigd = request.POST.get('loaigd', 'Tích điểm')  # 'Tích điểm' hoặc 'Quy đổi điểm'
+        lydo = request.POST.get('lydo', '').strip() or 'Cập nhật thủ công'
+
+        sodiem = diem_raw if loaigd == 'Tích điểm' else -diem_raw
+
+        created_count = 0
+        with transaction.atomic():
+            for makh in makh_list:
+                kh = get_object_or_404(KhachHang, MaKhachHang=makh)
+                LichSuTichDiem.objects.create(
+                    MaKhachHang=kh,
+                    LoaiGiaoDich=loaigd,
+                    ChiTietGiaoDich=lydo,
+                    SoDiemThayDoi=sodiem,
+                )
+                created_count += 1
+
+        msg = f"Đã cập nhật thành công cho {created_count} khách hàng!"
+        return JsonResponse({'success': True, 'message': msg})
+
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Số điểm không hợp lệ'})
+    except ValidationError as ve:
+        return JsonResponse({'success': False, 'error': str(ve)})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+@reception_required
+@require_POST
+def staff_loyalty_edit_history(request, magd):
+    try:
+        ls = get_object_or_404(LichSuTichDiem, MaGiaoDich=magd)
+    except Exception:
+        return JsonResponse({'success': False, 'error': 'Không tìm thấy giao dịch'})
+
+    # Quyền: lễ tân + quản lý
+    if request.user.nhanvien.VaiTro not in ['MANAGER', 'RECEPTION']:
+        return JsonResponse({'success': False, 'error': 'Không có quyền'})
+
+    # Chỉ sửa được giao dịch mới nhất của khách hàng
+    latest = LichSuTichDiem.objects.filter(MaKhachHang=ls.MaKhachHang).order_by('-NgayGiaoDich').first()
+    if not latest or ls.MaGiaoDich != latest.MaGiaoDich:
+        return JsonResponse({'success': False, 'error': 'Chỉ được sửa giao dịch mới nhất'})
+
+    try:
+        raw = int(request.POST.get('diem', 0))
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Số điểm không hợp lệ'})
+
+    if abs(raw) <= 0:
+        return JsonResponse({'success': False, 'error': 'Số điểm phải lớn hơn 0'})
+
+    new_lydo = request.POST.get('lydo', '').strip() or 'Cập nhật thủ công'
+
+    # Giữ nguyên loại giao dịch: Tích điểm => dương, Quy đổi => âm
+    if ls.LoaiGiaoDich == 'Tích điểm':
+        new_sodiem = abs(raw)
+    else:
+        new_sodiem = -abs(raw)
+
+    kh = ls.MaKhachHang
+    with transaction.atomic():
+        # Cập nhật số điểm hiện tại
+        dtl = kh.diemtichluy
+        if not dtl:
+            return JsonResponse({'success': False, 'error': 'Khách hàng chưa có điểm tích lũy'})
+        old = ls.SoDiemThayDoi or 0
+        # Logic chính xác: trừ đi giá trị cũ, cộng giá trị mới
+        dtl.SoDiemHienTai = dtl.SoDiemHienTai - old + new_sodiem
+        dtl.save()
+
+        # Cập nhật giao dịch
+        ls.SoDiemThayDoi = new_sodiem
+        ls.ChiTietGiaoDich = new_lydo
+        ls.save()
+
+    return JsonResponse({'success': True, 'message': 'Đã sửa giao dịch thành công'})
+
+@manager_required
+@require_POST
+def staff_loyalty_delete_history(request, magd):
+    try:
+        ls = get_object_or_404(LichSuTichDiem, MaGiaoDich=magd)
+        # XÓA CHỈ NHẤT LỊCH SỬ: điểm hiện tại KHÔNG thay đổi (theo yêu cầu)
+        ls.delete()
+        return JsonResponse({'success': True, 'message': 'Đã xóa lịch sử giao dịch'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@staff_required  # chuyên viên
+def appointment_staff(request):
+    nv = request.user.nhanvien  # lấy nhân viên đang đăng nhập
+
+    lichhen = LichHen.objects.filter(NhanVienThucHien=nv)
+
+    return render(request, "staffpanel/appointment_staff.html", {
+        "lichhen": lichhen
+    })

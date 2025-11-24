@@ -31,17 +31,44 @@ urlpatterns = [
 
     # Lịch hẹn
     path('appointments/', views.staff_appointment_list, name='staff_appointment_list'),
-    path('appointments/<str:pk>/edit/', views.staff_appointment_edit, name='staff_appointment_edit'),
-
+    path('appointments/add/', views.staff_appointment_create, name='staff_appointment_create'),
+    path('appointments/bulk-delete/', views.staff_appointment_bulk_delete, name='staff_appointment_bulk_delete'),
+    path('appointments/<str:ma_lich_hen>/', views.staff_appointment_detail, name='staff_appointment_detail'),
+    path('appointments/<str:ma_lich_hen>/edit/', views.staff_appointment_edit, name='staff_appointment_edit'),
+    path('appointments/<str:ma_lich_hen>/delete/', views.staff_appointment_delete, name='staff_appointment_delete'),
+    # ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
+    path('ajax/get-services/', views.ajax_get_services, name='ajax_get_services'),
+    path('ajax/available-times/', views.ajax_available_times, name='available_times'),
     # Khách hàng
-    path('customers/', views.staff_customer_list, name='staff_customer_list'),
-    path('customers/<str:pk>/edit/', views.staff_customer_edit, name='staff_customer_edit'),
-
-    # Điểm tích lũy
+    path('customer/', views.staff_customer_list, name='staff_customer_list'),
+    path('customer/add/', views.staff_customer_edit, name='staff_customer_add'),
+    path('customer/edit/<str:pk>/', views.staff_customer_edit, name='staff_customer_edit'),
+# Điểm tích lũy
     path('loyalty/', views.staff_loyalty_list, name='staff_loyalty_list'),
-    path('loyalty/<str:pk>/edit/', views.staff_loyalty_edit, name='staff_loyalty_edit'),
 
+    # Lấy lịch sử + trả về is_manager để ẩn/hiện nút Xóa/Edit
+    path('loyalty/history/<str:makh>/', views.staff_loyalty_history_ajax, name='staff_loyalty_history_ajax'),
+
+    # Cộng/trừ điểm nhanh (dùng cho nút +10/-10 hoặc trong popup)
+    path('loyalty/update/', views.staff_loyalty_update_ajax, name='staff_loyalty_update_ajax'),
+
+    # Bulk update (checkbox nhiều khách)
+    path('loyalty/bulk-update/', views.staff_loyalty_update_ajax, name='staff_loyalty_bulk_update_ajax'),
+    # → Dùng chung 1 view với update bình thường, vì nó nhận list makh[] tự động
+
+    # XÓA lịch sử giao dịch (CHỈ MANAGER ĐƯỢC GỌI)
+    path('loyalty/delete-history/<str:magd>/', views.staff_loyalty_delete_history, name='staff_loyalty_delete_history'),
+
+    # EDIT lịch sử giao dịch (CHỈ MANAGER, và chỉ cho giao dịch gần nhất)
+    path('loyalty/edit-history/<str:magd>/', views.staff_loyalty_edit_history, name='staff_loyalty_edit_history'),
     # Nhân viên + nhật ký
     path('employees/', views.staff_employee_list, name='staff_employee_list'),
+    path('employees/add/', views.staff_register, name='staff_employee_add'),  # dùng chung register
+    path('employees/<str:pk>/edit/', views.staff_employee_edit, name='staff_employee_edit'),
+    path('employees/<str:pk>/delete/', views.staff_employee_delete, name='staff_employee_delete'),
+    path('employees/bulk-delete/', views.staff_employee_bulk_delete, name='staff_employee_bulk_delete'),
     path('logs/', views.staff_log_list, name='staff_log_list'),
+
+
+    path('appointments/my/', views.appointment_staff, name='appointment_staff'),
 ]

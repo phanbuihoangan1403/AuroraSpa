@@ -48,27 +48,51 @@
     <aside class="sidebar">
         <div class="brand">Aurora Spa</div>
 
-        <div class="nav-section-title">Tổng quan</div>
-        <a href="{% url 'staff_dashboard' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Dashboard</a>
+        {% with role=request.user.nhanvien.VaiTro %}
 
-        <div class="nav-section-title">Nội dung</div>
-        <a href="{% url 'staff_blog_list' %}" class="nav-link {% block nav_blog %}{% endblock %}">Blog</a>
-        <a href="{% url 'staff_service_list' %}" class="nav-link {% block nav_service %}{% endblock %}">Dịch vụ</a>
-        <a href="{% url 'staff_faq_list' %}" class="nav-link {% block nav_faq %}{% endblock %}">FAQ</a>
+        {# ===================== TỔNG QUAN (chỉ MANAGER) ===================== #}
+        {% if role == "MANAGER" %}
+            <div class="nav-section-title">Tổng quan</div>
+            <a href="{% url 'staff_dashboard' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Dashboard</a>
+        {% endif %}
 
-        <div class="nav-section-title">Vận hành</div>
-        <a href="{% url 'staff_appointment_list' %}" class="nav-link {% block nav_appointment %}{% endblock %}">Lịch hẹn</a>
-        <a href="{% url 'staff_customer_list' %}" class="nav-link {% block nav_customer %}{% endblock %}">Khách hàng</a>
-        <a href="{% url 'staff_loyalty_list' %}" class="nav-link {% block nav_loyalty %}{% endblock %}">Điểm tích lũy</a>
+        {# ===================== NỘI DUNG (MANAGER + CONTENT) ===================== #}
+        {% if role == "MANAGER" or role == "CONTENT" %}
+            <div class="nav-section-title">Nội dung</div>
+            <a href="{% url 'staff_blog_list' %}" class="nav-link {% block nav_blog %}{% endblock %}">Blog</a>
+            <a href="{% url 'staff_service_list' %}" class="nav-link {% block nav_service %}{% endblock %}">Dịch vụ</a>
+            <a href="{% url 'staff_faq_list' %}" class="nav-link {% block nav_faq %}{% endblock %}">FAQ</a>
+        {% endif %}
 
-        <div class="nav-section-title">Nhân sự</div>
-        <a href="{% url 'staff_employee_list' %}" class="nav-link {% block nav_employee %}{% endblock %}">Nhân viên</a>
-        <a href="{% url 'staff_log_list' %}" class="nav-link {% block nav_logs %}{% endblock %}">Nhật ký</a>
+        {# ===================== VẬN HÀNH (MANAGER + RECEPTION) ===================== #}
+        {% if role == "MANAGER" or role == "RECEPTION" %}
+            <div class="nav-section-title">Vận hành</div>
+            <a href="{% url 'staff_appointment_list' %}" class="nav-link {% block nav_appointment %}{% endblock %}">Lịch hẹn</a>
+            <a href="{% url 'staff_customer_list' %}" class="nav-link {% block nav_customer %}{% endblock %}">Khách hàng</a>
+            <a href="{% url 'staff_loyalty_list' %}" class="nav-link {% block nav_loyalty %}{% endblock %}">Điểm tích lũy</a>
+        {% endif %}
 
+        {# ===================== NHÂN SỰ (chỉ MANAGER) ===================== #}
+        {% if role == "MANAGER" %}
+            <div class="nav-section-title">Nhân sự</div>
+            <a href="{% url 'staff_employee_list' %}" class="nav-link {% block nav_employee %}{% endblock %}">Nhân viên</a>
+            <a href="{% url 'staff_log_list' %}" class="nav-link {% block nav_logs %}{% endblock %}">Nhật ký</a>
+        {% endif %}
+
+        {# ===================== LỊCH HẸN CHUYÊN VIÊN (chỉ STAFF) ===================== #}
+        {% if role == 'STAFF' %}
+        <a href="{% url 'appointment_staff' %}" class="nav-link {% block nav_appointmentstaff %}{% endblock %}">Lịch hẹn của tôi</a>
+        {% endif %}
+
+        {# ===================== TÀI KHOẢN (mọi vai trò đều thấy) ===================== #}
         <div class="nav-section-title">Tài khoản</div>
         <a href="{% url 'staff_profile' %}" class="nav-link">Hồ sơ</a>
         <a href="{% url 'staff_logout' %}" class="nav-link">Đăng xuất</a>
+
+        {% endwith %}
     </aside>
+
+
 
     <div class="main">
         <header class="topbar">

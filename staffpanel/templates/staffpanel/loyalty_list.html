@@ -1,34 +1,469 @@
-{% extends "staffpanel/base.html" %}
-{% block title %}Điểm tích lũy{% endblock %}
+{% extends 'staffpanel/base.html' %}
+{% load static %}
+
+{% block title %}Quản lý điểm tích lũy{% endblock %}
 {% block nav_loyalty %}active{% endblock %}
 
+{% block extra_css %}
+<style>
+/* (giữ nguyên hoặc thêm tùy ý) */
+.modal-backdrop {
+    position: fixed; inset:0; background: rgba(0,0,0,0.4); z-index: 9998;
+}
+.modal-centered {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+.card-shadow { box-shadow: 0 6px 24px rgba(0,0,0,0.08); border-radius:10px; }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">ĐIỂM TÍCH LŨY</h1>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom">
+        <h4 class="mb-0 fw-semibold">Quản lý điểm tích lũy khách hàng</h4>
+    </div>
+
+    <div class="card-body border-bottom">
+        <form method="get" class="row g-3 align-items-center">
+            <div class="col-auto flex-fill">
+                <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Tìm theo Mã KH hoặc Tên" style="min-width:300px;">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-success px-4 fw-bold">Tìm</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="bulkSection" style="display:none; background:#f8f9fa; border-top:1px solid #e2e6ea; border-bottom:1px solid #e2e6ea;">
+        <div class="card-body">
+            <form id="bulkForm" class="row g-3 align-items-center" onsubmit="return bulkSubmit(event);">
+                {% csrf_token %}
+                <div class="col-auto">
+                    <strong id="selectedCount" style="color:#2f5c48; font-size:15px;">0</strong> khách hàng đã chọn
+                </div>
+                <div class="col-auto">
+                    <select name="loaigd" class="form-select">
+                        <option value="Tích điểm">+ Cộng điểm</option>
+                        <option value="Quy đổi điểm">- Trừ điểm</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <input type="number" name="diem" class="form-control" placeholder="Số điểm" min="1" required>
+                </div>
+                <div class="col-auto flex-fill">
+                    <input type="text" name="lydo" class="form-control" placeholder="Lý do (tùy chọn)">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success fw-bold">
+                        Áp dụng cho <span id="applyCount">0</span> KH đã chọn
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0 align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th width="50">
+                            <input type="checkbox" class="form-check-input" id="select-all">
+                        </th>
+                        <th>Mã KH</th>
+                        <th>Tên khách hàng</th>
+                        <th class="text-center">Điểm hiện tại</th>
+                        <th class="text-center">Số GD điểm</th>
+                        <th>Cập nhật gần nhất</th>
+                        <th class="text-center" width="180">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr class="customer-row"
+                        data-makh="{{ item.MaKhachHang.MaKhachHang }}"
+                        data-ten="{{ item.MaKhachHang.HoTen }}"
+                        onclick="openHistory(event, '{{ item.MaKhachHang.MaKhachHang }}', '{{ item.MaKhachHang.HoTen|escapejs }}')"
+                        style="cursor:pointer;">
+                        <td onclick="event.stopPropagation()">
+                            <input type="checkbox" name="makh[]" value="{{ item.MaKhachHang.MaKhachHang }}" class="form-check-input cb-item">
+                        </td>
+                        <td><strong>{{ item.MaKhachHang.MaKhachHang }}</strong></td>
+                        <td>{{ item.MaKhachHang.HoTen }}</td>
+                        <td class="text-center fw-bold text-primary">{{ item.SoDiemHienTai }}</td>
+                        <td class="text-center">{{ item.MaKhachHang.lichsutichdiem_set.count }}</td>
+                        <td>
+                            {% with hist=item.MaKhachHang.lichsutichdiem_set.all|dictsortreversed:"NgayCapNhat" %}
+                                {% if item.MaKhachHang.lichsutichdiem_set.first %}
+                                    {{ item.MaKhachHang.lichsutichdiem_set.first.NgayCapNhat|date:"d/m/Y H:i" }}
+                                {% else %}—{% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-center" onclick="event.stopPropagation()">
+                            <button class="btn btn-sm btn-outline-success me-1"
+                                    onclick="openAddPoint(event,'{{ item.MaKhachHang.MaKhachHang }}', '{{ item.MaKhachHang.HoTen|escapejs }}', true)"
+                                    title="Cộng điểm">
+                                +
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger me-1"
+                                    onclick="openAddPoint(event,'{{ item.MaKhachHang.MaKhachHang }}', '{{ item.MaKhachHang.HoTen|escapejs }}', false)"
+                                    title="Trừ điểm">
+                                −
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center py-5 text-muted">Chưa có khách hàng nào</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-<div class="card">
-    <table>
-        <thead>
-        <tr>
-            <th>Khách hàng</th>
-            <th>Email</th>
-            <th>Điểm hiện tại</th>
-            <th>Hành động</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for item in items %}
-            <tr>
-                <td>{{ item.MaKhachHang.HoTen }}</td>
-                <td>{{ item.MaKhachHang.Email }}</td>
-                <td>{{ item.SoDiemHienTai }}</td>
-                <td><a href="{% url 'staff_loyalty_edit' item.MaKhachHang.MaKhachHang %}">Cập nhật</a></td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="4" style="text-align:center;">Không có dữ liệu.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+<!-- MODAL HISTORY -->
+<div id="historyModal" class="modal-centered" style="display:none;">
+    <div class="modal-backdrop" id="historyBackdrop"></div>
+    <div style="background:#fff; width:95%; max-width:720px; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:10000;">
+        <div style="background:#2f5c48; color:#fff; padding:16px 24px; font-size:18px; font-weight:600;">Lịch sử tích điểm</div>
+        <div style="padding:20px 24px 10px;">
+            <div style="text-align:center; color:#666; font-size:14px; margin-bottom:12px;">
+                Mã KH: <span id="hist_makh" style="font-weight:600;"></span> - Tên: <span id="hist_ten" style="font-weight:600;"></span>
+            </div>
+            <div style="max-height:380px; overflow-y:auto; border:1px solid #e0e0e0; border-radius:8px;">
+                <table style="width:100%; border-collapse:collapse; font-size:14px;">
+                    <thead>
+                        <tr style="background:#f5f5f5;">
+                            <th style="padding:12px 8px; text-align:left;">Ngày</th>
+                            <th style="padding:12px 8px; text-align:center; width:120px;">Thay đổi điểm</th>
+                            <th style="padding:12px 8px; text-align:left;">Lý do</th>
+                            <th style="padding:12px 8px; text-align:center; width:160px;">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <div style="padding:12px 18px; text-align:right; background:#fafafa; border-top:1px solid #eee;">
+            <button class="btn btn-secondary" onclick="closeHistory()">Đóng</button>
+        </div>
+    </div>
 </div>
+
+<!-- MODAL ADD/EDIT POINT -->
+<div id="addPointModal" class="modal-centered" style="display:none;">
+    <div class="modal-backdrop" id="addBackdrop"></div>
+    <div style="background:#fff; width:95%; max-width:420px; border-radius:12px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,0.2); z-index:10000;">
+        <div style="background:#2f5c48; color:#fff; padding:16px 24px; font-size:18px; font-weight:600; text-align:center;" id="modalTitle">Cộng điểm</div>
+        <div style="padding:24px;">
+            <div style="text-align:center; color:#666; font-size:14px; margin-bottom:12px;" id="modalCustomer"></div>
+
+            <!-- THÊM DÒNG SELECT NÀY -->
+            <select id="pointType" class="form-select mb-3" style="padding:10px; font-size:15px;">
+                <option value="add">+ Cộng điểm tích lũy</option>
+                <option value="subtract">- Trừ điểm (quy đổi)</option>
+            </select>
+
+            <input type="number" id="pointAmount" placeholder="Số điểm" min="1"
+                   style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:16px; text-align:center; margin-bottom:12px;">
+
+            <input type="text" id="pointReason" placeholder="Lý do (Ví dụ: Mua hàng / Điều chỉnh)"
+                   style="width:100%; padding:12px; border:1px solid #ddd; border-radius:8px; font-size:14px; margin-bottom:18px;">
+
+            <div style="display:flex; gap:8px; justify-content:center;">
+                <button id="confirmPointBtn" class="btn btn-success" onclick="submitPoint()">Xác nhận</button>
+                <button class="btn btn-secondary" onclick="closeAddPoint()">Hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* CSRF token */
+const csrftoken = '{{ csrf_token }}';
+
+/* trạng thái toàn cục */
+let currentMakh = null;
+let currentTen = '';
+let isAdding = true;
+let editMagd = null;
+
+/* ===== select-all / bulk logic ===== */
+function updateBulkVisibility() {
+    const count = document.querySelectorAll('.cb-item:checked').length;
+    const bulk = document.getElementById('bulkSection');
+    bulk.style.display = count > 0 ? 'block' : 'none';
+    document.getElementById('selectedCount').textContent = count;
+    document.getElementById('applyCount').textContent = count;
+}
+function setAllCheckboxes(val) {
+    document.querySelectorAll('.cb-item').forEach(cb => cb.checked = val);
+    updateBulkVisibility();
+}
+document.addEventListener('change', function(e) {
+    if (e.target && e.target.classList && e.target.classList.contains('cb-item')) {
+        updateBulkVisibility();
+    }
+});
+document.getElementById('select-all')?.addEventListener('change', function(e) {
+    setAllCheckboxes(e.target.checked);
+});
+
+/* ===== open history (AJAX) ===== */
+function openHistory(evt, makh, ten) {
+    // === CHỐNG MỞ 2 LẦN KHI CLICK VÀO NÚT HOẶC CHECKBOX ===
+    if (evt) {
+        // Nếu click vào button (bất kỳ), hoặc checkbox → bỏ qua hoàn toàn
+        if (evt.target.closest('button') || evt.target.type === 'checkbox') {
+            return;
+        }
+        evt.stopPropagation(); // chặn nổi bọt lên các phần tử cha (nếu có)
+    }
+
+    currentMakh = makh;
+    currentTen = ten;
+    document.getElementById('hist_makh').textContent = makh;
+    document.getElementById('hist_ten').textContent = ten;
+    document.getElementById('historyBody').innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;">Đang tải...</td></tr>';
+    document.getElementById('historyModal').style.display = 'flex';
+
+    fetch("{% url 'staff_loyalty_history_ajax' 'XXXXXXXX' %}".replace('XXXXXXXX', makh), {
+        headers: {'X-CSRFToken': csrftoken}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) {
+            document.getElementById('historyBody').innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:red;">Lỗi tải lịch sử</td></tr>';
+            return;
+        }
+        const items = data.items || [];
+        const isManager = data.is_manager;
+        const canEditDelete = data.can_edit_delete;
+
+        if (items.length === 0) {
+            document.getElementById('historyBody').innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:#666;">Chưa có giao dịch</td></tr>';
+            return;
+        }
+
+        let html = '';
+        items.forEach(it => {
+            const sign = it.diem >= 0 ? '+' + Math.abs(it.diem) : '-' + Math.abs(it.diem);
+            const isLatest = it.is_latest;
+            html += `<tr data-magd="${it.magd}">
+                <td style="padding:10px 8px;">${it.ngay}</td>
+                <td style="padding:10px 8px; text-align:center; width:120px; font-weight:600;">${sign}</td>
+                <td style="padding:10px 8px;">${it.chitiet}</td>
+                <td style="padding:10px 8px; text-align:center; width:160px;">`;
+
+            if (canEditDelete && isLatest) {
+                html += `<button class="btn btn-sm btn-sua me-1"
+                                onclick="event.stopPropagation(); openEditFromHistory('${it.magd}', ${it.diem}, '${escapeJs(it.chitiet)}')">
+                                Sửa
+                         </button>`;
+            } else {
+                html += `<span style="color:#999">—</span>`;
+            }
+            if (isManager) {
+                html += ` <button class="btn btn-sm btn-xoa"
+                                 onclick="event.stopPropagation(); deleteHistory('${it.magd}')">
+                                 Xóa
+                          </button>`;
+            }
+            html += `</td></tr>`;
+        });
+        document.getElementById('historyBody').innerHTML = html;
+    })
+    .catch(err => {
+        console.error(err);
+        document.getElementById('historyBody').innerHTML = '<tr><td colspan="4" style="padding:16px;text-align:center;color:red;">Lỗi kết nối</td></tr>';
+    });
+}
+function closeHistory() {
+    document.getElementById('historyModal').style.display = 'none';
+    currentMakh = null;
+}
+
+/* ===== open add/edit point modal ===== */
+function openAddPoint(evt, makh, ten, add=true) {
+    if (evt) evt.stopPropagation();
+    currentMakh = makh;
+    currentTen = ten;
+    isAdding = add;
+    editMagd = null;
+    document.getElementById('modalTitle').textContent = add ? 'Cộng điểm tích lũy' : 'Trừ điểm tích lũy';
+    document.getElementById('modalCustomer').textContent = `${ten} (${makh})`;
+    document.getElementById('pointAmount').value = '';
+    document.getElementById('pointReason').value = '';
+    document.getElementById('addPointModal').style.display = 'flex';
+    document.getElementById('pointAmount').focus();
+}
+
+function openEditFromHistory(magd, diem, chitiet) {
+    // diem may be negative for "Quy đổi"
+    editMagd = magd;
+    isAdding = (diem >= 0);
+    document.getElementById('modalTitle').textContent = 'Sửa giao dịch điểm';
+    document.getElementById('modalCustomer').textContent = `Mã GD: ${magd}`;
+    document.getElementById('pointAmount').value = Math.abs(diem);
+    document.getElementById('pointReason').value = chitiet === '—' ? '' : chitiet;
+    document.getElementById('addPointModal').style.display = 'flex';
+}
+
+/* ===== submit add/edit point ===== */
+function submitPoint() {
+    const amount = parseInt(document.getElementById('pointAmount').value);
+    if (!amount || amount <= 0) return alert('Vui lòng nhập số điểm hợp lệ!');
+    const lydo = document.getElementById('pointReason').value.trim() || 'Cập nhật thủ công';
+
+    let url, body;
+    if (editMagd) {
+        // edit existing (POST to edit-history/<magd>/)
+        url = `/staff/loyalty/edit-history/${editMagd}/`;
+        body = new FormData();
+        body.append('diem', amount);
+        body.append('lydo', lydo);
+    } else {
+        // create new for currentMakh
+        url = "{% url 'staff_loyalty_update_ajax' %}";
+        body = new FormData();
+        body.append('makh', currentMakh);
+        body.append('diem', amount);
+        body.append('lydo', lydo);
+        body.append('loaigd', isAdding ? 'Tích điểm' : 'Quy đổi điểm');
+    }
+
+    fetch(url, {
+        method: 'POST',
+        body: body,
+        headers: {'X-CSRFToken': csrftoken}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert(d.message || 'Thành công!');
+            location.reload(); // đơn giản + an toàn: reload để cập nhật số liệu
+        } else {
+            alert('Lỗi: ' + (d.error || 'Không xác định'));
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Lỗi kết nối: ' + err.message);
+    });
+}
+
+function deleteHistory(magd) {
+    if (!confirm('Xác nhận xóa lịch sử này? (Điểm hiện tại sẽ KHÔNG thay đổi)')) return;
+    fetch(`/staff/loyalty/delete-history/${magd}/`, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrftoken}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert(d.message || 'Đã xóa');
+            // reload history modal to reflect change
+            if (currentMakh) openHistory(null, currentMakh, currentTen);
+        } else {
+            alert('Lỗi: ' + (d.error || 'Không xác định'));
+        }
+    }).catch(err => {
+        console.error(err);
+        alert('Lỗi kết nối: ' + err.message);
+    });
+}
+
+/* ===== bulk submit handler ===== */
+function bulkSubmit(e) {
+    e.preventDefault();
+    const checked = document.querySelectorAll('.cb-item:checked');
+    if (checked.length === 0) return alert('Chưa chọn khách hàng nào!');
+    if (!confirm(`Áp dụng cho ${checked.length} khách hàng?`)) return;
+
+    const form = document.getElementById('bulkForm');
+    const formData = new FormData(form);
+    checked.forEach(cb => formData.append('makh[]', cb.value));
+
+    fetch("{% url 'staff_loyalty_update_ajax' %}", {
+        method: 'POST',
+        body: formData,
+        headers: {'X-CSRFToken': csrftoken}
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            alert(d.message || 'Hoàn tất');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + (d.error || 'Không xác định'));
+        }
+    }).catch(err => {
+        console.error(err);
+        alert('Lỗi kết nối: ' + err.message);
+    });
+
+    return false;
+}
+
+/* ===== helpers ===== */
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+function escapeJs(s) {
+    if (!s) return '';
+    return s.replace(/'/g, "\\'").replace(/"/g, '\\"');
+}
+
+/* init */
+updateBulkVisibility();
+
+/* ===== TỰ ĐỘNG TẮT MODAL KHI CLICK RA NGOÀI HOẶC BẤM ESC ===== */
+document.addEventListener('click', function(e) {
+    // Modal cộng/trừ điểm
+    const addModal = document.getElementById('addPointModal');
+    const historyModal = document.getElementById('historyModal');
+
+    // Nếu đang mở modal cộng/trừ điểm
+    if (addModal.style.display === 'flex') {
+        if (e.target === document.getElementById('addBackdrop') ||
+            e.target.closest('#addBackdrop')) {
+            closeAddPoint();
+        }
+    }
+
+    // Nếu đang mở modal lịch sử
+    if (historyModal.style.display === 'flex') {
+        if (e.target === document.getElementById('historyBackdrop') ||
+            e.target.closest('#historyBackdrop')) {
+            closeHistory();
+        }
+    }
+});
+
+// Thêm chức năng bấm ESC để tắt cả 2 modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.getElementById('addPointModal').style.display === 'flex') {
+            closeAddPoint();
+        } else if (document.getElementById('historyModal').style.display === 'flex') {
+            closeHistory();
+        }
+    }
+});
+
+// Hàm đóng modal cộng/trừ điểm (bạn đã có rồi, nhưng thêm cái này cho chắc)
+function closeAddPoint() {
+    document.getElementById('addPointModal').style.display = 'none';
+    // Reset form
+    document.getElementById('pointAmount').value = '';
+    document.getElementById('pointReason').value = '';
+    editMagd = null;
+}
+</script>
 {% endblock %}

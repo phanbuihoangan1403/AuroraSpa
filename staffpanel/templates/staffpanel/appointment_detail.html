@@ -1,0 +1,25 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Chi tiết lịch hẹn #{{ lh.MaLichHen }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Chi tiết lịch hẹn #{{ lh.MaLichHen }}</h1>
+</div>
+
+<div class="card" style="max-width:700px;">
+    <table class="table table-bordered">
+        <tr><th>Mã lịch hẹn</th><td>{{ lh.MaLichHen }}</td></tr>
+        <tr><th>Khách hàng</th><td>{{ lh.HoTen|default:"-" }}</td></tr>
+        <tr><th>Số điện thoại</th><td>{{ lh.DienThoai|default:"-" }}</td></tr>
+        <tr><th>Dịch vụ</th><td>{{ lh.DichVu.TenDichVu|default:"-" }}</td></tr>
+        <tr><th>Ngày hẹn</th><td>{{ lh.NgayHen|date:"d/m/Y" }}</td></tr>
+        <tr><th>Khung giờ</th><td>{{ lh.KhungGio }}</td></tr>
+        <tr><th>Trạng thái</th><td>{{ lh.TrangThai }}</td></tr>
+        <tr><th>Ghi chú</th><td>{{ lh.GhiChu|default:"Không có" }}</td></tr>
+    </table>
+    <div style="margin-top: 24px;" >
+        <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline"><strong>← Quay lại danh sách</strong></a>
+    </div>
+</div>
+{% endblock %}
+

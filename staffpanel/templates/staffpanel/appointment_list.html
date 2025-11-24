@@ -4,50 +4,150 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">LỊCH HẸN</h1>
+    <h1 class="page-title">DANH SÁCH LỊCH HẸN</h1>
 
-    <form method="get" style="display:flex;gap:8px;">
-        <select name="trang_thai" style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;">
-            <option value="">Tất cả trạng thái</option>
-            <option value="Chờ" {% if trang_thai == "Chờ" %}selected{% endif %}>Chờ xác nhận</option>
-            <option value="Đã xác nhận" {% if trang_thai == "Đã xác nhận" %}selected{% endif %}>Đã xác nhận</option>
-            <option value="Đã hủy" {% if trang_thai == "Đã hủy" %}selected{% endif %}>Đã hủy</option>
-            <option value="Hoàn thành" {% if trang_thai == "Hoàn thành" %}selected{% endif %}>Hoàn thành</option>
-        </select>
-        <button class="btn btn-outline">Lọc</button>
-    </form>
+    <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <a href="{% url 'staff_appointment_create' %}" class="btn btn-primary" style="background:#ffc107;border:none;">
+            + Thêm lịch hẹn mới
+        </a>
+
+        <form method="get" style="display:flex; gap:8px; align-items:center;">
+            <input type="date" name="ngay" value="{{ request.GET.ngay }}"
+                   class="form-control"
+                   style="padding:8px 12px; border-radius:8px; border:1px solid #ddd;">
+
+            <select name="trang_thai" class="form-control" style="padding:8px 12px; border-radius:8px; border:1px solid #ddd; width:200px;">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Đang chờ" {% if request.GET.trang_thai == "Đang chờ" %}selected{% endif %}>Đang chờ</option>
+                <option value="Đang thực hiện" {% if request.GET.trang_thai == "Đang thực hiện" %}selected{% endif %}>Đang thực hiện</option>
+                <option value="Hoàn thành" {% if request.GET.trang_thai == "Hoàn thành" %}selected{% endif %}>Hoàn thành</option>
+                <option value="Đã hủy" {% if request.GET.trang_thai == "Đã hủy" %}selected{% endif %}>Đã hủy</option>
+            </select>
+
+            <select name="dich_vu" class="form-control"
+                    style="padding:8px 12px; border-radius:8px; border:1px solid #ddd; width:200px;">
+                <option value="">Tất cả dịch vụ</option>
+                {% for dv in dich_vu_list %}
+                    <option value="{{ dv.MaDichVu }}"
+                        {% if request.GET.dich_vu == dv.MaDichVu|stringformat:"s" %}selected{% endif %}>
+                        {{ dv.TenDichVu }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit"
+                    class="btn btn-outline-secondary"
+                    style="border: 1px solid #ddd !important; border-radius:8px; padding:8px 16px;">
+                Tìm kiếm
+            </button>
+        </form>
+    </div>
 </div>
 
 <div class="card">
-    <table>
-        <thead>
-        <tr>
-            <th>Mã LH</th>
-            <th>Khách hàng</th>
-            <th>Dịch vụ</th>
-            <th>Ngày</th>
-            <th>Giờ</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for lh in lich_hen %}
-            <tr>
-                <td>{{ lh.MaLichHen }}</td>
-                <td>{{ lh.HoTen }}</td>
-                <td>{{ lh.DichVu.TenDichVu }}</td>
-                <td>{{ lh.NgayHen|date:"d/m/Y" }}</td>
-                <td>{{ lh.KhungGio }}</td>
-                <td>{{ lh.TrangThai }}</td>
-                <td>
-                    <a href="{% url 'staff_appointment_edit' lh.MaLichHen %}">Cập nhật</a>
-                </td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="7" style="text-align:center;">Không có lịch hẹn.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-hover" style="margin-bottom:0;">
+            <thead style="background:#f8f9fa;">
+                <tr>
+                    <th style="width:50px;"></th>
+                    <th style="width:120px;">MÃ LỊCH HẸN</th>
+                    <th>NGÀY HẸN</th>
+                    <th>GIỜ</th>
+                    <th>TRẠNG THÁI</th>
+                    <th>KHÁCH HÀNG</th>
+                    <th>DỊCH VỤ</th>
+                    <th style="width:140px; text-align:center;">HÀNH ĐỘNG</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for lh in lich_hen %}
+                <tr>
+                    <td><input type="checkbox" class="form-check-input"></td>
+
+                    <!-- Giữ nguyên như cũ, không thêm # -->
+                    <td>{{ lh.MaLichHen }}</td>
+
+                    <td>{{ lh.NgayHen|date:"d/m/Y" }}</td>
+                    <td>{{ lh.KhungGio }}</td>
+
+                    <td>
+                        {% if lh.TrangThai == "Đã đặt" %}
+                            <span class="badge bg-warning text-dark">Đã đặt</span>
+                        {% elif lh.TrangThai == "Trống" %}
+                            <span class="badge bg-secondary">Trống</span>
+                        {% elif lh.TrangThai == "Đã xác nhận" %}
+                            <span class="badge bg-success">Đã xác nhận</span>
+                        {% elif lh.TrangThai == "Hoàn thành" %}
+                            <span class="badge bg-info">Hoàn thành</span>
+                        {% elif lh.TrangThai == "Đã hủy" %}
+                            <span class="badge bg-danger">Đã hủy</span>
+                        {% else %}
+                            <span class="badge bg-light text-dark">{{ lh.TrangThai }}</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ lh.HoTen|default:"-" }}</td>
+                    <td>{{ lh.DichVu.TenDichVu|default:"-" }}</td>
+
+                    <td style="text-align:center; white-space:nowrap;">
+                        <!-- Xem -->
+                        <a href="{% url 'staff_appointment_detail' lh.MaLichHen %}" style="margin:0 4px;" title="Xem">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#007bff" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </a>
+
+                        <!-- Sửa -->
+                        <a href="{% url 'staff_appointment_edit' lh.MaLichHen %}" style="margin:0 4px;" title="Sửa">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#28a745" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5l3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </a>
+
+                        <!-- XÓA: Chỉ hiện nếu là MANAGER hoặc superuser -->
+                        {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
+                            <a href="javascript:void(0)"
+                               onclick="if(confirm('Bạn có chắc chắn muốn xóa lịch hẹn {{ lh.MaLichHen }}?')) document.getElementById('del-{{ lh.MaLichHen }}').submit();"
+                               style="margin:0 4px;" title="Xóa">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc3545" stroke-width="2">
+                                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6M5 6l1 14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-14H5z"></path>
+                                </svg>
+                            </a>
+
+                            <form id="del-{{ lh.MaLichHen }}" method="post"
+                                  action="{% url 'staff_appointment_delete' lh.MaLichHen %}" style="display:none;">
+                                {% csrf_token %}
+                            </form>
+                        {% else %}
+                            <!-- Để trống hoặc để icon mờ nếu muốn -->
+                            <span style="margin:0 4px; display:inline-block; width:22px;"></span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align:center; padding:40px; color:#888;">
+                        Không có lịch hẹn nào.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- Chỉ đồng nhất font và cỡ chữ, không can thiệp gì khác -->
+<style>
+    table.table th,
+    table.table td,
+    table.table .badge {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 14px !important;
+    }
+</style>
+
 {% endblock %}

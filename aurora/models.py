@@ -66,6 +66,7 @@ class LichSuTichDiem(models.Model):
         auto_now_add=True,
         help_text='Ngày giao dịch'
     )
+    NgayCapNhat = models.DateTimeField(auto_now=True)
     MaQuyDoi = models.ForeignKey(
         'QuyDoiDiem',
         on_delete=models.SET_NULL,
@@ -92,6 +93,7 @@ class LichSuTichDiem(models.Model):
             self.MaGiaoDich = f"GD{so:03d}"
 
         # === 2. Tính delta (chênh lệch điểm so với lần trước) ===
+
         old_value = 0
         if self.pk:  # nếu đang sửa bản ghi
             try:
@@ -123,9 +125,9 @@ class LichSuTichDiem(models.Model):
 
     def clean(self):
         # Ràng buộc giá trị hợp lệ theo loại giao dịch
-        if self.LoaiGiaoDich == 'Tích điểm' and self.SoDiemThayDoi < 0:
+        if self.LoaiGiaoDich == 'Tích điểm' and self.SoDiemThayDoi <= 0:
             raise ValidationError("Giao dịch 'Tích điểm' phải là số dương.")
-        if self.LoaiGiaoDich == 'Quy đổi điểm' and self.SoDiemThayDoi > 0:
+        if self.LoaiGiaoDich == 'Quy đổi điểm' and self.SoDiemThayDoi >= 0:
             raise ValidationError("Giao dịch 'Quy đổi điểm' phải là số âm.")
 
     class Meta:
@@ -251,7 +253,7 @@ class LichHen(models.Model):
 
     # Thời gian
     NgayHen = models.DateField("Ngày đặt")
-    KhungGio = models.CharField("Khung giờ", max_length=10,null=True, blank=True)  # có thể thêm choices nếu muốn
+    KhungGio = models.CharField("Khung giờ", max_length=13,null=True, blank=True)  # có thể thêm choices nếu muốn
 
     # Mã giảm giá & trạng thái
     MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
@@ -403,6 +405,7 @@ class NhanVien(models.Model):
         ('MANAGER', 'Quản lý'),
         ('CONTENT', 'Nhân viên nội dung'),
         ('RECEPTION', 'Nhân viên lễ tân'),
+        ('STAFF', 'Chuyên viên'),
     ]
     VaiTro = models.CharField(max_length=20, choices=ROLE_CHOICES, default='RECEPTION')
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)

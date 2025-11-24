@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'aurora',
     'ckeditor',
     'staffpanel.apps.StaffpanelConfig',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [

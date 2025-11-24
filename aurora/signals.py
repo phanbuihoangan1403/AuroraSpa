@@ -6,4 +6,4 @@ from .models import NhanVien
 @receiver(post_save, sender=User)
 def create_staff_profile(sender, instance, created, **kwargs):
     if instance.is_staff:
-        NhanVien.objects.get_or_create(user=instance, defaults={'ChucVu': 'Nhân viên'})
+        NhanVien.objects.get_or_create(user=instance, defaults={'VaiTro': 'MANAGER'})
