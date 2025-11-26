@@ -82,47 +82,49 @@ class LichSuTichDiem(models.Model):
     SoDiemThayDoi = models.IntegerField(
         help_text="Số điểm thay đổi (+ hoặc -)"
     )
+    NguoiThucHien = models.ForeignKey(
+        'NhanVien',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Nhân viên thực hiện giao dịch (tăng/giảm điểm)'
+    )
 
-    def save(self, *args, **kwargs):
-        from .models import DiemTichLuy
+    HanhDong = models.CharField(
+        max_length=10,
+        choices=[('+', 'Tăng'), ('-', 'Giảm')],
+        null=True,
+        blank=True,
+        help_text='Giao dịch là cộng hay trừ điểm'
+    )
 
-        # === 1. Tạo mã tự động ===
+    # === Trong aurora/models.py - class LichSuTichDiem ===
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, current_user=None):
+        if current_user and current_user.is_authenticated and hasattr(current_user, 'nhanvien'):
+            self.NguoiThucHien = current_user.nhanvien
+
+        if self.SoDiemThayDoi > 0:
+            self.HanhDong = '+'
+        elif self.SoDiemThayDoi < 0:
+            self.HanhDong = '-'
+
         if not self.MaGiaoDich:
             last = LichSuTichDiem.objects.order_by('-MaGiaoDich').first()
             so = int(last.MaGiaoDich.replace("GD", "")) + 1 if last else 1
             self.MaGiaoDich = f"GD{so:03d}"
 
-        # === 2. Tính delta (chênh lệch điểm so với lần trước) ===
-
-        old_value = 0
-        if self.pk:  # nếu đang sửa bản ghi
-            try:
-                old_obj = LichSuTichDiem.objects.get(pk=self.pk)
-                old_value = old_obj.SoDiemThayDoi
-            except LichSuTichDiem.DoesNotExist:
-                old_value = 0
-
-        delta = self.SoDiemThayDoi - old_value
-
-        # === 3. Cập nhật ví điểm theo delta ===
         with transaction.atomic():
+            super().save(force_insert, force_update, using, update_fields)
+
             wallet, _ = DiemTichLuy.objects.select_for_update().get_or_create(
                 MaKhachHang=self.MaKhachHang,
-                defaults={"SoDiemHienTai": 0}
+                defaults={'SoDiemHienTai': 0}
             )
+            if self.SoDiemThayDoi < 0 and wallet.SoDiemHienTai + self.SoDiemThayDoi < 0:
+                raise ValidationError("Không đủ điểm để thực hiện giao dịch này!")
 
-            # Kiểm tra không trừ quá số điểm hiện có
-            if delta < 0 and wallet.SoDiemHienTai + delta < 0:
-                raise ValidationError("Không thể trừ quá số điểm hiện có!")
-
-            # Lưu lịch sử giao dịch
-            super().save(*args, **kwargs)
-
-            # Cập nhật ví điểm
-            DiemTichLuy.objects.filter(MaKhachHang=self.MaKhachHang).update(
-                SoDiemHienTai=F('SoDiemHienTai') + delta
-            )
-
+            wallet.SoDiemHienTai = F('SoDiemHienTai') + self.SoDiemThayDoi
+            wallet.save()
     def clean(self):
         # Ràng buộc giá trị hợp lệ theo loại giao dịch
         if self.LoaiGiaoDich == 'Tích điểm' and self.SoDiemThayDoi <= 0:

@@ -668,138 +668,130 @@ def staff_loyalty_list(request):
 
 @reception_required
 def staff_loyalty_history_ajax(request, makh):
-    # Trả về JSON của lịch sử cho một khách hàng
-    history = LichSuTichDiem.objects.filter(MaKhachHang__MaKhachHang=makh).order_by('-NgayGiaoDich')
-    latest = history.first()
+    history = LichSuTichDiem.objects.filter(MaKhachHang__MaKhachHang=makh) \
+        .order_by('-NgayGiaoDich') \
+        .select_related('NguoiThucHien__user')
+
     items = []
+    is_manager = request.user.nhanvien.VaiTro == 'MANAGER'
+
     for h in history:
-        items.append({
+        item = {
             "magd": h.MaGiaoDich,
             "ngay": h.NgayGiaoDich.strftime("%d/%m/%Y %H:%M"),
             "loaigd": h.LoaiGiaoDich,
             "diem": h.SoDiemThayDoi,
             "chitiet": h.ChiTietGiaoDich or "—",
-            "is_latest": bool(latest and h.MaGiaoDich == latest.MaGiaoDich),
-        })
-
-    is_manager = request.user.nhanvien.VaiTro == 'MANAGER'
-    can_edit_delete = request.user.nhanvien.VaiTro in ['MANAGER', 'RECEPTION']
+        }
+        # Chỉ manager mới thấy người thực hiện
+        if is_manager and h.NguoiThucHien:
+            nguoi = h.NguoiThucHien
+            ten = nguoi.user.get_full_name().strip() or nguoi.user.username
+            item["nguoi_thuc_hien"] = f"{nguoi.MaNhanVien} - {ten}"
+        items.append(item)
 
     return JsonResponse({
         "success": True,
         "items": items,
         "is_manager": is_manager,
-        "can_edit_delete": can_edit_delete
     })
 
 
 @reception_required
-@require_POST
 def staff_loyalty_update_ajax(request):
-    """
-    Dùng cho:
-    - Thêm 1 giao dịch cho 1 khách (makh)
-    - Bulk (makh[] list)
-    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid method'})
+
+    # Lấy danh sách mã khách hàng
+    makh_list = request.POST.getlist('makh[]') or [request.POST.get('makh')]
+    if not makh_list or not makh_list[0]:
+        return JsonResponse({'success': False, 'error': 'Chưa chọn khách hàng'})
+
     try:
-        # nhận makh[] hoặc makh (single)
-        makh_list = request.POST.getlist('makh[]') or ([request.POST.get('makh')] if request.POST.get('makh') else [])
-        if not makh_list:
-            return JsonResponse({'success': False, 'error': 'Chưa chọn khách hàng'})
+        diem_thay_doi = int(request.POST.get('diem', 0))
+    except ValueError:
+        return JsonResponse({'success': False, 'error': 'Số điểm không hợp lệ'})
 
-        diem_raw = int(request.POST.get('diem', 0))
-        if diem_raw <= 0:
-            return JsonResponse({'success': False, 'error': 'Số điểm phải lớn hơn 0'})
+    lydo = request.POST.get('lydo', '').strip() or 'Cập nhật thủ công'
+    loaigd = request.POST.get('loaigd', '').strip()
 
-        loaigd = request.POST.get('loaigd', 'Tích điểm')  # 'Tích điểm' hoặc 'Quy đổi điểm'
-        lydo = request.POST.get('lydo', '').strip() or 'Cập nhật thủ công'
+    # Tự động xác định loại giao dịch nếu chưa có
+    if not loaigd:
+        loaigd = 'Tích điểm' if diem_thay_doi > 0 else 'Quy đổi điểm'
 
-        sodiem = diem_raw if loaigd == 'Tích điểm' else -diem_raw
+    # === KIỂM TRA ĐIỂM TRƯỚC KHI LÀM GÌ CẢ ===
+    if diem_thay_doi == 0:
+        return JsonResponse({'success': False, 'error': 'Số điểm phải khác 0'})
+    if diem_thay_doi > 0 and loaigd != 'Tích điểm':
+        return JsonResponse({'success': False, 'error': 'Loại giao dịch không khớp (cộng điểm)'})
+    if diem_thay_doi < 0 and loaigd != 'Quy đổi điểm':
+        return JsonResponse({'success': False, 'error': 'Loại giao dịch không khớp (trừ điểm)'})
 
-        created_count = 0
-        with transaction.atomic():
-            for makh in makh_list:
-                kh = get_object_or_404(KhachHang, MaKhachHang=makh)
+    # Đếm thành công và lỗi
+    success_count = 0
+    errors = []
+
+    for makh in makh_list:
+        makh = makh.strip()
+        try:
+            kh = KhachHang.objects.get(MaKhachHang=makh)
+            wallet = DiemTichLuy.objects.select_for_update().get(MaKhachHang=kh)
+
+            # === CHỖ QUAN TRỌNG NHẤT: KIỂM TRA KHÔNG ĐƯỢC TRỪ QUÁ ĐIỂM HIỆN TẠI ===
+            if diem_thay_doi < 0:
+                diem_can_tru = -diem_thay_doi  # ví dụ: -10 → cần trừ 10
+                if diem_can_tru > wallet.SoDiemHienTai:
+                    errors.append(f"{makh}: Không đủ điểm (còn {wallet.SoDiemHienTai}, cần {diem_can_tru})")
+                    continue
+
+            # Tạo lịch sử giao dịch
+            LichSuTichDiem.objects.create(
+                MaKhachHang=kh,
+                SoDiemThayDoi=diem_thay_doi,
+                ChiTietGiaoDich=lydo,
+                LoaiGiaoDich=loaigd,
+                NguoiThucHien=request.user.nhanvien
+            )
+            success_count += 1
+
+        except KhachHang.DoesNotExist:
+            errors.append(f"{makh}: Không tìm thấy khách hàng")
+        except DiemTichLuy.DoesNotExist:
+            # Nếu chưa có ví → chỉ cho cộng, không cho trừ
+            if diem_thay_doi < 0:
+                errors.append(f"{makh}: Chưa có điểm để trừ")
+            else:
+                # Tạo ví mới và cộng điểm
+                DiemTichLuy.objects.create(MaKhachHang=kh, SoDiemHienTai=diem_thay_doi)
                 LichSuTichDiem.objects.create(
                     MaKhachHang=kh,
-                    LoaiGiaoDich=loaigd,
+                    SoDiemThayDoi=diem_thay_doi,
                     ChiTietGiaoDich=lydo,
-                    SoDiemThayDoi=sodiem,
+                    LoaiGiaoDich=loaigd,
+                    NguoiThucHien=request.user.nhanvien
                 )
-                created_count += 1
+                success_count += 1
+        except Exception as e:
+            errors.append(f"{makh}: Lỗi - {str(e)}")
 
-        msg = f"Đã cập nhật thành công cho {created_count} khách hàng!"
-        return JsonResponse({'success': True, 'message': msg})
-
-    except ValueError:
-        return JsonResponse({'success': False, 'error': 'Số điểm không hợp lệ'})
-    except ValidationError as ve:
-        return JsonResponse({'success': False, 'error': str(ve)})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-
-@reception_required
-@require_POST
-def staff_loyalty_edit_history(request, magd):
-    try:
-        ls = get_object_or_404(LichSuTichDiem, MaGiaoDich=magd)
-    except Exception:
-        return JsonResponse({'success': False, 'error': 'Không tìm thấy giao dịch'})
-
-    # Quyền: lễ tân + quản lý
-    if request.user.nhanvien.VaiTro not in ['MANAGER', 'RECEPTION']:
-        return JsonResponse({'success': False, 'error': 'Không có quyền'})
-
-    # Chỉ sửa được giao dịch mới nhất của khách hàng
-    latest = LichSuTichDiem.objects.filter(MaKhachHang=ls.MaKhachHang).order_by('-NgayGiaoDich').first()
-    if not latest or ls.MaGiaoDich != latest.MaGiaoDich:
-        return JsonResponse({'success': False, 'error': 'Chỉ được sửa giao dịch mới nhất'})
-
-    try:
-        raw = int(request.POST.get('diem', 0))
-    except ValueError:
-        return JsonResponse({'success': False, 'error': 'Số điểm không hợp lệ'})
-
-    if abs(raw) <= 0:
-        return JsonResponse({'success': False, 'error': 'Số điểm phải lớn hơn 0'})
-
-    new_lydo = request.POST.get('lydo', '').strip() or 'Cập nhật thủ công'
-
-    # Giữ nguyên loại giao dịch: Tích điểm => dương, Quy đổi => âm
-    if ls.LoaiGiaoDich == 'Tích điểm':
-        new_sodiem = abs(raw)
+    # Trả kết quả
+    if success_count == len(makh_list):
+        return JsonResponse({
+            'success': True,
+            'message': f'Thành công {success_count} khách hàng'
+        })
+    elif success_count > 0:
+        return JsonResponse({
+            'success': False,
+            'message': f'Thành công {success_count}/{len(makh_list)}',
+            'error': '\n'.join(errors)
+        })
     else:
-        new_sodiem = -abs(raw)
+        return JsonResponse({
+            'success': False,
+            'error': '\n'.join(errors) or 'Có lỗi xảy ra'
+        })
 
-    kh = ls.MaKhachHang
-    with transaction.atomic():
-        # Cập nhật số điểm hiện tại
-        dtl = kh.diemtichluy
-        if not dtl:
-            return JsonResponse({'success': False, 'error': 'Khách hàng chưa có điểm tích lũy'})
-        old = ls.SoDiemThayDoi or 0
-        # Logic chính xác: trừ đi giá trị cũ, cộng giá trị mới
-        dtl.SoDiemHienTai = dtl.SoDiemHienTai - old + new_sodiem
-        dtl.save()
-
-        # Cập nhật giao dịch
-        ls.SoDiemThayDoi = new_sodiem
-        ls.ChiTietGiaoDich = new_lydo
-        ls.save()
-
-    return JsonResponse({'success': True, 'message': 'Đã sửa giao dịch thành công'})
-
-@manager_required
-@require_POST
-def staff_loyalty_delete_history(request, magd):
-    try:
-        ls = get_object_or_404(LichSuTichDiem, MaGiaoDich=magd)
-        # XÓA CHỈ NHẤT LỊCH SỬ: điểm hiện tại KHÔNG thay đổi (theo yêu cầu)
-        ls.delete()
-        return JsonResponse({'success': True, 'message': 'Đã xóa lịch sử giao dịch'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
 
 @staff_required  # chuyên viên
 def appointment_staff(request):
@@ -810,3 +802,4 @@ def appointment_staff(request):
     return render(request, "staffpanel/appointment_staff.html", {
         "lichhen": lichhen
     })
+

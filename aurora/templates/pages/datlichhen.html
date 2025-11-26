@@ -1,15 +1,9 @@
 {% extends "base.html" %}
-
+{% block body_class %}datlich-body{% endblock %}
 {% block content %}
 
 <style>
-    body {
-        font-family: "Segoe UI", sans-serif;
-        background-color: #faf6f0;
-        margin: 0;
-        padding: 0;
-        color: #333;
-    }
+
 
     /* --- Container --- */
     .container {
@@ -83,7 +77,7 @@
 <div class="container">
 
     <section id="dat-lich">
-        <h2>Đặt lịch</h2>
+        <h2>ĐẶT LỊCH</h2>
         <p class="subtitle">Chỉ một bước đặt lịch, bạn sẽ có ngay trải nghiệm tuyệt vời tại Aurora Spa</p>
 
         <form id="appointment-form" method="POST">

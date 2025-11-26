@@ -11,7 +11,7 @@ def action_icons(obj):
         f"{obj.pk}/change/",
         f"{obj.pk}/delete/",
     )
-action_icons.short_description = "Hành động"
+action_icons.short_description = "Thao tác"
 
 @admin.register(KhachHang)
 class KhachHangAdmin(admin.ModelAdmin):
@@ -79,18 +79,49 @@ class FAQAdmin(admin.ModelAdmin):
 
 @admin.register(LichSuTichDiem)
 class LichSuTichDiemAdmin(admin.ModelAdmin):
-    readonly_fields = ('MaGiaoDich',)  # Ẩn trong form (chỉ đọc)
+    readonly_fields = ('MaGiaoDich', 'NgayGiaoDich', 'NgayCapNhat', 'NguoiThucHien', 'HanhDong')
     list_display = (
         "MaGiaoDich", "MaKhachHang", "LoaiGiaoDich",
-        "SoDiemThayDoi", "NgayGiaoDich", "MaQuyDoi", action_icons
+        "formatted_diem", "NgayGiaoDich", "MaQuyDoi", "get_nguoi_thuc_hien", "HanhDong", action_icons
     )
-    autocomplete_fields = ['MaKhachHang']
     list_display_links = ("MaGiaoDich",)
-    search_fields = ("MaGiaoDich", "MaKhachHang__HoTen","MaKhachHang__MaKhachHang","MaKhachHang__user__username")
-    list_filter = ("LoaiGiaoDich", "NgayGiaoDich")
+    autocomplete_fields = ['MaKhachHang']
+    search_fields = (
+        "MaGiaoDich", "MaKhachHang__HoTen", "MaKhachHang__MaKhachHang",
+        "NguoiThucHien__MaNhanVien", "NguoiThucHien__user__username"
+    )
+    list_filter = ("LoaiGiaoDich", "NgayGiaoDich", "NguoiThucHien")
     ordering = ("-NgayGiaoDich",)
     date_hierarchy = "NgayGiaoDich"
-    list_per_page = 15
+    list_per_page = 20
+
+    def formatted_diem(self, obj):
+        if obj.SoDiemThayDoi > 0:
+            return f"+{obj.SoDiemThayDoi}"
+        elif obj.SoDiemThayDoi < 0:
+            return f"{obj.SoDiemThayDoi}"
+        return "0"
+    formatted_diem.short_description = "Điểm"
+
+    def get_nguoi_thuc_hien(self, obj):
+        if not obj.NguoiThucHien:
+            return "—"
+        nv = obj.NguoiThucHien
+        ten = nv.user.get_full_name().strip() or nv.user.username
+        return f"{nv.MaNhanVien} - {ten}"
+    get_nguoi_thuc_hien.short_description = "Người thực hiện"
+    get_nguoi_thuc_hien.admin_order_field = 'NguoiThucHien__MaNhanVien'
+
+    # ĐOẠN QUAN TRỌNG NHẤT – BẮT BUỘC CÓ 2 DÒNG NÀY
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            'MaKhachHang',
+            'NguoiThucHien__user',   # ← Dòng này là "thần chú" fix 99% trường hợp không hiện tên
+            'MaQuyDoi'
+        )
+
+    def save_model(self, request, obj, form, change):
+        obj.save(current_user=request.user)
 
 
 @admin.register(QuyDoiDiem)

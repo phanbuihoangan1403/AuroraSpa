@@ -6,26 +6,8 @@
 {% block extra_css %}
 <style>
     /* Reset và base styles */
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-    }
 
-    .card-header {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 0 1.5rem 0 !important;
-    }
 
-    .card-header h4 {
-        color: #374151;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-size: 0.875rem;
-        font-weight: 600;
-        margin-bottom: 1.5rem !important;
-    }
 
     /* Form search container */
     .search-container {
@@ -128,10 +110,7 @@
     }
 
     /* Table styles */
-    .card-body {
-        padding: 0 !important;
-        margin-top: 1rem;
-    }
+
 
     .table {
         background: white;
@@ -140,15 +119,7 @@
         overflow: hidden;
     }
 
-    .table thead th {
-        background-color: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-        color: #6b7280;
-        font-weight: 500;
-        font-size: 0.875rem;
-        padding: 0.875rem 1.25rem;
-        text-align: left;
-    }
+
 
     .table tbody td {
         padding: 1rem 1.25rem;
@@ -158,9 +129,7 @@
         vertical-align: middle;
     }
 
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
+
 
     .employee-row {
         cursor: pointer;
@@ -325,10 +294,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h4>Danh sách nhân viên</h4>
 
+    <div class="page-header">
+    <h1 class="page-title">DANH SÁCH NHÂN VIÊN</h1>
+</div>
+    <div>
         <div class="search-container">
             <!-- Form tìm kiếm bên trái -->
             <form method="get" class="search-left">

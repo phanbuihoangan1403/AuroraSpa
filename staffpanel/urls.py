@@ -56,11 +56,7 @@ urlpatterns = [
     path('loyalty/bulk-update/', views.staff_loyalty_update_ajax, name='staff_loyalty_bulk_update_ajax'),
     # → Dùng chung 1 view với update bình thường, vì nó nhận list makh[] tự động
 
-    # XÓA lịch sử giao dịch (CHỈ MANAGER ĐƯỢC GỌI)
-    path('loyalty/delete-history/<str:magd>/', views.staff_loyalty_delete_history, name='staff_loyalty_delete_history'),
 
-    # EDIT lịch sử giao dịch (CHỈ MANAGER, và chỉ cho giao dịch gần nhất)
-    path('loyalty/edit-history/<str:magd>/', views.staff_loyalty_edit_history, name='staff_loyalty_edit_history'),
     # Nhân viên + nhật ký
     path('employees/', views.staff_employee_list, name='staff_employee_list'),
     path('employees/add/', views.staff_register, name='staff_employee_add'),  # dùng chung register
