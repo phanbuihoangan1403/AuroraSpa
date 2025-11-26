@@ -4,18 +4,20 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">{{ title|default:"Cập nhật lịch hẹn" }}</h1>
+    <h1 class="page-title">
+        {{ title|default:"Cập nhật lịch hẹn" }}
+    </h1>
 </div>
 
 <div class="card" style="max-width:780px;">
-    <form method="post" action="{% if lh %}{% url 'staff_appointment_edit' lh.MaLichHen %}{% endif %}">
+    <form method="post" action="{% if lh %}{% url 'staff_appointment_edit' lh.MaLichHen %}{% else %}{% url 'staff_appointment_create' %}{% endif %}">
         {% csrf_token %}
 
         {% for field in form %}
             <div class="mb-4">
                 <label class="form-label pt-2">
                     {{ field.label_tag }}
-                    {% if field.field.required %}<span style="color:red;">*</span>{% endif %}
+                    {% if field.field.required %}<span style="color:red">*</span>{% endif %}
                 </label>
 
                 <div class="input-wrapper">
@@ -31,31 +33,63 @@
             </div>
         {% endfor %}
 
-        <br>
-        <div class="mt-5"></div>
         <div class="pt-5 border-top mt-5"></div>
-        <div class="pt-4 text-end">
+        <div class="appointment-actions text-end">
             {% if lh %}
-                <button type="submit" class="btn btn-success btn-lg px-5 py-3">💾 Lưu thay đổi</button>
-                <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">❌ Hủy</a>
+                <button type="submit" class="btn btn-success btn-lg px-5 py-3">Lưu thay đổi</button>
+                <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">Hủy</a>
             {% else %}
-                <button type="submit" class="btn btn-primary btn-lg px-5 py-3">➕ Thêm lịch hẹn</button>
-                <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">❌ Hủy</a>
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3">Thêm lịch hẹn</button>
+                <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">Hủy</a>
             {% endif %}
         </div>
     </form>
 </div>
 
+<!-- ==============================
+     SYSTEM FONT + SIZE CHUẨN 2025
+     ============================== -->
 <style>
-    /* ĐÚNG Y CHANG FILE GỐC CỦA BẠN - KHÔNG SỬA GÌ HẾT */
-    .card .form-label,
-    .card .form-control,
-    .card .form-select,
-    .card textarea.form-control,
-    .card small,
-    .card .text-danger,
-    .card .btn {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    /* System font sắc nét nhất 2025 */
+    body,
+    .page-title,
+    .card,
+    .table,
+    .btn,
+    .form-control,
+    .form-select,
+    .badge,
+    input,
+    select,
+    button,
+    a,
+    span,
+    label,
+    small,
+    .text-danger,
+    .text-muted {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                     "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+                     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
+    }
+
+    /* Tiêu đề trang: 32px + đậm */
+    .page-title {
+        font-size: 32px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+    }
+
+    /* Toàn bộ nội dung còn lại = 14px */
+    .card,
+    .form-label,
+    .form-control,
+    .form-select,
+    textarea.form-control,
+    small,
+    .text-danger,
+    .btn,
+    .text-muted {
         font-size: 14px !important;
     }
 
@@ -74,6 +108,7 @@
         border: 1px solid #ddd !important;
         border-radius: 8px !important;
         background: #fff;
+        font-size: 14px !important;
     }
 
     .input-wrapper textarea.form-control {
@@ -87,88 +122,108 @@
         border-radius: 8px !important;
     }
 
-    .btn-outline-secondary {
+    .btn-outline-secondary,
+    .btn-primary {
         border-radius: 8px !important;
     }
+        /* Đẩy 2 nút xuống xa hơn – tránh sát khung trạng thái */
+    .appointment-actions {
+        padding-top: 10px !important;  /* Có thể tăng lên 50–60 nếu muốn xa hơn */
+    }
+
 </style>
 
-<!-- ĐOẠN NÀY LÀ DUY NHẤT MÌNH THÊM - NHƯNG KHÔNG ĐỘNG GÌ VÀO GIAO DIỆN -->
+
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
 <script>
 $(function(){
-    // Django tự thêm id="id_TenField" sẵn rồi → mình dùng luôn, không cần sửa HTML
-    var $danhmuc = $('#id_DanhMucDichVu');
-    var $dichvu  = $('#id_DichVu');
-    var $ngay    = $('#id_NgayHen');
-    var $khunggio = $('#id_KhungGio');
+    const $danhmuc  = $('#id_DanhMucDichVu');
+    const $dichvu   = $('#id_DichVu');
+    const $ngay     = $('#id_NgayHen');
+    const $khunggio = $('#id_KhungGio');
 
-    // Load dịch vụ khi chọn danh mục
-    $danhmuc.change(function(){
-        var ma = $(this).val();
-        $dichvu.html('<option value="">-- Chọn dịch vụ --</option>');
-        if(ma){
-            $.get("{% url 'ajax_get_services' %}", {ma_danh_muc: ma}, function(data){
-                $.each(data, function(i, item){
-                    $dichvu.append('<option value="'+item.MaDichVu+'">'+item.TenDichVu+'</option>');
+    // Ngăn submit khi đổi ngày
+    $ngay.on('change', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        loadKhungGio($(this).val());
+    });
+
+    function loadKhungGio(date, selectedTime = '') {
+        $khunggio.empty().append('<option value="" disabled>-- Đang tải... --</option>');
+
+        if (!date) {
+            $khunggio.empty().append('<option value="" disabled>-- Chọn ngày trước --</option>');
+            return;
+        }
+
+        $.get("{% url 'available_times' %}", { date: date })
+        .done(function(res) {
+            $khunggio.empty();
+            $khunggio.append('<option value="" disabled>-- Chọn khung giờ --</option>');
+
+            if (res.available_times?.length) {
+                res.available_times.forEach(time => {
+                    const sel = (time === selectedTime.trim()) ? 'selected' : '';
+                    $khunggio.append(`<option value="${time}" ${sel}>${time}</option>`);
                 });
+            } else {
+                $khunggio.append('<option value="" disabled>Không còn khung giờ trống</option>');
+            }
+        })
+        .fail(() => {
+            $khunggio.empty().append('<option value="" disabled>Lỗi tải dữ liệu</option>');
+        });
+    }
+
+    // Load dịch vụ theo danh mục
+    $danhmuc.on('change', function() {
+        const ma = $(this).val();
+        $dichvu.empty().append('<option value="">-- Chọn dịch vụ --</option>');
+
+        if (ma) {
+            $.get("{% url 'ajax_get_services' %}", { ma_danh_muc: ma }, function(data) {
+                data.forEach(item =>
+                    $dichvu.append(`<option value="${item.MaDichVu}">${item.TenDichVu}</option>`)
+                );
             });
         }
     });
 
-    // Load khung giờ khi chọn ngày
-    $ngay.change(function(){
-        var date = $(this).val();
-        $khunggio.html('<option value="">-- Chọn khung giờ --</option>');
-        if(date){
-            var current = "{{ form.instance.KhungGio|default:''|escapejs }}";
-            $.get("{% url 'available_times' %}", {date: date}, function(data){
-                $.each(data.available_times, function(i, time){
-                    var sel = (time === current) ? 'selected' : '';
-                    $khunggio.append('<option value="'+time+'" '+sel+'>'+time+'</option>');
-                });
-            });
-        }
-    });
+    // Khi chỉnh sửa: load dữ liệu cũ
+    {% if form.instance.pk %}
+        const currentDanhMuc = "{{ form.instance.DichVu.MaDanhMuc_id|escapejs }}";
+        const currentDichVu  = "{{ form.instance.DichVu_id|escapejs }}";
+        const currentNgay    = "{{ form.instance.NgayHen|date:'Y-m-d'|escapejs }}";
+        const currentGio     = "{{ form.instance.KhungGio|escapejs }}".trim();
 
-    // Khi sửa lịch → tự động load lại dịch vụ + khung giờ cũ
-    if($danhmuc.val()){
-        $danhmuc.trigger('change');
-    }
-    if($ngay.val()){
-        $ngay.trigger('change');
-    }
+        if (currentDanhMuc) {
+            $danhmuc.val(currentDanhMuc).trigger('change');
+            setTimeout(() => $dichvu.val(currentDichVu), 500);
+        }
+        if (currentNgay) {
+            $ngay.val(currentNgay);
+            setTimeout(() => loadKhungGio(currentNgay, currentGio), 700);
+        }
+    {% endif %}
 });
 </script>
 
+<!-- Required fields -->
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-    const requiredFields = [
-        "id_HoTen",            // Họ tên
-        "id_Email",            // Email
-        "id_DienThoai",        // SĐT đúng theo model
-        "id_DanhMucDichVu",    // Danh mục
-        "id_DichVu",           // Dịch vụ
-        "id_NgayHen",          // Ngày hẹn
-        "id_KhungGio"          // Khung giờ
-    ];
-
-     requiredFields.forEach(id => {
+    ["id_HoTen","id_Email","id_DienThoai","id_DanhMucDichVu","id_DichVu","id_NgayHen","id_KhungGio"].forEach(id => {
         const el = document.getElementById(id);
-
         if (el) {
-            // Thêm required vào input
             el.setAttribute("required", "required");
-
-            // Tìm label tương ứng
-            const label = el.closest(".mb-4").querySelector("label");
-
+            const label = el.closest(".mb-4")?.querySelector("label");
             if (label && !label.innerHTML.includes('*')) {
-                label.innerHTML += ' <span style="color:red;">*</span>';
+                label.innerHTML += ' <span style="color:red">*</span>';
             }
         }
     });
 });
 </script>
-
 
 {% endblock %}

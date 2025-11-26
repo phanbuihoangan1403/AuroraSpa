@@ -299,6 +299,41 @@ def staff_service_delete(request, pk):
 
 @reception_required
 def staff_appointment_list(request):
+    # Lấy các bộ lọc hiện có
+    ngay = request.GET.get('ngay')
+    trang_thai = request.GET.get('trang_thai', '')
+    dich_vu = request.GET.get('dich_vu', '')
+    q = request.GET.get('q', '').strip()  # <-- THÊM DÒNG NÀY
+
+    # Bắt đầu từ tất cả lịch hẹn
+    lich_hen = LichHen.objects.select_related('DichVu').order_by('-MaLichHen')
+
+    # =================== TÌM KIẾM CHUNG ===================
+    if q:
+        lich_hen = lich_hen.filter(
+            Q(MaLichHen__icontains=q) |  # Tìm mã lịch hẹn
+            Q(HoTen__icontains=q) |  # Tìm tên khách
+            Q(DienThoai__icontains=q) |  # Tìm SĐT khách
+            Q(DichVu__TenDichVu__icontains=q)  # Tìm tên dịch vụ
+        )
+    # =====================================================
+
+    # Các bộ lọc cũ vẫn giữ nguyên
+    if ngay:
+        lich_hen = lich_hen.filter(NgayHen=ngay)
+    if trang_thai:
+        lich_hen = lich_hen.filter(TrangThai=trang_thai)
+    if dich_vu:
+        lich_hen = lich_hen.filter(DichVu_id=dich_vu)
+
+    context = {
+        'lich_hen': lich_hen,
+        'form': LichHenForm(),  # để lấy choices trạng thái
+        'dich_vu_list': DichVu.objects.all(),
+        'q': q,  # <-- Thêm để giữ lại từ khóa tìm kiếm trên thanh tìm kiếm
+    }
+    return render(request, 'staffpanel/appointment_list.html', context)
+
     ngay = request.GET.get('ngay')
     trang_thai = request.GET.get('trang_thai', '')
     dich_vu = request.GET.get('dich_vu', '')
@@ -385,33 +420,35 @@ def staff_appointment_edit(request, ma_lich_hen):
 # ====================== XÓA HÀNG riêng lẻ ======================
 
 
-@reception_required  # lễ tân vẫn được vào trang confirm delete để xem
+@reception_required
 def staff_appointment_delete(request, ma_lich_hen):
     lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
 
-    # ---------- KIỂM TRA QUYỀN XÓA (chỉ MANAGER hoặc superuser) ----------
+    # Chỉ MANAGER hoặc superuser mới được xóa
     if not (request.user.is_superuser or
             (hasattr(request.user, 'nhanvien') and request.user.nhanvien.VaiTro == 'MANAGER')):
         messages.error(request, "Bạn không có quyền xóa lịch hẹn.")
         return redirect('staff_appointment_list')
-    # -------------------------------------------------------------------
 
     if request.method == 'POST':
         ma = lh.MaLichHen
         ten_khach = lh.HoTen or "Khách lẻ"
-        lh.delete()
+        ngay_hen = lh.NgayHen
+        khunggio = lh.KhungGio
+
+        lh.delete()  # xóa trước
 
         NhatKyHoatDong.objects.create(
             nhan_vien=request.user.nhanvien,
             hanh_dong="Xóa lịch hẹn",
             doi_tuong='LichHen',
             object_id=ma,
-            mo_ta=f"{ten_khach} - {lh.NgayHen} {lh.KhungGio}"
+            mo_ta=f"{ten_khach} - {ngay_hen} {khunggio}"
         )
         messages.success(request, "Đã xóa lịch hẹn thành công!")
         return redirect('staff_appointment_list')
 
-    return render(request, 'staffpanel/appointment_confirm_delete.html', {'lh': lh})
+    return redirect('staff_appointment_list')
 
 # ====================== XÓA HÀNG LOẠT ======================
 from django.views.decorators.http import require_POST
@@ -454,6 +491,43 @@ def staff_appointment_bulk_delete(request):
         messages.warning(request, "Không thể xóa bất kỳ lịch hẹn nào.")
 
     return redirect('staff_appointment_list')
+
+
+# ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
+
+@require_GET
+def ajax_get_services(request):
+    ma_danh_muc = request.GET.get('ma_danh_muc')
+    if not ma_danh_muc:
+        return JsonResponse([], safe=False)
+
+    services = DichVu.objects.filter(MaDanhMuc_id=ma_danh_muc).values('MaDichVu', 'TenDichVu')
+    return JsonResponse(list(services), safe=False)
+
+
+# Trong views.py → ajax_available_times
+@require_GET
+def ajax_available_times(request):
+    date_str = request.GET.get('date')  # ví dụ: 2025-11-30
+    if not date_str:
+        return JsonResponse({'available_times': []})
+
+    try:
+        # Đảm bảo ngày hợp lệ
+        from datetime import datetime
+        datetime.strptime(date_str, '%Y-%m-%d')
+    except ValueError:
+        return JsonResponse({'available_times': []})
+
+    ALL_TIMES = [
+        "09:00 - 10:30", "10:30 - 12:00", "13:30 - 15:00",
+        "15:00 - 16:30", "16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"
+    ]
+
+    booked_times = LichHen.objects.filter(NgayHen=date_str).values_list('KhungGio', flat=True).distinct()
+    available = [t for t in ALL_TIMES if t not in booked_times]
+
+    return JsonResponse({'available_times': available})
 
 
 # ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
@@ -803,3 +877,28 @@ def appointment_staff(request):
         "lichhen": lichhen
     })
 
+import json
+@manager_required
+@login_required
+def staff_customer_bulk_delete(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "message": "Invalid request"}, status=400)
+
+    if request.user.nhanvien.VaiTro != "MANAGER":
+        return JsonResponse({"success": False, "message": "Bạn không có quyền xóa"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        ids = data.get("ids", [])
+
+        if not ids:
+            return JsonResponse({"success": False, "message": "Không có khách hàng nào"}, status=400)
+
+        with transaction.atomic():
+            from aurora.models import KhachHang
+            KhachHang.objects.filter(MaKhachHang__in=ids).delete()
+
+        return JsonResponse({"success": True})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "message": str(e)}, status=500)

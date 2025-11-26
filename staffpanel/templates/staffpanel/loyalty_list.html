@@ -156,21 +156,8 @@
         border-collapse: collapse;
     }
 
-    thead {
-        background: #f8fafc;
-    }
 
-    th, td {
-        padding: 8px 12px !important;
-        vertical-align: middle !important;
-    }
 
-   
-    td {
-        border-bottom: 1px solid #e2e8f0;
-        font-size: 14px;
-        color: #4a5568;
-    }
 
     tbody tr {
         height: 56px;
@@ -551,7 +538,7 @@
                 <th style="width:50px;text-align:center;">
                     <input type="checkbox" id="select-all" class="custom-checkbox">
                 </th>
-                <th style="width:100px;">Mã KH</th>
+                <th>Mã KH</th>
                 <th>Tên khách hàng</th>
                 <th style="width:140px;text-align:center;">Điểm hiện tại</th>
                 <th style="width:80px;text-align:center;">Số GD</th>
@@ -565,7 +552,7 @@
                 <td style="text-align:center;" onclick="event.stopPropagation()">
                     <input type="checkbox" class="custom-checkbox cb-item" value="{{ item.MaKhachHang.MaKhachHang }}" form="bulk-delete-form">
                 </td>
-                <td style="color:#4a5568;">{{ item.MaKhachHang.MaKhachHang }}</td>
+                <td>{{ item.MaKhachHang.MaKhachHang }}</td>
                 <td>{{ item.MaKhachHang.HoTen }}</td>
                 <td style="text-align:center;">
                     <span class="points-badge">{{ item.SoDiemHienTai }}</span>

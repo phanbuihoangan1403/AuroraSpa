@@ -4,430 +4,126 @@
 {% block title %}Quản lý khách hàng{% endblock %}
 {% block nav_customer %}active{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Reset và base styles */
-    .card {
-        border: none !important;
-        box-shadow: none !important;
-        background: transparent !important;
-    }
-
-
-
-    /* Form search container */
-    .search-container {
-        display: flex;
-        gap: 0.75rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .search-left {
-        display: flex;
-        gap: 0.75rem;
-        flex: 1;
-        max-width: 800px;
-    }
-
-    .search-right {
-        display: flex;
-        gap: 0.75rem;
-        margin-left: auto;
-    }
-
-    /* Input và Select styles */
-    .form-control, .form-select {
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 0.625rem 1rem;
-        font-size: 0.9375rem;
-        color: #374151;
-        background: white;
-        transition: all 0.2s;
-    }
-
-    .form-control {
-        flex: 1;
-        min-width: 280px;
-    }
-
-    .form-control::placeholder {
-        color: #9ca3af;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #0d9488;
-        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
-        outline: none;
-    }
-
-    .form-select {
-        min-width: 200px;
-        cursor: pointer;
-    }
-
-    /* Button styles */
-    .btn {
-        border-radius: 8px;
-        padding: 0.625rem 1.5rem;
-        font-size: 0.9375rem;
-        font-weight: 500;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-
-    /* Nút Tìm - Teal */
-    .btn-search {
-        background-color: #0d9488 !important;
-        color: white !important;
-    }
-
-    .btn-search:hover {
-        background-color: #0f766e !important;
-    }
-
-    /* Nút Xóa đã chọn - Xám nhạt */
-    .btn-delete {
-        background-color: #e5e7eb !important;
-        color: #6b7280 !important;
-    }
-
-    .btn-delete:hover:not(:disabled) {
-        background-color: #d1d5db !important;
-        color: #4b5563 !important;
-    }
-
-    .btn-delete:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    /* Nút Thêm khách hàng - Teal đậm */
-    .btn-add {
-        background-color: #0d9488 !important;
-        color: white !important;
-        text-decoration: none !important;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .btn-add:hover {
-        background-color: #0f766e !important;
-        color: white !important;
-    }
-
-    /* Table styles */
-    .card-body {
-        padding: 0 !important;
-        margin-top: 1rem;
-    }
-
-    .table {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-
-    .table tbody td {
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #f3f4f6;
-        color: #374151;
-        font-size: 0.9375rem;
-        vertical-align: middle;
-    }
-
-    .table tbody tr:last-child td {
-        border-bottom: none;
-    }
-
-    .customer-row {
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .customer-row:hover {
-        background-color: #f9fafb !important;
-    }
-
-    /* Checkbox styles */
-    .form-check-input, input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .form-check-input:checked, input[type="checkbox"]:checked {
-        background-color: #0d9488;
-        border-color: #0d9488;
-    }
-
-    .form-check-input:focus, input[type="checkbox"]:focus {
-        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
-    }
-
-    /* Badge điểm */
-    .badge-point {
-        background-color: #0d9488;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.8125rem;
-        font-weight: 500;
-    }
-
-    /* Button trong bảng */
-    .btn-sm {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-
-    .btn-outline-primary {
-        color: #7c3aed !important;
-        border-color: #7c3aed !important;
-        background: transparent;
-    }
-
-    .btn-outline-primary:hover {
-        color: white !important;
-        background-color: #7c3aed !important;
-        border-color: #7c3aed !important;
-    }
-
-    /* Modal styles */
-    #customerModal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 1050;
-        align-items: center;
-        justify-content: center;
-    }
-
-    #customerModal .modal-backdrop {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 1040;
-    }
-
-    #customerModal .modal-dialog {
-        z-index: 1050;
-        position: relative;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        max-width: 540px;
-        margin: 0 auto;
-        width: 90%;
-        animation: zoomIn 0.3s ease;
-    }
-
-    @keyframes zoomIn {
-        from {
-            opacity: 0;
-            transform: scale(0.9);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    .modal-header-custom {
-        background: #0d9488;
-        color: white;
-        padding: 1.25rem 1.5rem;
-        font-size: 1.125rem;
-        font-weight: 600;
-        border-radius: 12px 12px 0 0;
-    }
-
-    .modal-body-custom {
-        padding: 1.5rem;
-        line-height: 1.8;
-    }
-
-    .modal-body-custom > div {
-        margin-bottom: 0.75rem;
-    }
-
-    .modal-body-custom strong {
-        color: #6b7280;
-        font-weight: 500;
-        display: inline-block;
-        min-width: 140px;
-    }
-
-    .modal-footer-custom {
-        padding: 1rem 1.5rem;
-        background: #f9fafb;
-        border-top: 1px solid #e5e7eb;
-        text-align: right;
-        border-radius: 0 0 12px 12px;
-    }
-
-    .modal-footer-custom .btn {
-        padding: 0.5rem 1.25rem;
-    }
-
-    /* Section cho nút xóa hàng loạt */
-    .bulk-actions {
-        padding: 1rem 0 0.5rem 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .search-container {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .search-left {
-            max-width: 100%;
-            flex-direction: column;
-        }
-
-        .search-right {
-            margin-left: 0;
-            width: 100%;
-            justify-content: flex-start;
-        }
-
-        .form-control {
-            min-width: auto;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="card">
-    <div class="page-header">
-    <h1 class="page-title">QUẢN LÝ KHÁCH HÀNG</h1>
-    </div>
-    <div>
-        <div class="search-container">
-            <!-- Form tìm kiếm bên trái -->
-            <form method="get" class="search-left">
-                <input
-                    type="text"
-                    name="q"
-                    value="{{ q }}"
-                    class="form-control"
-                    placeholder="Tìm tên, SĐT, email, mã khách hàng..."
-                >
-                <select name="customer_type" class="form-select">
-                    <option value="">Tất cả khách hàng</option>
-                    <option value="online" {% if customer_type == 'online' %}selected{% endif %}>
-                        Đăng ký qua Web/App
-                    </option>
-                    <option value="offline" {% if customer_type == 'offline' %}selected{% endif %}>
-                        Tạo tại cửa hàng
-                    </option>
-                </select>
-                <button type="submit" class="btn btn-search">Tìm</button>
-            </form>
-
-            <!-- Các nút hành động bên phải -->
-            <div class="search-right">
-                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
-                <button id="bulkDelete" class="btn btn-delete" disabled>
-                    Xóa đã chọn
-                </button>
-                {% endif %}
-                <a href="{% url 'staff_customer_add' %}" class="btn btn-add">
-Thêm khách hàng mới
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                    <tr>
-                        {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
-                        <th style="width: 50px;">
-                            <input type="checkbox" id="selectAll">
-                        </th>
-                        {% endif %}
-                        <th>Mã KH</th>
-                        <th>User</th>
-                        <th>Họ tên</th>
-                        <th>SĐT</th>
-                        <th>Email</th>
-                        <th class="text-center">Điểm</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for kh in customers %}
-                    <tr class="customer-row"
-                        data-makh="{{ kh.MaKhachHang }}"
-                        data-json='{
-                            "makh": "{{ kh.MaKhachHang }}",
-                            "hoten": "{{ kh.HoTen|escapejs }}",
-                            "sdt": "{{ kh.SDT }}",
-                            "email": "{{ kh.Email|default:'' }}",
-                            "diachi": "{{ kh.DiaChi|default:''|escapejs }}",
-                            "ngaysinh": "{% if kh.NgaySinh %}{{ kh.NgaySinh|date:'d/m/Y' }}{% endif %}",
-                            "diem": {{ kh.diem_hien_tai|default:0 }},
-                            "user": "{% if kh.user %}{{ kh.user.username }}{% else %}—{% endif %}"
-                        }'>
-                        {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
-                        <td onclick="event.stopPropagation()">
-                            <input type="checkbox" class="row-checkbox" value="{{ kh.MaKhachHang }}">
-                        </td>
-                        {% endif %}
-                        <td>{{ kh.MaKhachHang }}</td>
-                        <td>{% if kh.user %}{{ kh.user.username }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
-                        <td>{{ kh.HoTen }}</td>
-                        <td>{{ kh.SDT }}</td>
-                        <td>{{ kh.Email|default:"—" }}</td>
-                        <td class="text-center">
-                            <span class="badge-point">{{ kh.diem_hien_tai|default:0 }}</span>
-                        </td>
-                        <td onclick="event.stopPropagation()">
-                            <button class="btn btn-sm btn-outline-primary"
-                                    onclick="editCustomer('{{ kh.MaKhachHang }}')">
-                                Sửa
-                            </button>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="{% if request.user.nhanvien.VaiTro == 'MANAGER' %}8{% else %}7{% endif %}"
-                            class="text-center py-5 text-muted">
-                            Chưa có khách hàng nào
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<div class="page-header">
+    <h1 class="page-title">DANH SÁCH KHÁCH HÀNG</h1>
 </div>
 
-<!-- MODAL CHI TIẾT -->
-<div id="customerModal">
-    <div class="modal-backdrop" onclick="closeCustomerDetail()"></div>
-    <div class="modal-dialog">
-        <div class="modal-header-custom">
+<!-- THANH TÌM KIẾM + NÚT THÊM + NÚT XÓA – GIỐNG HỆT TRANG NHÂN VIÊN -->
+<div style="margin-top:10px; display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap;">
+
+    <form method="get" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên, SĐT, email, mã khách hàng..."
+               style="padding:6px 10px; border-radius:8px; border:1px solid #d9cfc3; min-width:240px;">
+        <select name="customer_type" style="padding:6px 10px; border-radius:8px; border:1px solid #d9cfc3;">
+            <option value="">Tất cả khách hàng</option>
+            <option value="online" {% if customer_type == 'online' %}selected{% endif %}>Đăng ký Web/App</option>
+            <option value="offline" {% if customer_type == 'offline' %}selected{% endif %}>Tạo tại cửa hàng</option>
+        </select>
+        <button type="submit" class="btn btn-outline">Tìm</button>
+    </form>
+
+    <a href="{% url 'staff_customer_add' %}">
+        <button type="button" class="btn btn-primary">+ Thêm khách hàng</button>
+    </a>
+
+    {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+    <button id="bulkDelete" class="btn btn-danger"
+            style="background:#e53e3e;color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;
+                   opacity:0.5;cursor:not-allowed;" disabled>
+        Xóa đã chọn
+    </button>
+    {% endif %}
+</div>
+
+<!-- BẢNG KHÁCH HÀNG – GIỐNG HỆT TRANG NHÂN VIÊN -->
+<div class="card" style="margin-top:16px;">
+    <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
+        <thead style="background:#f8fafc;">
+            <tr>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <th style="width:50px;text-align:center;">
+                    <input type="checkbox" id="selectAll" class="custom-checkbox">
+                </th>
+                {% endif %}
+                <th style="width:90px;text-align:center;">Mã KH</th>
+                <th style="text-align:left;padding-left:12px;">Họ tên</th>
+                <th style="width:140px;text-align:center;">SĐT</th>
+                <th style="width:200px;text-align:left;">Email</th>
+                <th style="width:120px;text-align:center;">Loại KH</th>
+                <th style="width:100px;text-align:center;">Điểm</th>
+                <th style="width:140px;text-align:center;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for kh in customers %}
+            <tr style="height:56px;border-bottom:1px solid #e2e8f0;" class="customer-row"
+                data-json='{
+                    "makh": "{{ kh.MaKhachHang }}",
+                    "hoten": "{{ kh.HoTen|escapejs }}",
+                    "sdt": "{{ kh.SDT }}",
+                    "email": "{{ kh.Email|default:'' }}",
+                    "diachi": "{{ kh.DiaChi|default:''|escapejs }}",
+                    "ngaysinh": "{% if kh.NgaySinh %}{{ kh.NgaySinh|date:'d/m/Y' }}{% endif %}",
+                    "diem": {{ kh.diem_hien_tai|default:0 }},
+                    "user": "{% if kh.user %}{{ kh.user.username }}{% else %}—{% endif %}"
+                }'>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="row-checkbox custom-checkbox" value="{{ kh.MaKhachHang }}">
+                </td>
+                {% endif %}
+
+                <td style="text-align:center;">{{ kh.MaKhachHang }}</td>
+                <td style="padding-left:12px;">
+                    <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ kh.HoTen }}">
+                        {{ kh.HoTen }}
+                    </div>
+                </td>
+                <td style="text-align:center;">{{ kh.SDT }}</td>
+                <td style="padding-left:8px;color:#4a5568;">{{ kh.Email|default:"—" }}</td>
+                <td style="text-align:center;">
+                    <span class="status-badge {% if kh.user %}status-online{% else %}status-offline{% endif %}">
+                        {% if kh.user %}Web/App{% else %}Cửa hàng{% endif %}
+                    </span>
+                </td>
+                <td style="text-align:center;font-weight:600;color:#2d3748;">
+                    {{ kh.diem_hien_tai|default:0 }}
+                </td>
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <a href="#"
+                       onclick="event.preventDefault(); editCustomer('{{ kh.MaKhachHang }}')"
+                       style="color:#3182ce; font-weight:600; text-decoration:underline;">
+                        Sửa
+                    </a>
+                    <span style="color:#cbd5e0; margin:0 8px;">|</span>
+                    <a href="#"
+                       style="color:#e53e3e; font-weight:600;"
+                       onclick="event.preventDefault(); this.closest('tr').click()">
+                        Chi tiết
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if request.user.nhanvien.VaiTro == 'MANAGER' %}8{% else %}7{% endif %}"
+                    style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">
+                    Chưa có khách hàng nào
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL CHI TIẾT – GIỮ NGUYÊN HOÀN TOÀN -->
+<div id="customerModal" style="display:none;position:fixed;inset:0;z-index:1050;align-items:center;justify-content:center;">
+    <div class="modal-backdrop" onclick="closeCustomerDetail()" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);"></div>
+    <div style="background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:540px;width:90%;position:relative;z-index:10;animation:zoomIn .3s;">
+        <div style="background:#214134;color:white;padding:1.25rem 1.5rem;border-radius:12px 12px 0 0;font-size:1.125rem;font-weight:600;">
             Thông tin khách hàng
         </div>
-        <div class="modal-body-custom">
+        <div style="padding:1.5rem;line-height:1.8;">
             <div><strong>Mã KH:</strong> <span id="detail_makh" class="fw-bold text-primary"></span></div>
             <div><strong>User:</strong> <span id="detail_user"></span></div>
             <div><strong>Họ tên:</strong> <span id="detail_hoten" class="fw-bold"></span></div>
@@ -437,7 +133,7 @@ Thêm khách hàng mới
             <div><strong>Ngày sinh:</strong> <span id="detail_ngaysinh"></span></div>
             <div><strong class="text-success">Điểm tích lũy:</strong> <span id="detail_diem" class="fw-bold fs-5 text-success"></span> điểm</div>
         </div>
-        <div class="modal-footer-custom">
+        <div style="padding:1rem 1.5rem;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:right;border-radius:0 0 12px 12px;">
             <button class="btn btn-search me-2" onclick="viewLoyalty()">Xem lịch sử điểm</button>
             <button class="btn btn-search me-2" onclick="editFromModal()">Sửa thông tin</button>
             <button class="btn btn-delete" onclick="closeCustomerDetail()">Đóng</button>
@@ -445,10 +141,37 @@ Thêm khách hàng mới
     </div>
 </div>
 
+<style>
+    @keyframes zoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+
+    /* Đồng bộ hoàn toàn với trang nhân viên */
+    .custom-checkbox {
+        width: 14px!important; height: 14px!important; cursor: pointer; accent-color: #28a745; margin:0;
+    }
+    th, td { padding: 8px 12px!important; vertical-align: middle!important; font-size: 14px; }
+
+    .status-badge {
+        display: inline-block; min-width: 70px; padding: 3px 10px; border-radius: 999px;
+        font-size: 11.5px; font-weight: 600; text-align: center;
+    }
+    .status-online  { background:#d4edda; color:#155724; }
+    .status-offline { background:#e2e8f0; color:#718096; }
+
+    /* Nút chung – giống hệt trang nhân viên */
+    .btn-outline { background:transparent; border:1px solid #a0aec0; color:#4a5568; padding:6px 14px; border-radius:8px; font-weight:500; }
+    .btn-primary { background:#214134!important; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:600; }
+    .btn-primary:hover { background:#1a3429!important; }
+    .btn-danger { background:#e53e3e!important; color:white!important; border:none!important; transition:all .3s; }
+    .btn-danger:hover:not(:disabled) { background:#c53030!important; transform:translateY(-2px); box-shadow:0 6px 20px rgba(229,62,62,0.4); }
+    .btn-search { background:#214134; color:white; border:none; padding:8px 16px; border-radius:8px; }
+    .btn-delete { background:#e5e7eb; color:#6b7280; border:none; padding:8px 16px; border-radius:8px; }
+    .btn-delete:hover { background:#d1d5db; color:#4b5563; }
+</style>
+
 <script>
 let currentCustomer = null;
 
-// Click dòng → mở modal
+// Click dòng → mở modal (giữ nguyên chức năng cũ)
 document.querySelectorAll('.customer-row').forEach(row => {
     row.addEventListener('click', function(e) {
         if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON') return;
@@ -484,7 +207,7 @@ function viewLoyalty() {
     if (currentCustomer) window.location = '/staff/loyalty/?q=' + currentCustomer.makh;
 }
 
-// Checkbox + Xóa hàng loạt
+// Checkbox + Xóa hàng loạt – giữ nguyên fetch + JSON như cũ
 const selectAllBtn = document.getElementById('selectAll');
 if (selectAllBtn) {
     selectAllBtn.addEventListener('change', function() {
@@ -503,7 +226,37 @@ function toggleBulkDelete() {
         const count = document.querySelectorAll('.row-checkbox:checked').length;
         btn.disabled = count === 0;
         btn.textContent = count > 0 ? `Xóa đã chọn (${count})` : 'Xóa đã chọn';
+        btn.style.opacity = count > 0 ? '1' : '0.5';
+        btn.style.cursor = count > 0 ? 'pointer' : 'not-allowed';
     }
+}
+
+const bulkBtn = document.getElementById('bulkDelete');
+if (bulkBtn) {
+    bulkBtn.addEventListener('click', function () {
+        const selected = [...document.querySelectorAll('.row-checkbox:checked')].map(cb => cb.value);
+        if (selected.length === 0) return;
+
+        if (!confirm(`Bạn chắc chắn muốn xóa ${selected.length} khách hàng?`)) return;
+
+        fetch("{% url 'staff_customer_bulk_delete' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: JSON.stringify({ ids: selected })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert("Đã xóa thành công!");
+                location.reload();
+            } else {
+                alert("Lỗi: " + data.message);
+            }
+        });
+    });
 }
 
 // Đóng modal bằng ESC
@@ -511,7 +264,6 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeCustomerDetail();
 });
 
-// Khởi tạo
 toggleBulkDelete();
 </script>
 {% endblock %}

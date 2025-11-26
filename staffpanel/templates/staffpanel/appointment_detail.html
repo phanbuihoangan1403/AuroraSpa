@@ -2,11 +2,12 @@
 {% block title %}Chi tiết lịch hẹn #{{ lh.MaLichHen }}{% endblock %}
 
 {% block content %}
+
 <div class="page-header">
-    <h1>Chi tiết lịch hẹn #{{ lh.MaLichHen }}</h1>
+    <h1 class="page-title">Chi tiết lịch hẹn #{{ lh.MaLichHen }}</h1>
 </div>
 
-<div class="card" style="max-width:700px;">
+<div class="card appointment-detail-page" style="max-width:700px;">
     <table class="table table-bordered">
         <tr><th>Mã lịch hẹn</th><td>{{ lh.MaLichHen }}</td></tr>
         <tr><th>Khách hàng</th><td>{{ lh.HoTen|default:"-" }}</td></tr>
@@ -17,9 +18,57 @@
         <tr><th>Trạng thái</th><td>{{ lh.TrangThai }}</td></tr>
         <tr><th>Ghi chú</th><td>{{ lh.GhiChu|default:"Không có" }}</td></tr>
     </table>
-    <div style="margin-top: 24px;" >
-        <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline"><strong>← Quay lại danh sách</strong></a>
+
+    <div style="margin-top: 24px;">
+        <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline">
+            <strong>← Quay lại danh sách</strong>
+        </a>
     </div>
 </div>
-{% endblock %}
 
+<style>
+    /* Giới hạn phạm vi: chỉ trang có class appointment-detail-page */
+    .appointment-detail-page table th,
+    .appointment-detail-page table td {
+        color: #111 !important;          /* CHỮ MÀU ĐEN */
+        font-size: 14px !important;
+        padding: 12px 14px !important;
+        vertical-align: middle !important;
+        border: 1px solid #ddd !important;
+    }
+
+    .appointment-detail-page table th {
+        background: #f8f9fa;
+        font-weight: 600 !important;
+        width: 35%;
+        text-align: left;
+    }
+
+    .appointment-detail-page table tr:nth-child(even) {
+        background: #fcfcfc;
+    }
+
+    .appointment-detail-page {
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        background: #fff;
+    }
+
+    .appointment-detail-page .btn.btn-outline {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid #444;
+        font-weight: 600;
+        color: #111 !important;
+    }
+
+    .appointment-detail-page .btn.btn-outline:hover {
+        background: #111;
+        color: #fff !important;
+    }
+
+</style>
+
+
+{% endblock %}

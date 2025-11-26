@@ -3,523 +3,255 @@
 {% block title %}Quản lý nhân viên{% endblock %}
 {% block nav_employee %}active{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Reset và base styles */
-
-
-
-    /* Form search container */
-    .search-container {
-        display: flex;
-        gap: 0.75rem;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .search-left {
-        display: flex;
-        gap: 0.75rem;
-        flex: 1;
-        max-width: 700px;
-    }
-
-    .search-right {
-        display: flex;
-        gap: 0.75rem;
-        margin-left: auto;
-    }
-
-    /* Input và Select styles */
-    .form-control, .form-select {
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 0.625rem 1rem;
-        font-size: 0.9375rem;
-        color: #374151;
-        background: white;
-        transition: all 0.2s;
-    }
-
-    .form-control {
-        flex: 1;
-        min-width: 250px;
-    }
-
-    .form-control::placeholder {
-        color: #9ca3af;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #0d9488;
-        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
-        outline: none;
-    }
-
-    .form-select {
-        min-width: 180px;
-        cursor: pointer;
-    }
-
-    /* Button styles */
-    .btn {
-        border-radius: 8px;
-        padding: 0.625rem 1.5rem;
-        font-size: 0.9375rem;
-        font-weight: 500;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-
-    /* Nút Tìm - Teal */
-    .btn-search {
-        background-color: #0d9488 !important;
-        color: white !important;
-    }
-
-    .btn-search:hover {
-        background-color: #0f766e !important;
-    }
-
-    /* Nút Xóa đã chọn - Xám nhạt */
-    .btn-delete {
-        background-color: #e5e7eb !important;
-        color: #6b7280 !important;
-    }
-
-    .btn-delete:hover:not(:disabled) {
-        background-color: #d1d5db !important;
-        color: #4b5563 !important;
-    }
-
-    .btn-delete:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    /* Nút Thêm nhân viên - Teal đậm */
-    .btn-add {
-        background-color: #0d9488 !important;
-        color: white !important;
-    }
-
-    .btn-add:hover {
-        background-color: #0f766e !important;
-    }
-
-    /* Table styles */
-
-
-    .table {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-
-
-    .table tbody td {
-        padding: 1rem 1.25rem;
-        border-bottom: 1px solid #f3f4f6;
-        color: #374151;
-        font-size: 0.9375rem;
-        vertical-align: middle;
-    }
-
-
-
-    .employee-row {
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .employee-row:hover {
-        background-color: #f9fafb !important;
-    }
-
-    /* Checkbox styles */
-    .form-check-input {
-        width: 1rem;
-        height: 1rem;
-        border: 1px solid #d1d5db;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-
-    .form-check-input:checked {
-        background-color: #0d9488;
-        border-color: #0d9488;
-    }
-
-    .form-check-input:focus {
-        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
-    }
-
-    /* Badge styles */
-    .badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 6px;
-        font-size: 0.8125rem;
-        font-weight: 500;
-    }
-
-    .badge-manager {
-        background-color: #dc2626;
-        color: white;
-    }
-
-    .badge-content {
-        background-color: #2563eb;
-        color: white;
-    }
-
-    .badge-reception {
-        background-color: #16a34a;
-        color: white;
-    }
-
-    .badge-online {
-        background-color: #15803d;
-        color: white;
-    }
-
-    .badge-offline {
-        background-color: #6b7280;
-        color: white;
-    }
-
-    /* Action links */
-    .action-link {
-        color: #7c3aed !important;
-        text-decoration: none !important;
-        font-size: 0.9375rem;
-        transition: color 0.2s;
-    }
-
-    .action-link:hover {
-        color: #6d28d9 !important;
-    }
-
-    /* Modal styles */
-    #employeeModal {
-        display: none;
-        position: fixed;
-        inset: 0;
-        z-index: 1050;
-        background: rgba(0, 0, 0, 0.5);
-        align-items: center;
-        justify-content: center;
-    }
-
-    #employeeModal .modal-dialog {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        max-width: 540px;
-        width: 90%;
-        overflow: hidden;
-        animation: zoomIn 0.3s ease;
-    }
-
-    @keyframes zoomIn {
-        from {
-            opacity: 0;
-            transform: scale(0.9);
-        }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    .modal-header-custom {
-        background: #0d9488;
-        color: white;
-        padding: 1.25rem 1.5rem;
-        font-size: 1.125rem;
-        font-weight: 600;
-    }
-
-    .modal-body-custom {
-        padding: 1.5rem;
-        line-height: 1.8;
-    }
-
-    .modal-body-custom > div {
-        margin-bottom: 0.75rem;
-    }
-
-    .modal-body-custom strong {
-        color: #6b7280;
-        font-weight: 500;
-        display: inline-block;
-        min-width: 140px;
-    }
-
-    .modal-footer-custom {
-        padding: 1rem 1.5rem;
-        background: #f9fafb;
-        border-top: 1px solid #e5e7eb;
-        text-align: right;
-    }
-
-    .modal-footer-custom .btn {
-        padding: 0.5rem 1.25rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .search-container {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .search-left {
-            max-width: 100%;
-        }
-
-        .search-right {
-            margin-left: 0;
-            width: 100%;
-        }
-
-        .form-control {
-            min-width: auto;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-
-    <div class="page-header">
+<div class="page-header">
     <h1 class="page-title">DANH SÁCH NHÂN VIÊN</h1>
 </div>
-    <div>
-        <div class="search-container">
-            <!-- Form tìm kiếm bên trái -->
-            <form method="get" class="search-left">
-                <input
-                    type="text"
-                    name="q"
-                    value="{{ q }}"
-                    class="form-control"
-                    placeholder="Tìm nhân viên..."
-                >
-                <select name="vai_tro" class="form-select">
-                    <option value="">Tất cả vai trò</option>
-                    <option value="MANAGER" {% if current_vai_tro == 'MANAGER' %}selected{% endif %}>Quản lý</option>
-                    <option value="CONTENT" {% if current_vai_tro == 'CONTENT' %}selected{% endif %}>Nội dung</option>
-                    <option value="RECEPTION" {% if current_vai_tro == 'RECEPTION' %}selected{% endif %}>Lễ tân</option>
-                </select>
-                <button type="submit" class="btn btn-search">Tìm</button>
-            </form>
 
-            <!-- Các nút hành động bên phải -->
-            <div class="search-right">
-                <button id="bulkDelete" class="btn btn-delete" disabled>
-                    Xóa đã chọn
-                </button>
-                <a href="{% url 'staff_register' %}" class="btn btn-add">
-Thêm nhân viên
-                </a>
-            </div>
-        </div>
-    </div>
+<!-- THANH TÌM KIẾM + NÚT THÊM + NÚT XÓA – GIỐNG HỆT TRANG KHÁCH HÀNG -->
+<div style="margin-top:10px; display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap;">
+    <form method="get" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên, email, mã nhân viên..."
+               style="padding:6px 10px; border-radius:8px; border:1px solid #d9cfc3; min-width:240px;">
+        <select name="vai_tro" style="padding:6px 10px; border-radius:8px; border:1px solid #d9cfc3;">
+            <option value="">Tất cả vai trò</option>
+            <option value="MANAGER" {% if current_vai_tro == 'MANAGER' %}selected{% endif %}>Quản lý</option>
+            <option value="CONTENT" {% if current_vai_tro == 'CONTENT' %}selected{% endif %}>Nội dung</option>
+            <option value="RECEPTION" {% if current_vai_tro == 'RECEPTION' %}selected{% endif %}>Lễ tân</option>
+            <option value="STAFF" {% if current_vai_tro == 'STAFF' %}selected{% endif %}>Chuyên viên</option>
+        </select>
+        <button type="submit" class="btn btn-outline">Tìm</button>
+    </form>
 
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table mb-0">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">
-                            <input type="checkbox" id="selectAll" class="form-check-input">
-                        </th>
-                        <th>ID</th>
-                        <th>Họ tên</th>
-                        <th>Email</th>
-                        <th>Vai trò</th>
-                        <th>Trạng thái</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for e in employees %}
-                    <tr class="employee-row"
-                        data-manv="{{ e.MaNhanVien }}"
-                        data-hoten="{{ e.user.get_full_name|default:e.user.username }}"
-                        data-username="{{ e.user.username }}"
-                        data-email="{{ e.user.email|default:'' }}"
-                        data-vaitro="{{ e.get_VaiTro_display }}"
-                        data-vaitro-class="{{ e.VaiTro|lower }}"
-                        data-ngayvaolam="{{ e.NgayVaoLam|date:'d/m/Y' }}"
-                        data-online="{{ e.is_online|yesno:'1,0' }}"
-                        data-lastlogin="{% if e.user.last_login %}{{ e.user.last_login|date:'d/m/Y H:i' }}{% else %}Chưa đăng nhập{% endif %}">
-                        <td onclick="event.stopPropagation()">
-                            <input type="checkbox" class="form-check-input row-checkbox" value="{{ e.MaNhanVien }}">
-                        </td>
-                        <td>{{ e.MaNhanVien }}</td>
-                        <td>{{ e.user.get_full_name|default:e.user.username }}</td>
-                        <td>{{ e.user.email|default:"—" }}</td>
-                        <td>
-                            <span class="badge badge-{{ e.VaiTro|lower }}">{{ e.get_VaiTro_display }}</span>
-                        </td>
-                        <td>
-                            <span class="badge {{ e.is_online|yesno:'badge-online,badge-offline' }}">
-                                {% if e.is_online %}Online{% else %}Offline{% endif %}
-                            </span>
-                        </td>
-                        <td onclick="event.stopPropagation()">
-                            <a href="{% url 'staff_employee_edit' e.MaNhanVien %}" class="action-link">Sửa</a>
-                            <span class="text-muted mx-1">|</span>
-                            <a href="#" class="action-link" onclick="deleteEmployee(event, '{{ e.MaNhanVien }}', '{{ e.user.get_full_name|default:e.user.username }}')">Xóa</a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
-                            Chưa có nhân viên nào
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <a href="{% url 'staff_register' %}">
+        <button type="button" class="btn btn-primary">+ Thêm nhân viên</button>
+    </a>
+
+    {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+    <button id="bulkDelete" class="btn btn-danger"
+            style="opacity:0.5;cursor:not-allowed;" disabled>
+        Xóa đã chọn
+    </button>
+    {% endif %}
 </div>
 
-<!-- MODAL CHI TIẾT -->
-<div id="employeeModal">
-    <div class="modal-dialog">
-        <div class="modal-header-custom">
+<!-- BẢNG NHÂN VIÊN – GIỐNG HỆT TRANG KHÁCH HÀNG -->
+<div class="card" style="margin-top:16px;">
+    <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
+        <thead style="background:#f8fafc;">
+            <tr>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <th style="width:50px;text-align:center;">
+                    <input type="checkbox" id="selectAll" class="custom-checkbox">
+                </th>
+                {% endif %}
+                <th style="width:90px;text-align:center;">Mã NV</th>
+                <th style="text-align:left;padding-left:12px;">Họ tên</th>
+                <th style="width:200px;text-align:left;">Email</th>
+                <th style="width:120px;text-align:center;">Vai trò</th>
+                <th style="width:100px;text-align:center;">Trạng thái</th>
+                <th style="width:140px;text-align:center;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in employees %}
+            <tr style="height:56px;border-bottom:1px solid #e2e8f0;" class="employee-row"
+                data-json='{
+                    "manv": "{{ e.MaNhanVien }}",
+                    "hoten": "{{ e.user.get_full_name|default:e.user.username|escapejs }}",
+                    "username": "{{ e.user.username }}",
+                    "email": "{{ e.user.email|default:'' }}",
+                    "vaitro": "{{ e.get_VaiTro_display }}",
+                    "vaitro_class": "{{ e.VaiTro|lower }}",
+                    "ngayvaolam": "{{ e.NgayVaoLam|date:'d/m/Y' }}",
+                    "online": {{ e.is_online|yesno:"true,false" }},
+                    "lastlogin": "{% if e.user.last_login %}{{ e.user.last_login|date:'d/m/Y H:i' }}{% else %}Chưa đăng nhập{% endif %}"
+                }'>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="row-checkbox custom-checkbox" value="{{ e.MaNhanVien }}">
+                </td>
+                {% endif %}
+                <td style="text-align:center;">{{ e.MaNhanVien }}</td>
+                <td style="padding-left:12px;">
+                    <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ e.user.get_full_name|default:e.user.username }}">
+                        {{ e.user.get_full_name|default:e.user.username }}
+                    </div>
+                </td>
+                <td style="padding-left:8px;color:#4a5568;">{{ e.user.email|default:"—" }}</td>
+                <td style="text-align:center;">
+                    <span class="status-badge status-{{ e.VaiTro|lower }}">{{ e.get_VaiTro_display }}</span>
+                </td>
+                <td style="text-align:center;">
+                    <span class="status-badge {% if e.is_online %}status-online{% else %}status-offline{% endif %}">
+                        {% if e.is_online %}Online{% else %}Offline{% endif %}
+                    </span>
+                </td>
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <a href="{% url 'staff_employee_edit' e.MaNhanVien %}"
+                       style="color:#3182ce; font-weight:600; text-decoration:underline;">Sửa</a>
+                    <span style="color:#cbd5e0; margin:0 8px;">|</span>
+                    <a href="#" style="color:#e53e3e; font-weight:600;"
+                       onclick="event.preventDefault(); deleteEmployee('{{ e.MaNhanVien }}', '{{ e.user.get_full_name|default:e.user.username|escapejs }}')">
+                        Xóa
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if request.user.nhanvien.VaiTro == 'MANAGER' %}7{% else %}6{% endif %}"
+                    style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">
+                    Chưa có nhân viên nào
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL CHI TIẾT NHÂN VIÊN – GIỐNG HỆT TRANG KHÁCH HÀNG -->
+<div id="employeeModal" style="display:none;position:fixed;inset:0;z-index:1050;align-items:center;justify-content:center;">
+    <div class="modal-backdrop" onclick="closeEmployeeDetail()" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);"></div>
+    <div style="background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:540px;width:90%;position:relative;z-index:10;animation:zoomIn .3s;">
+        <div style="background:#0d9488;color:white;padding:1.25rem 1.5rem;border-radius:12px 12px 0 0;font-size:1.125rem;font-weight:600;">
             Thông tin nhân viên
         </div>
-        <div class="modal-body-custom">
-            <div><strong>Mã NV:</strong> <span id="e_manv" class="fw-bold text-primary"></span></div>
-            <div><strong>Họ tên:</strong> <span id="e_hoten" class="fw-bold"></span></div>
-            <div><strong>Tên đăng nhập:</strong> <span id="e_username"></span></div>
-            <div><strong>Email:</strong> <span id="e_email"></span></div>
-            <div><strong>Vai trò:</strong> <span id="e_vaitro"></span></div>
-            <div><strong>Ngày vào làm:</strong> <span id="e_ngayvaolam"></span></div>
-            <div><strong>Trạng thái:</strong> <span id="e_status" class="badge"></span></div>
-            <div><strong>Đăng nhập lần cuối:</strong> <span id="e_lastlogin"></span></div>
+        <div style="padding:1.5rem;line-height:1.8;">
+            <div><strong>Mã NV:</strong> <span id="detail_manv" class="fw-bold text-primary"></span></div>
+            <div><strong>Tên đăng nhập:</strong> <span id="detail_username"></span></div>
+            <div><strong>Họ tên:</strong> <span id="detail_hoten" class="fw-bold"></span></div>
+            <div><strong>Email:</strong> <span id="detail_email"></span></div>
+            <div><strong>Vai trò:</strong> <span id="detail_vaitro"></span></div>
+            <div><strong>Ngày vào làm:</strong> <span id="detail_ngayvaolam"></span></div>
+            <div><strong>Trạng thái:</strong> <span id="detail_status" class="status-badge"></span></div>
+            <div><strong>Đăng nhập lần cuối:</strong> <span id="detail_lastlogin"></span></div>
         </div>
-        <div class="modal-footer-custom">
-            <button class="btn btn-search me-2" id="editBtn">Sửa thông tin</button>
-            <button class="btn btn-delete" onclick="closeModal()">Đóng</button>
+        <div style="padding:1rem 1.5rem;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:right;border-radius:0 0 12px 12px;">
+            <button class="btn btn-search me-2" onclick="editFromModal()">Sửa thông tin</button>
+            <button class="btn btn-delete" onclick="closeEmployeeDetail()">Đóng</button>
         </div>
     </div>
 </div>
 
+<style>
+    @keyframes zoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+    .custom-checkbox{width:14px!important;height:14px!important;cursor:pointer;accent-color:#28a745;margin:0;}
+    th, td{padding:8px 12px!important;vertical-align:middle!important;font-size:14px;}
+    .status-badge{
+        display:inline-block;min-width:70px;padding:3px 10px;border-radius:999px;
+        font-size:11.5px;font-weight:600;text-align:center;
+    }
+    .status-manager{background:#fed7d7;color:#9b2c2c;}
+    .status-content{background:#bfdbfe;color:#1e40af;}
+    .status-reception{background:#d1fae5;color:#065f46;}
+    .status-staff {
+    background: #fffbeb;}
+    .status-online{background:#d4edda;color:#155724;}
+    .status-offline{background:#e2e8f0;color:#718096;}
+
+    /* Nút chung – giống hệt trang khách hàng */
+    .btn-outline{background:transparent;border:1px solid #a0aec0;color:#4a5568;padding:6px 14px;border-radius:8px;font-weight:500;}
+    .btn-primary{background:#214134!important;color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;}
+    .btn-primary:hover{background:#1a3429!important;}
+    .btn-danger{background:#e53e3e!important;color:white!important;border:none!important;transition:all .3s;}
+    .btn-danger:hover:not(:disabled){background:#c53030!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(229,62,62,0.4);}
+    .btn-search{background:#0d9488;color:white;border:none;padding:8px 16px;border-radius:8px;}
+    .btn-delete{background:#e5e7eb;color:#6b7280;border:none;padding:8px 16px;border-radius:8px;}
+    .btn-delete:hover{background:#d1d5db;color:#4b5563;}
+</style>
+
 <script>
-// Click dòng → mở modal
-document.querySelectorAll('.employee-row').forEach(row => {
-    row.addEventListener('click', function(e) {
-        if (e.target.closest('input[type="checkbox"], a, button')) return;
+    let currentEmployee = null;
 
-        const r = this;
-        document.getElementById('e_manv').textContent = r.dataset.manv;
-        document.getElementById('e_hoten').textContent = r.dataset.hoten;
-        document.getElementById('e_username').textContent = r.dataset.username;
-        document.getElementById('e_email').textContent = r.dataset.email || '—';
-        document.getElementById('e_vaitro').innerHTML = `<span class="badge badge-${r.dataset.vaitroClass}">${r.dataset.vaitro}</span>`;
-        document.getElementById('e_ngayvaolam').textContent = r.dataset.ngayvaolam;
-        document.getElementById('e_status').textContent = r.dataset.online === '1' ? 'Online' : 'Offline';
-        document.getElementById('e_status').className = r.dataset.online === '1' ? 'badge badge-online' : 'badge badge-offline';
-        document.getElementById('e_lastlogin').textContent = r.dataset.lastlogin;
+    // Click dòng → mở modal
+    document.querySelectorAll('.employee-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            const data = JSON.parse(this.dataset.json);
+            currentEmployee = data;
 
-        // Nút sửa
-        document.getElementById('editBtn').onclick = () => {
-            window.location = `/staff/employees/${r.dataset.manv}/edit/`;
-        };
+            document.getElementById('detail_manv').textContent = data.manv;
+            document.getElementById('detail_username').textContent = data.username;
+            document.getElementById('detail_hoten').textContent = data.hoten;
+            document.getElementById('detail_email').textContent = data.email || '—';
+            document.getElementById('detail_vaitro').innerHTML = `<span class="status-badge status-${data.vaitro_class}">${data.vaitro}</span>`;
+            document.getElementById('detail_ngayvaolam').textContent = data.ngayvaolam;
+            document.getElementById('detail_status').textContent = data.online ? 'Online' : 'Offline';
+            document.getElementById('detail_status').className = data.online ? 'status-badge status-online' : 'status-badge status-offline';
+            document.getElementById('detail_lastlogin').textContent = data.lastlogin;
 
-        document.getElementById('employeeModal').style.display = 'flex';
+            document.getElementById('employeeModal').style.display = 'flex';
+        });
     });
-});
 
-function closeModal() {
-    document.getElementById('employeeModal').style.display = 'none';
-}
-
-// Click nền hoặc ESC để đóng
-document.getElementById('employeeModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('employeeModal')) closeModal();
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
-});
-
-// Hàm xóa từng nhân viên
-function deleteEmployee(event, maNV, tenNV) {
-    event.preventDefault();
-    event.stopPropagation();
-
-    if (!confirm(`Bạn có chắc muốn xóa nhân viên "${tenNV}"?\nHành động này không thể hoàn tác!`)) {
-        return;
+    function closeEmployeeDetail() {
+        document.getElementById('employeeModal').style.display = 'none';
+    }
+    function editFromModal() {
+        if (currentEmployee) window.location = `/staff/employees/${currentEmployee.manv}/edit/`;
     }
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `/staff/employees/${maNV}/delete/`;
+    // Xóa từng nhân viên
+    function deleteEmployee(maNV, tenNV) {
+        if (!confirm(`Bạn có chắc muốn xóa nhân viên "${tenNV}"?\nHành động này không thể hoàn tác!`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/staff/employees/${maNV}/delete/`;
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+        form.appendChild(csrf);
+        document.body.appendChild(form);
+        form.submit();
+    }
 
-    const csrf = document.createElement('input');
-    csrf.type = 'hidden';
-    csrf.name = 'csrfmiddlewaretoken';
-    csrf.value = '{{ csrf_token }}';
-    form.appendChild(csrf);
+    // === CHECKBOX + XÓA HÀNG LOẠT ===
+    const selectAllBtn = document.getElementById('selectAll');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('change', function() {
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
+            toggleBulkDelete();
+        });
+    }
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.addEventListener('change', toggleBulkDelete));
 
-    document.body.appendChild(form);
-    form.submit();
-}
+    function toggleBulkDelete() {
+        const btn = document.getElementById('bulkDelete');
+        if (!btn) return;
+        const count = document.querySelectorAll('.row-checkbox:checked').length;
+        btn.disabled = count === 0;
+        btn.textContent = count > 0 ? `Xóa đã chọn (${count})` : 'Xóa đã chọn';
+        btn.style.opacity = count > 0 ? '1' : '0.5';
+        btn.style.cursor = count > 0 ? 'pointer' : 'not-allowed';
+    }
 
-// === CHECKBOX + XÓA HÀNG LOẠT ===
-const selectAll = document.getElementById('selectAll');
-const checkboxes = document.querySelectorAll('.row-checkbox');
-const bulkBtn = document.getElementById('bulkDelete');
+    const bulkBtn = document.getElementById('bulkDelete');
+    if (bulkBtn) {
+        bulkBtn.addEventListener('click', function () {
+            const selected = [...document.querySelectorAll('.row-checkbox:checked')].map(cb => cb.value);
+            if (selected.length === 0) return;
+            if (!confirm(`Xóa ${selected.length} nhân viên đã chọn?\nKhông thể khôi phục!`)) return;
 
-selectAll.addEventListener('change', () => {
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
-    updateBulk();
-});
-checkboxes.forEach(cb => cb.addEventListener('change', updateBulk));
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "staff_employee_bulk_delete" %}';
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            selected.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden'; input.name = 'ids[]'; input.value = id;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
 
-function updateBulk() {
-    const count = document.querySelectorAll('.row-checkbox:checked').length;
-    bulkBtn.disabled = count === 0;
-    bulkBtn.textContent = count > 0 ? `Xóa đã chọn (${count})` : 'Xóa đã chọn';
-}
-updateBulk(); // khởi tạo
-
-// XÓA HÀNG LOẠT
-bulkBtn.addEventListener('click', () => {
-    const checked = document.querySelectorAll('.row-checkbox:checked');
-    if (checked.length === 0) return alert('Chưa chọn nhân viên nào!');
-
-    if (!confirm(`Xóa ${checked.length} nhân viên này?\nKhông thể khôi phục!`)) return;
-
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '{% url "staff_employee_bulk_delete" %}';
-
-    const csrf = document.createElement('input');
-    csrf.type = 'hidden';
-    csrf.name = 'csrfmiddlewaretoken';
-    csrf.value = '{{ csrf_token }}';
-    form.appendChild(csrf);
-
-    checked.forEach(cb => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'ids[]';
-        input.value = cb.value;
-        form.appendChild(input);
+    // Đóng modal bằng ESC
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeEmployeeDetail();
     });
 
-    document.body.appendChild(form);
-    form.submit();
-});
+    toggleBulkDelete();
 </script>
 {% endblock %}
