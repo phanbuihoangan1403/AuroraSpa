@@ -7,7 +7,7 @@ from django.contrib import messages
 from .forms import RegisterForm
 from django.utils.timezone import localtime
 from aurora.models import Blog, DichVu, KhachHang, DiemTichLuy, LichSuTichDiem, FAQ, DanhMucDichVu
-
+from django.utils import timezone
 from datetime import datetime
 import json
 from django.http import JsonResponse #JAVA
@@ -252,7 +252,7 @@ def diem_view(request):
     rows = []
     for tx in history:
         rows.append({
-            "date": localtime(tx.NgayGiaoDich),
+            "date": timezone.localtime(tx.NgayGiaoDich),
             "detail": tx.ChiTietGiaoDich,
             "delta": tx.SoDiemThayDoi,
             "balance_after": running_balance

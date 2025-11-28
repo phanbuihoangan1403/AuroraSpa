@@ -228,6 +228,15 @@ class KhachHang(models.Model):
 
 # MODEL: LỊCH HẸN
 class LichHen(models.Model):
+    KHUNG_GIO_CHOICES = [
+        ("09:00 - 10:30", "09:00 - 10:30"),
+        ("10:30 - 12:00", "10:30 - 12:00"),
+        ("13:30 - 15:00", "13:30 - 15:00"),
+        ("15:00 - 16:30", "15:00 - 16:30"),
+        ("16:30 - 18:00", "16:30 - 18:00"),
+        ("18:00 - 19:30", "18:00 - 19:30"),
+        ("19:30 - 21:00", "19:30 - 21:00"),
+    ]
     # Trạng thái hợp lệ
     TRANG_THAI_CHOICES = [
         ('Đang chờ', 'Đang chờ'),
@@ -255,7 +264,7 @@ class LichHen(models.Model):
 
     # Thời gian
     NgayHen = models.DateField("Ngày đặt")
-    KhungGio = models.CharField("Khung giờ", max_length=13,null=True, blank=True)  # có thể thêm choices nếu muốn
+    KhungGio = models.CharField(max_length=30, choices=KHUNG_GIO_CHOICES, blank=True, null=True)
 
     # Mã giảm giá & trạng thái
     MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
@@ -283,6 +292,8 @@ class LichHen(models.Model):
                 so = 1
             self.MaLichHen = f"LH{so:03d}"
         super().save(*args, **kwargs)
+
+
 
 
 # MODEL: DANH MỤC DỊCH VỤ
@@ -409,6 +420,23 @@ class NhanVien(models.Model):
         ('RECEPTION', 'Nhân viên lễ tân'),
         ('STAFF', 'Chuyên viên'),
     ]
+    # aurora/models.py – thêm vào class NhanVien
+
+    NHOM_CHUYEN_VIEN_CHOICES = [
+        ('DA_MAT', 'Chăm sóc da mặt'),
+        ('MASSAGE', 'Massage thư giãn'),
+        ('NAIL', 'Chăm sóc tay và chân'),
+        ('TOAN_THAN', 'Liệu trình làm đẹp toàn thân'),
+    ]
+
+    NhomChuyenVien = models.CharField(
+        max_length=20,
+        choices=NHOM_CHUYEN_VIEN_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Nhóm chuyên môn của chuyên viên"
+    )
+
     VaiTro = models.CharField(max_length=20, choices=ROLE_CHOICES, default='RECEPTION')
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     MaNhanVien = models.CharField(max_length=5, primary_key=True, blank=True)

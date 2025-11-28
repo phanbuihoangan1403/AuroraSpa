@@ -135,10 +135,41 @@
     .lichhen-dropdown a:hover::after {
       display: none !important;
     }
+ /* Nút Zalo nổi góc phải */
+.zalo-button {
+    position: fixed;
+    bottom: 30px;       /* cách đáy 30px */
+    right: 30px;        /* cách phải 30px */
+    width: 60px;
+    height: 60px;
+    background-color: #0088ff; /* màu nền Zalo */
+    border-radius: 50%;  /* bo tròn */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+    z-index: 9999;      /* luôn nổi trên web */
+    text-decoration: none;
+}
+
+.zalo-button img {
+    width: 30px;
+    height: 30px;
+}
+
+.zalo-button:hover {
+    transform: scale(1.1);        /* zoom khi hover */
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+}
   </style>
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+<!-- Nút Zalo nổi góc phải -->
+<a href="https://zalo.me/0768066342" class="zalo-button">💬</a>
+
+
 <header>
   <div class="logo">
     <a href="{% url 'home' %}"><img src="https://i.ibb.co/67CYk7vv/image-removebg-preview-12.png" alt="Aurora"></a>
@@ -318,7 +349,6 @@
 
     <p style="text-align: center; margin-top: 40px; font-size: 13.8px; color: #e8f2f0; opacity: 0.95; letter-spacing: 0.6px; font-style: italic; text-shadow: 0 1px 3px rgba(0,0,0,0.2); padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
         © 2025 Aurora Spa. All rights reserved.
-    </p>
 </footer>
 
     <script>

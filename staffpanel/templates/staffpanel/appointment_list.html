@@ -67,20 +67,11 @@
         <input type="hidden" name="q" value="{{ request.GET.q }}">
         {% endif %}
 
-        <!-- ĐÃ THAY ĐỔI: Ô NGÀY HẸN ĐẸP + ICON LỊCH -->
         <div style="margin-bottom:18px;">
             <label style="display:block; margin-bottom:8px; font-size:14px; color:#374151; font-weight:600;">Ngày hẹn</label>
             <div style="position:relative;">
                 <input type="date" name="ngay" value="{{ request.GET.ngay }}" class="form-control"
-                       style="width:100%;
-                              padding:10px 12px;
-                              border-radius:8px;
-                              border:1px solid #d1d5db;
-                              font-size:14px;
-                              height:44px;
-                              box-sizing:border-box;
-                              appearance:none;
-                              -webkit-appearance:none;">
+                       style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:14px; height:44px; box-sizing:border-box;">
                 <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6b7280;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -150,7 +141,9 @@
                     <th>TRẠNG THÁI</th>
                     <th>KHÁCH HÀNG</th>
                     <th>DỊCH VỤ</th>
-                    <th style="width:140px; text-align:center;">HÀNH ĐỘNG</th>
+                    <!-- CỘT NHÂN VIÊN MỚI -->
+                    <th style="width:130px;">NHÂN VIÊN</th>
+                    <th style="width:160px; text-align:center;">HÀNH ĐỘNG</th>
                 </tr>
             </thead>
             <tbody>
@@ -163,14 +156,25 @@
                     <td>{{ lh.NgayHen|date:"d/m/Y" }}</td>
                     <td>{{ lh.KhungGio }}</td>
                     <td>
-                        {% if lh.TrangThai == "Đã đặt" %}<span class="badge bg-warning text-dark">Đã đặt</span>
-                        {% elif lh.TrangThai == "Đã xác nhận" %}<span class="badge bg-success">Đã xác nhận</span>
-                        {% elif lh.TrangThai == "Hoàn thành" %}<span class="badge bg-info">Hoàn thành</span>
+                        {% if lh.TrangThai == "Đang chờ" %}<span class="badge bg-warning text-dark">Đang chờ</span>
+                        {% elif lh.TrangThai == "Đang thực hiện" %}<span class="badge bg-primary">Đang thực hiện</span>
+                        {% elif lh.TrangThai == "Hoàn thành" %}<span class="badge bg-success">Hoàn thành</span>
                         {% elif lh.TrangThai == "Đã hủy" %}<span class="badge bg-danger">Đã hủy</span>
                         {% else %}<span class="badge bg-light text-dark">{{ lh.TrangThai }}</span>{% endif %}
                     </td>
                     <td>{{ lh.HoTen|default:"-" }}</td>
                     <td>{{ lh.DichVu.TenDichVu|default:"-" }}</td>
+
+                    <!-- CỘT NHÂN VIÊN -->
+                    <td>
+                        {% if lh.NhanVienThucHien %}
+                            <strong>{{ lh.NhanVienThucHien.MaNhanVien }}</strong><br>
+                            <small class="text-muted">{{ lh.NhanVienThucHien.user.get_full_name|default:"Chuyên viên" }}</small>
+                        {% else %}
+                            <span class="text-danger">Chưa phân công</span>
+                        {% endif %}
+                    </td>
+
                     <td style="text-align:center; white-space:nowrap;">
                         <a href="{% url 'staff_appointment_detail' lh.MaLichHen %}" style="color:#3182ce;font-weight:600;text-decoration:underline;">Xem</a>
                         <span style="color:#cbd5e0;margin:0 8px;">|</span>
@@ -185,7 +189,12 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="{% if request.user.is_superuser or request.user.nhanvien.VaiTro == 'MANAGER' %}9{% else %}8{% endif %}" style="text-align:center; padding:60px; color:#888;">Không có lịch hẹn nào.</td></tr>
+                <tr>
+                    <td colspan="{% if request.user.is_superuser or request.user.nhanvien.VaiTro == 'MANAGER' %}10{% else %}9{% endif %}"
+                        style="text-align:center; padding:60px; color:#888;">
+                        Không có lịch hẹn nào.
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

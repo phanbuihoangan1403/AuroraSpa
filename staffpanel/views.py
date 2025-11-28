@@ -528,35 +528,6 @@ def ajax_available_times(request):
     available = [t for t in ALL_TIMES if t not in booked_times]
 
     return JsonResponse({'available_times': available})
-
-
-# ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
-
-@require_GET
-def ajax_get_services(request):
-    ma_danh_muc = request.GET.get('ma_danh_muc')
-    if not ma_danh_muc:
-        return JsonResponse([], safe=False)
-
-    services = DichVu.objects.filter(MaDanhMuc_id=ma_danh_muc).values('MaDichVu', 'TenDichVu')
-    return JsonResponse(list(services), safe=False)
-
-
-@require_GET
-def ajax_available_times(request):
-    date_str = request.GET.get('date')
-    if not date_str:
-        return JsonResponse({'available_times': []})
-
-    ALL_TIMES = [
-        "09:00 - 10:30", "10:30 - 12:00", "13:30 - 15:00",
-        "15:00 - 16:30", "16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"
-    ]
-
-    booked_times = LichHen.objects.filter(NgayHen=date_str).values_list('KhungGio', flat=True)
-    available = [t for t in ALL_TIMES if t not in booked_times]
-
-    return JsonResponse({'available_times': available})
 # ========== KHÁCH HÀNG + ĐIỂM TÍCH LŨY (RECEPTION + MANAGER) ==========
 
 @reception_required
