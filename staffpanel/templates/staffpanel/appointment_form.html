@@ -1,29 +1,26 @@
 {% extends "staffpanel/base.html" %}
 {% block title %}{{ title|default:"Lịch hẹn" }}{% endblock %}
 {% block nav_appointment %}active{% endblock %}
-
 {% block content %}
 <div class="page-header">
     <h1 class="page-title">
         {{ title|default:"Cập nhật lịch hẹn" }}
     </h1>
 </div>
-
 <div class="card" style="max-width:780px;">
     <form method="post" action="{% if lh %}{% url 'staff_appointment_edit' lh.MaLichHen %}{% else %}{% url 'staff_appointment_create' %}{% endif %}">
         {% csrf_token %}
-
+        <!-- 1. CÁC FIELD THƯỜNG -->
         {% for field in form %}
+            {% if field.name != 'nhan_vien_display' and field.name != 'NhanVienThucHien' %}
             <div class="mb-4">
                 <label class="form-label pt-2">
                     {{ field.label_tag }}
                     {% if field.field.required %}<span style="color:red">*</span>{% endif %}
                 </label>
-
                 <div class="input-wrapper">
                     {{ field }}
                 </div>
-
                 {% if field.help_text %}
                     <small class="text-muted">{{ field.help_text }}</small>
                 {% endif %}
@@ -31,12 +28,23 @@
                     <div class="text-danger small mt-1">{{ field.errors }}</div>
                 {% endif %}
             </div>
+            {% endif %}
         {% endfor %}
 
-        <div class="pt-5 border-top mt-5"></div>
+<!-- 2. NHÂN VIÊN - RIÊNG BIỆT (CHỈ 1 LABEL) -->
+<div class="mb-4">
+    <label class="form-label pt-2">Nhân viên thực hiện: <span style="color: #6c757d; font-size: 13px;">(Tự động phân)</span></label>
+    <div class="input-wrapper">
+        {{ form.nhan_vien_display }}
+    </div>
+</div>
+
+        <!-- ĐÃ CHỈNH: Đưa nút lên sát field cuối, chỉ cách ~12px -->
+        <div class="border-top my-3"></div>
+
         <div class="appointment-actions text-end">
             {% if lh %}
-                <button type="submit" class="btn btn-success btn-lg px-5 py-3">Lưu thay đổi</button>
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3">Lưu thay đổi</button>
                 <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline-secondary btn-lg px-5 py-3 ms-3">Hủy</a>
             {% else %}
                 <button type="submit" class="btn btn-primary btn-lg px-5 py-3">Thêm lịch hẹn</button>
@@ -46,9 +54,6 @@
     </form>
 </div>
 
-<!-- ==============================
-     SYSTEM FONT + SIZE CHUẨN 2025
-     ============================== -->
 <style>
     /* System font sắc nét nhất 2025 */
     body,
@@ -72,15 +77,13 @@
                      "Helvetica Neue", Arial, "Noto Sans", sans-serif,
                      "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !important;
     }
-
-    /* Tiêu đề trang: 32px + đậm */
+    /* Tiêu đề trang */
     .page-title {
         font-size: 32px !important;
         font-weight: 700 !important;
         margin: 0 !important;
     }
-
-    /* Toàn bộ nội dung còn lại = 14px */
+    /* Font size chung */
     .card,
     .form-label,
     .form-control,
@@ -92,12 +95,11 @@
     .text-muted {
         font-size: 14px !important;
     }
-
     .input-wrapper {
         width: 100%;
         box-sizing: border-box;
+        display: block;
     }
-
     .input-wrapper .form-control,
     .input-wrapper .form-select,
     .input-wrapper textarea.form-control {
@@ -110,40 +112,32 @@
         background: #fff;
         font-size: 14px !important;
     }
-
     .input-wrapper textarea.form-control {
         min-height: 100px;
         resize: vertical;
     }
-
-    .btn-success {
-        background-color: #28a745 !important;
-        border: none !important;
-        border-radius: 8px !important;
+    /* Khoảng cách giữa các field */
+    .mb-4 {
+        margin-bottom: 1.5rem !important;
     }
-
+    .form-label {
+        margin-bottom: 10px !important;
+        display: block !important;
+    }
     .btn-outline-secondary,
     .btn-primary {
         border-radius: 8px !important;
     }
-        /* Đẩy 2 nút xuống xa hơn – tránh sát khung trạng thái */
-    .appointment-actions {
-        padding-top: 10px !important;  /* Có thể tăng lên 50–60 nếu muốn xa hơn */
-    }
-
 </style>
 
-
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-
 <script>
 $(function(){
-    const $danhmuc  = $('#id_DanhMucDichVu');
-    const $dichvu   = $('#id_DichVu');
-    const $ngay     = $('#id_NgayHen');
+    const $danhmuc = $('#id_DanhMucDichVu');
+    const $dichvu = $('#id_DichVu');
+    const $ngay = $('#id_NgayHen');
     const $khunggio = $('#id_KhungGio');
 
-    // Ngăn submit khi đổi ngày
     $ngay.on('change', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -152,17 +146,14 @@ $(function(){
 
     function loadKhungGio(date, selectedTime = '') {
         $khunggio.empty().append('<option value="" disabled>-- Đang tải... --</option>');
-
         if (!date) {
             $khunggio.empty().append('<option value="" disabled>-- Chọn ngày trước --</option>');
             return;
         }
-
         $.get("{% url 'available_times' %}", { date: date })
         .done(function(res) {
             $khunggio.empty();
             $khunggio.append('<option value="" disabled>-- Chọn khung giờ --</option>');
-
             if (res.available_times?.length) {
                 res.available_times.forEach(time => {
                     const sel = (time === selectedTime.trim()) ? 'selected' : '';
@@ -177,11 +168,9 @@ $(function(){
         });
     }
 
-    // Load dịch vụ theo danh mục
     $danhmuc.on('change', function() {
         const ma = $(this).val();
         $dichvu.empty().append('<option value="">-- Chọn dịch vụ --</option>');
-
         if (ma) {
             $.get("{% url 'ajax_get_services' %}", { ma_danh_muc: ma }, function(data) {
                 data.forEach(item =>
@@ -191,13 +180,11 @@ $(function(){
         }
     });
 
-    // Khi chỉnh sửa: load dữ liệu cũ
     {% if form.instance.pk %}
         const currentDanhMuc = "{{ form.instance.DichVu.MaDanhMuc_id|escapejs }}";
         const currentDichVu  = "{{ form.instance.DichVu_id|escapejs }}";
         const currentNgay    = "{{ form.instance.NgayHen|date:'Y-m-d'|escapejs }}";
         const currentGio     = "{{ form.instance.KhungGio|escapejs }}".trim();
-
         if (currentDanhMuc) {
             $danhmuc.val(currentDanhMuc).trigger('change');
             setTimeout(() => $dichvu.val(currentDichVu), 500);
@@ -225,5 +212,19 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
-
+<!-- Required fields -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    ["id_HoTen","id_Email","id_DienThoai","id_DanhMucDichVu","id_DichVu","id_NgayHen","id_KhungGio"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.setAttribute("required", "required");  <!-- Đây chính là chỗ ép trường thành bắt buộc -->
+            const label = el.closest(".mb-4")?.querySelector("label");
+            if (label && !label.innerHTML.includes('*')) {
+                label.innerHTML += ' <span style="color:red">*</span>';  <!-- Và thêm dấu sao đỏ -->
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

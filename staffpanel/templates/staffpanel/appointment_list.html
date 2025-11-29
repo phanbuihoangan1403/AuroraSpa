@@ -258,7 +258,7 @@
     checkboxes.forEach(cb => cb.addEventListener('change', updateBulkButton));
     document.getElementById('bulk-delete-form').addEventListener('submit', e => {
         const count = document.querySelectorAll('.appointment-checkbox:checked').length;
-        if (!confirm(`XÓA ${count} lịch hẹn đã chọn?\nHành động này không thể hoàn tác!`)) e.preventDefault();
+        if (!confirm(`Xóa ${count} lịch hẹn đã chọn?\nHành động này không thể hoàn tác!`)) e.preventDefault();
     });
     updateBulkButton();
     {% endif %}

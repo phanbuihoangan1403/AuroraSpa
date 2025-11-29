@@ -5,6 +5,18 @@ from aurora.models import (
     LichHen, KhachHang, DiemTichLuy
 )
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.utils import timezone  # Thêm import này để check ngày
+
+# 7 KHUNG GIỜ CỐ ĐỊNH
+KHUNG_GIO_CHOICES = [
+    ("09:00 - 10:30", "09:00 - 10:30"),
+    ("10:30 - 12:00", "10:30 - 12:00"),
+    ("13:30 - 15:00", "13:30 - 15:00"),
+    ("15:00 - 16:30", "15:00 - 16:30"),
+    ("16:30 - 18:00", "16:30 - 18:00"),
+    ("18:00 - 19:30", "18:00 - 19:30"),
+    ("19:30 - 21:00", "19:30 - 21:00"),
+]
 
 
 # ========================================
@@ -116,18 +128,26 @@ class DichVuForm(forms.ModelForm):
 # LỊCH HẸN FORM
 # ========================================
 class LichHenForm(forms.ModelForm):
+    KhungGio = forms.ChoiceField(
+        choices=KHUNG_GIO_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    nhan_vien_display = forms.CharField(  # Thêm field display read-only
+        label='Nhân viên thực hiện',
+        disabled=True,
+        required=False,
+        widget = forms.TextInput(attrs={
+            'class': 'form-control',  # ← THÊM DÒNG NÀY
+            'readonly': 'readonly',
+            'style': 'background-color: #f8f9fa; font-weight: 500; border-color: #ced4da;'
+        }))
     class Meta:
         model = LichHen
         fields = [
-            'HoTen',
-            'Email',
-            'DienThoai',
-            'DanhMucDichVu',
-            'DichVu',
-            'NgayHen',
-            'KhungGio',
-            'MaGiamGia',
-            'TrangThai'
+            'HoTen', 'Email', 'DienThoai', 'DanhMucDichVu', 'DichVu',
+            'NgayHen', 'KhungGio', 'MaGiamGia', 'TrangThai',
+            'NhanVienThucHien',  # Giữ để bind/save, nhưng ẩn
+            'nhan_vien_display'  # Thêm field display
         ]
         widgets = {
             'HoTen': forms.TextInput(attrs={'class': 'form-control'}),
@@ -136,10 +156,29 @@ class LichHenForm(forms.ModelForm):
             'DanhMucDichVu': forms.Select(attrs={'class': 'form-control'}),
             'DichVu': forms.Select(attrs={'class': 'form-control'}),
             'NgayHen': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'KhungGio': forms.TextInput(attrs={'class': 'form-control'}),
             'MaGiamGia': forms.TextInput(attrs={'class': 'form-control'}),
             'TrangThai': forms.Select(attrs={'class': 'form-control'}),
+            'NhanVienThucHien': forms.HiddenInput(),  # Ẩn hoàn toàn cho tất cả vai trò
         }
+
+    def __init__(self, *args, **kwargs):
+        # Nhận request từ view để biết ai đang đăng nhập (giữ nguyên)
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+
+        # Set initial cho field display
+        if self.instance.pk and self.instance.NhanVienThucHien:
+            nv = self.instance.NhanVienThucHien
+            display_text = f"{nv.MaNhanVien} - {nv.user.username if nv.user else 'Không xác định'}"
+            self.fields['nhan_vien_display'].initial = display_text
+        else:
+            self.fields['nhan_vien_display'].initial = 'Tự động phân nhân viên'
+
+    def clean_NgayHen(self):  # Thêm ràng buộc ngày không được qua
+        ngay_hen = self.cleaned_data.get('NgayHen')
+        if ngay_hen and ngay_hen < timezone.now().date():
+            raise ValidationError("Không thể chọn ngày đã qua.")
+        return ngay_hen
 
 
 # ========================================

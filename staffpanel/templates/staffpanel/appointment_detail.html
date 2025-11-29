@@ -15,6 +15,7 @@
         <tr><th>Dịch vụ</th><td>{{ lh.DichVu.TenDichVu|default:"-" }}</td></tr>
         <tr><th>Ngày hẹn</th><td>{{ lh.NgayHen|date:"d/m/Y" }}</td></tr>
         <tr><th>Khung giờ</th><td>{{ lh.KhungGio }}</td></tr>
+        <tr><th>Nhân viên thực hiện</th><td>{{ lh.NhanVienThucHien.MaNhanVien }} - {{ lh.NhanVienThucHien.user.username|default:"Chưa phân" }}</td></tr>
         <tr><th>Trạng thái</th><td>{{ lh.TrangThai }}</td></tr>
         <tr><th>Ghi chú</th><td>{{ lh.GhiChu|default:"Không có" }}</td></tr>
     </table>
@@ -56,15 +57,17 @@
     }
 
     .appointment-detail-page .btn.btn-outline {
-        padding: 10px 16px;
-        border-radius: 8px;
-        border: 1px solid #444;
-        font-weight: 600;
-        color: #111 !important;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #214134 !important;  /* ✅ MÀU XANH #214134 */
+    background-color: #214134 !important;  /* ✅ NỀN XANH #214134 */
+    color: #fff !important;                /* ✅ CHỮ TRẮNG */
+    font-weight: 600;
     }
 
     .appointment-detail-page .btn.btn-outline:hover {
-        background: #111;
+        background: #1a332a !important;        /* ✅ HOVER TỐI HƠN */
+        border-color: #1a332a !important;      /* ✅ BORDER HOVER */
         color: #fff !important;
     }
 

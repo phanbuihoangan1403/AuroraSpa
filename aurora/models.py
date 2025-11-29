@@ -265,7 +265,14 @@ class LichHen(models.Model):
     # Thời gian
     NgayHen = models.DateField("Ngày đặt")
     KhungGio = models.CharField(max_length=30, choices=KHUNG_GIO_CHOICES, blank=True, null=True)
-
+    NhanVienThucHien = models.ForeignKey(
+        'NhanVien',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lichhen_thuchien',
+        verbose_name="Nhân viên thực hiện"
+    )
     # Mã giảm giá & trạng thái
     MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
     TrangThai = models.CharField("Trạng thái", max_length=25, choices=TRANG_THAI_CHOICES, default='Đang chờ')
@@ -292,6 +299,9 @@ class LichHen(models.Model):
                 so = 1
             self.MaLichHen = f"LH{so:03d}"
         super().save(*args, **kwargs)
+
+
+
 
 
 

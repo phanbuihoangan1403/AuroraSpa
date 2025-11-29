@@ -27,7 +27,7 @@ from .permissions import manager_required, content_required, reception_required,
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
-
+from aurora.utils import phan_nhan_vien_tu_dong   # ← Hàm tự động phân nhân viên
 # ========== AUTH ==========
 
 def staff_login(request):
@@ -296,126 +296,159 @@ def staff_service_delete(request, pk):
 
 
 # ========== LỊCH HẸN (RECEPTION + MANAGER) ==========
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db import transaction
+from django.db.models import Q, Count
+from django.views.decorators.http import require_POST, require_GET
 
-@reception_required
-def staff_appointment_list(request):
-    # Lấy các bộ lọc hiện có
-    ngay = request.GET.get('ngay')
-    trang_thai = request.GET.get('trang_thai', '')
-    dich_vu = request.GET.get('dich_vu', '')
-    q = request.GET.get('q', '').strip()  # <-- THÊM DÒNG NÀY
-
-    # Bắt đầu từ tất cả lịch hẹn
-    lich_hen = LichHen.objects.select_related('DichVu').order_by('-MaLichHen')
-
-    # =================== TÌM KIẾM CHUNG ===================
-    if q:
-        lich_hen = lich_hen.filter(
-            Q(MaLichHen__icontains=q) |  # Tìm mã lịch hẹn
-            Q(HoTen__icontains=q) |  # Tìm tên khách
-            Q(DienThoai__icontains=q) |  # Tìm SĐT khách
-            Q(DichVu__TenDichVu__icontains=q)  # Tìm tên dịch vụ
-        )
-    # =====================================================
-
-    # Các bộ lọc cũ vẫn giữ nguyên
-    if ngay:
-        lich_hen = lich_hen.filter(NgayHen=ngay)
-    if trang_thai:
-        lich_hen = lich_hen.filter(TrangThai=trang_thai)
-    if dich_vu:
-        lich_hen = lich_hen.filter(DichVu_id=dich_vu)
-
-    context = {
-        'lich_hen': lich_hen,
-        'form': LichHenForm(),  # để lấy choices trạng thái
-        'dich_vu_list': DichVu.objects.all(),
-        'q': q,  # <-- Thêm để giữ lại từ khóa tìm kiếm trên thanh tìm kiếm
-    }
-    return render(request, 'staffpanel/appointment_list.html', context)
-
-    ngay = request.GET.get('ngay')
-    trang_thai = request.GET.get('trang_thai', '')
-    dich_vu = request.GET.get('dich_vu', '')
-
-    lich_hen = LichHen.objects.select_related('DichVu').order_by('-MaLichHen')
-
-    if ngay:
-        lich_hen = lich_hen.filter(NgayHen=ngay)
-    if trang_thai:
-        lich_hen = lich_hen.filter(TrangThai=trang_thai)
-    if dich_vu:
-        lich_hen = lich_hen.filter(DichVu_id=dich_vu)
-
-    context = {
-        'lich_hen': lich_hen,
-        'form': LichHenForm(),  # để lấy choices trạng thái
-        'dich_vu_list': DichVu.objects.all(),  # để đổ dropdown dịch vụ
-    }
-    return render(request, 'staffpanel/appointment_list.html', context)
+from aurora.models import (
+    NhanVien, FAQ, Blog, DichVu, LichHen,
+    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu
+)
+from .models import NhatKyHoatDong
+from .forms import (
+    StaffLoginForm, StaffRegisterForm, UserProfileForm, StaffProfileForm,
+    FAQForm, BlogForm, DichVuForm, LichHenForm,
+    KhachHangForm, DiemTichLuyForm
+)
+from .permissions import manager_required, content_required, reception_required, staff_required
 
 
-# ========== THÊM MỚI, XEM CHI TIẾT, XÓA LỊCH HẸN ==========
-
+# ====================== TẠO LỊCH MỚI ======================
+# TẠO MỚI
 @reception_required
 def staff_appointment_create(request):
     if request.method == 'POST':
-        form = LichHenForm(request.POST)
+        form = LichHenForm(request.POST, request=request)
         if form.is_valid():
-            lh = form.save(commit=False)
-            lh.save()
+            try:
+                with transaction.atomic():
+                    lich_hen = form.save(commit=False)
 
-            NhatKyHoatDong.objects.create(
-                nhan_vien=request.user.nhanvien,
-                hanh_dong="Tạo lịch hẹn mới",
-                doi_tuong='LichHen',
-                object_id=lh.MaLichHen,
-                mo_ta=f"{lh.HoTen} - {lh.NgayHen} {lh.KhungGio}"
-            )
-            messages.success(request, "Tạo lịch hẹn thành công!")
-            return redirect('staff_appointment_list')
+                    # TỰ ĐỘNG PHÂN NHÂN VIÊN dựa trên DanhMucDichVu
+                    ma_danh_muc = lich_hen.DichVu.MaDanhMuc.MaDanhMuc
+                    nhan_vien = phan_nhan_vien_tu_dong(
+                        ma_danh_muc=ma_danh_muc,
+                        ngay_hen=lich_hen.NgayHen,
+                        khung_gio=lich_hen.KhungGio
+                    )
+
+                    if not nhan_vien:
+                        raise ValidationError("Không có nhân viên nào available cho khung giờ này!")
+
+                    lich_hen.NhanVienThucHien = nhan_vien
+                    lich_hen.save()
+
+                    messages.success(request, f"Đã tạo lịch hẹn thành công! Nhân viên: {nhan_vien.MaNhanVien}")
+                    return redirect('staff_appointment_list')
+
+            except ValidationError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, f"Lỗi hệ thống: {str(e)}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{form[field].label}: {error}")
     else:
-        form = LichHenForm()
+        form = LichHenForm(request=request)
 
     return render(request, 'staffpanel/appointment_form.html', {
         'form': form,
-        'title': 'Tạo lịch hẹn mới',
-        'danh_muc_list': DanhMucDichVu.objects.all(),   # ← THÊM DÒNG NÀY
+        'lh': None,
+        'title': 'Thêm lịch hẹn mới'
     })
+
+
+@reception_required
+def staff_appointment_edit(request, ma_lich_hen):
+    lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
+
+    if request.method == 'POST':
+        form = LichHenForm(request.POST, instance=lh, request=request)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    lich_hen = form.save(commit=False)
+
+                    # LUÔN TỰ ĐỘNG PHÂN LẠI NHÂN VIÊN (kể cả khi edit)
+                    # vì có thể thay đổi danh mục/ngày/giờ
+                    ma_danh_muc = lich_hen.DichVu.MaDanhMuc.MaDanhMuc
+                    nhan_vien = phan_nhan_vien_tu_dong(
+                        ma_danh_muc=ma_danh_muc,
+                        ngay_hen=lich_hen.NgayHen,
+                        khung_gio=lich_hen.KhungGio
+                    )
+
+                    if not nhan_vien:
+                        raise ValidationError("Không có nhân viên nào available cho khung giờ này!")
+
+                    lich_hen.NhanVienThucHien = nhan_vien
+                    lich_hen.save()
+
+                    messages.success(request, f"Đã cập nhật lịch hẹn! Nhân viên mới: {nhan_vien.MaNhanVien}")
+                    return redirect('staff_appointment_list')
+
+            except ValidationError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, f"Lỗi hệ thống: {str(e)}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{form[field].label}: {error}")
+    else:
+        form = LichHenForm(instance=lh, request=request)
+
+    return render(request, 'staffpanel/appointment_form.html', {
+        'form': form,
+        'lh': lh,
+        'title': 'Cập nhật lịch hẹn'
+    })
+# ====================== DANH SÁCH LỊCH HẸN – ĐÃ CÓ CỘT NHÂN VIÊN ======================
+@reception_required
+def staff_appointment_list(request):
+    ngay = request.GET.get('ngay')
+    trang_thai = request.GET.get('trang_thai', '')
+    dich_vu = request.GET.get('dich_vu', '')
+    q = request.GET.get('q', '').strip()
+
+    lich_hen = LichHen.objects.select_related(
+        'DichVu', 'DanhMucDichVu', 'NhanVienThucHien__user'  # ← thêm để lấy tên nhân viên nhanh
+    ).order_by('-MaLichHen')
+
+    if q:
+        lich_hen = lich_hen.filter(
+            Q(MaLichHen__icontains=q) |
+            Q(HoTen__icontains=q) |
+            Q(DienThoai__icontains=q) |
+            Q(DichVu__TenDichVu__icontains=q)
+        )
+
+    if ngay:
+        lich_hen = lich_hen.filter(NgayHen=ngay)
+    if trang_thai:
+        lich_hen = lich_hen.filter(TrangThai=trang_thai)
+    if dich_vu:
+        lich_hen = lich_hen.filter(DichVu_id=dich_vu)
+
+    context = {
+        'lich_hen': lich_hen,
+        'form': LichHenForm(),
+        'dich_vu_list': DichVu.objects.all(),
+        'q': q,
+    }
+    return render(request, 'staffpanel/appointment_list.html', context)
+# ========== THÊM MỚI, XEM CHI TIẾT, XÓA LỊCH HẸN ==========
 
 
 @reception_required
 def staff_appointment_detail(request, ma_lich_hen):
     lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
     return render(request, 'staffpanel/appointment_detail.html', {'lh': lh})
-
-
-@reception_required
-def staff_appointment_edit(request, ma_lich_hen):
-    lh = get_object_or_404(LichHen, MaLichHen=ma_lich_hen)
-    if request.method == 'POST':
-        form = LichHenForm(request.POST, instance=lh)
-        if form.is_valid():
-            lh = form.save()
-            NhatKyHoatDong.objects.create(
-                nhan_vien=request.user.nhanvien,
-                hanh_dong="Cập nhật lịch hẹn",
-                doi_tuong='LichHen',
-                object_id=lh.MaLichHen,
-                mo_ta=f"{lh.HoTen} - {lh.NgayHen} {lh.KhungGio}"
-            )
-            messages.success(request, "Cập nhật lịch hẹn thành công!")
-            return redirect('staff_appointment_list')
-    else:
-        form = LichHenForm(instance=lh)
-
-    return render(request, 'staffpanel/appointment_form.html', {
-        'form': form,
-        'lh': lh,
-        'title': f'Cập nhật lịch hẹn #{lh.MaLichHen}',
-        'danh_muc_list': DanhMucDichVu.objects.all(),   # ← THÊM DÒNG NÀY
-    })
-
 
 # ====================== XÓA HÀNG riêng lẻ ======================
 
@@ -505,29 +538,55 @@ def ajax_get_services(request):
     return JsonResponse(list(services), safe=False)
 
 
-# Trong views.py → ajax_available_times
+
+
+# ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
+
+@require_GET
+def ajax_get_services(request):
+    ma_danh_muc = request.GET.get('ma_danh_muc')
+    if not ma_danh_muc:
+        return JsonResponse([], safe=False)
+
+    services = DichVu.objects.filter(MaDanhMuc_id=ma_danh_muc).values('MaDichVu', 'TenDichVu')
+    return JsonResponse(list(services), safe=False)
+
+
 @require_GET
 def ajax_available_times(request):
-    date_str = request.GET.get('date')  # ví dụ: 2025-11-30
+    date_str = request.GET.get('date')
     if not date_str:
         return JsonResponse({'available_times': []})
 
     try:
-        # Đảm bảo ngày hợp lệ
-        from datetime import datetime
-        datetime.strptime(date_str, '%Y-%m-%d')
-    except ValueError:
+        from datetime import date
+        selected_date = date.fromisoformat(date_str)
+    except:
         return JsonResponse({'available_times': []})
 
+    # 7 khung giờ cố định
     ALL_TIMES = [
         "09:00 - 10:30", "10:30 - 12:00", "13:30 - 15:00",
         "15:00 - 16:30", "16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"
     ]
 
-    booked_times = LichHen.objects.filter(NgayHen=date_str).values_list('KhungGio', flat=True).distinct()
-    available = [t for t in ALL_TIMES if t not in booked_times]
+    # Đếm số lịch hẹn từng khung giờ trong ngày
+    from django.db.models import Count
+    booked = (
+        LichHen.objects
+        .filter(NgayHen=selected_date)
+        .values('KhungGio')
+        .annotate(count=Count('KhungGio'))
+        .filter(count__gte=4)  # chỉ lấy những khung đã đủ 4+
+    )
 
-    return JsonResponse({'available_times': available})
+    # Lấy danh sách khung giờ đã đầy (4 trở lên)
+    full_times = {item['KhungGio'] for item in booked}
+
+    # Chỉ trả về những khung còn dưới 4 người
+    available_times = [t for t in ALL_TIMES if t not in full_times]
+
+    return JsonResponse({'available_times': available_times})
 # ========== KHÁCH HÀNG + ĐIỂM TÍCH LŨY (RECEPTION + MANAGER) ==========
 
 @reception_required

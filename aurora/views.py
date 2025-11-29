@@ -99,7 +99,7 @@ def get_service_by_category(request):
     ]
     return JsonResponse({'dich_vu_list': data})
 
-
+@login_required(login_url='login')
 ### 4. Đặt lịch hẹn
 def datlichhen_view(request):
     khachhang, created = KhachHang.objects.get_or_create(user=request.user)
