@@ -897,15 +897,7 @@ def staff_loyalty_update_ajax(request):
         })
 
 
-@staff_required  # chuyên viên
-def appointment_staff(request):
-    nv = request.user.nhanvien  # lấy nhân viên đang đăng nhập
 
-    lichhen = LichHen.objects.filter(NhanVienThucHien=nv)
-
-    return render(request, "staffpanel/appointment_staff.html", {
-        "lichhen": lichhen
-    })
 
 import json
 @manager_required

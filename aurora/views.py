@@ -23,47 +23,65 @@ def save_appointment(request):
         try:
             data = json.loads(request.body)
 
-            # Lấy thông tin từ request
             HoTen = data.get('hoten')
             Email = data.get('email')
             DienThoai = data.get('sdt')
             MaDanhMuc = data.get('danhmuc')
             MaDichVu = data.get('dichvu')
-            NgayHen = data.get('ngay')  # định dạng "YYYY-MM-DD"
+            NgayHen = data.get('ngay')  # YYYY-MM-DD
             KhungGio = data.get('gio')
             MaGiamGia = data.get('magiamgia', '')
 
             # Kiểm tra bắt buộc
             if not all([HoTen, Email, DienThoai, MaDichVu, NgayHen, KhungGio]):
-                return JsonResponse({'success': False, 'error': 'Thiếu dữ liệu bắt buộc'})
+                return JsonResponse({'success': False, 'error': 'Vui lòng điền đầy đủ thông tin bắt buộc'})
 
-            # Lấy dịch vụ và danh mục
-            dich_vu = DichVu.objects.get(MaDichVu=MaDichVu)
-            danh_muc = DanhMucDichVu.objects.get(MaDanhMuc=MaDanhMuc) if MaDanhMuc else None
+            # Lấy đối tượng dịch vụ
+            dich_vu = get_object_or_404(DichVu, MaDichVu=MaDichVu)
 
-            # Lưu lịch hẹn
+            # Chuyển ngày string → date object
+            ngay_hen_date = datetime.strptime(NgayHen, "%Y-%m-%d").date()
+
+            # TỰ ĐỘNG PHÂN NHÂN VIÊN – QUAN TRỌNG NHẤT
+            from aurora.utils import phan_nhan_vien_tu_dong
+            nhan_vien = phan_nhan_vien_tu_dong(
+                ma_danh_muc=dich_vu.MaDanhMuc.MaDanhMuc,
+                ngay_hen=ngay_hen_date,
+                khung_gio=KhungGio
+            )
+
+            # Tạo lịch hẹn với nhân viên đã được phân (hoặc NULL nếu kín lịch)
             lich_hen = LichHen.objects.create(
-                user=request.user,
+                user=request.user if request.user.is_authenticated else None,  # ← DÒNG QUAN TRỌNG NHẤT
                 HoTen=HoTen,
                 Email=Email,
                 DienThoai=DienThoai,
-                DanhMucDichVu=danh_muc,
                 DichVu=dich_vu,
-                NgayHen=datetime.strptime(NgayHen, "%Y-%m-%d").date(),
+                NgayHen=ngay_hen_date,
                 KhungGio=KhungGio,
-                MaGiamGia=MaGiamGia
+                MaGiamGia=MaGiamGia or None,
+                TrangThai='Đang chờ',  # hoặc 'Đã xác nhận' tùy bạn
+                NhanVienThucHien=nhan_vien  # ← ĐÂY LÀ CHỖ QUAN TRỌNG NHẤT
             )
 
-            return JsonResponse({'success': True, 'message': 'Đặt lịch thành công!', 'MaLichHen': lich_hen.MaLichHen})
+            # Trả về thông báo đẹp cho khách
+            if nhan_vien:
+                ten_nv = f"{nhan_vien.MaNhanVien} - {nhan_vien.user.get_full_name() or nhan_vien.user.username}"
+                msg = f"Đặt lịch thành công! Chúng tôi đã phân nhân viên <strong>{ten_nv}</strong> thực hiện cho bạn."
+            else:
+                msg = "Đặt lịch thành công! Hiện tại tất cả chuyên viên đều kín lịch, chúng tôi sẽ liên hệ sớm để sắp xếp."
 
-        except DichVu.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Dịch vụ không tồn tại'})
-        except DanhMucDichVu.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Danh mục không tồn tại'})
+            return JsonResponse({
+                'success': True,
+                'message': msg,
+                'MaLichHen': lich_hen.MaLichHen
+            })
+
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': 'Đã có lỗi xảy ra, vui lòng thử lại sau.'})
 
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
 
 
 ## 2. Lấy khung giờ còn trống

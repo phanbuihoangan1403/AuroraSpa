@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import admin
-from .models import KhachHang, NhanVien, DichVu, DanhMucDichVu, LichHen, DiemTichLuy, LichSuTichDiem, QuyDoiDiem, Blog, FAQ
+from .models import KhachHang, NhanVien, DichVu, DanhMucDichVu, LichHen, DiemTichLuy, LichSuTichDiem, Blog, FAQ
 from django.utils.html import format_html
 #TEMPLATE DÙNG CHUNG
 
@@ -82,7 +82,7 @@ class LichSuTichDiemAdmin(admin.ModelAdmin):
     readonly_fields = ('MaGiaoDich', 'NgayGiaoDich', 'NgayCapNhat', 'NguoiThucHien', 'HanhDong')
     list_display = (
         "MaGiaoDich", "MaKhachHang", "LoaiGiaoDich",
-        "formatted_diem", "NgayGiaoDich", "MaQuyDoi", "get_nguoi_thuc_hien", "HanhDong", action_icons
+        "formatted_diem", "NgayGiaoDich", "get_nguoi_thuc_hien", "HanhDong", action_icons
     )
     list_display_links = ("MaGiaoDich",)
     autocomplete_fields = ['MaKhachHang']
@@ -124,14 +124,7 @@ class LichSuTichDiemAdmin(admin.ModelAdmin):
         obj.save(current_user=request.user)
 
 
-@admin.register(QuyDoiDiem)
-class QuyDoiDiemAdmin(admin.ModelAdmin):
-    readonly_fields = ('MaQuyDoi',)  # Ẩn trong form (chỉ đọc)
-    list_display = ("MaQuyDoi", "GiaTriDiem", "GiaTriQuyDoi", action_icons)
-    list_display_links = ("MaQuyDoi",)
-    search_fields = ("MaQuyDoi",)
-    ordering = ("MaQuyDoi",)
-    list_per_page = 10
+
 
 #LỊCH HẸN
 @admin.register(LichHen)

@@ -66,7 +66,6 @@ urlpatterns = [
     path('logs/', views.staff_log_list, name='staff_log_list'),
 
 
-    path('appointments/my/', views.appointment_staff, name='appointment_staff'),
 path('customers/bulk-delete/', views.staff_customer_bulk_delete, name='staff_customer_bulk_delete'),
 
 ]

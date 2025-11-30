@@ -8,38 +8,6 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
 from django.db import transaction
-class QuyDoiDiem(models.Model):
-    MaQuyDoi = models.CharField(
-        primary_key=True,   # thêm khóa chính
-        max_length=5,
-        help_text='Mã quy đổi'
-    )
-    GiaTriDiem = models.IntegerField(
-        help_text='Giá trị điểm (số điểm cần để quy đổi)'
-    )
-    GiaTriQuyDoi = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text='Giá trị quy đổi tương ứng (VNĐ)'
-    )
-
-    class Meta:
-        db_table = 'QuyDoiDiem'
-        verbose_name = 'Quy Đổi Điểm'
-        verbose_name_plural = 'Quy Đổi Điểm'
-
-    def save(self, *args, **kwargs):
-        if not self.MaQuyDoi:
-            last = QuyDoiDiem.objects.order_by('-MaQuyDoi').first()
-            if last:
-                so = int(last.MaQuyDoi.replace("QD", "")) + 1
-            else:
-                so = 1
-            self.MaQuyDoi = f"QD{so:03d}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.MaQuyDoi
 
 class LichSuTichDiem(models.Model):
     MaGiaoDich = models.CharField(
@@ -67,13 +35,6 @@ class LichSuTichDiem(models.Model):
         help_text='Ngày giao dịch'
     )
     NgayCapNhat = models.DateTimeField(auto_now=True)
-    MaQuyDoi = models.ForeignKey(
-        'QuyDoiDiem',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="Chính sách quy đổi được áp dụng (nếu có)"
-    )
     MaKhachHang = models.ForeignKey(
         'KhachHang',
         on_delete=models.CASCADE,
