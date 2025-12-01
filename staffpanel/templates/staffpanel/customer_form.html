@@ -220,25 +220,6 @@
             {% csrf_token %}
 
             <div class="row">
-                <!-- MÃ KHÁCH HÀNG -->
-                <div class="col-md-6 form-row">
-                    <label class="form-label">
-                        Mã khách hàng
-                    </label>
-                    {% if form.instance.pk %}
-                        <!-- Đang SỬA -->
-                        <div class="code-display-edit">
-                            {{ form.instance.MaKhachHang }}
-                        </div>
-                        <small class="code-note d-block">Mã không thể thay đổi</small>
-                    {% else %}
-                        <!-- Đang THÊM MỚI -->
-                        <div class="code-display">
-                            Tự động tạo khi lưu
-                        </div>
-                        <small class="code-hint d-block">Hệ thống sẽ tự động tạo mã khách hàng</small>
-                    {% endif %}
-                </div>
 
                 <!-- HỌ TÊN -->
                 <div class="col-md-6 form-row">
