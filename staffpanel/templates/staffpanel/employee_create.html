@@ -1,7 +1,7 @@
 {% extends "staffpanel/base.html" %}
 {% load widget_tweaks %}
 
-{% block title %}Sửa nhân viên{% endblock %}
+{% block title %}Thêm nhân viên{% endblock %}
 {% block nav_employee %}active{% endblock %}
 
 {% block extra_css %}
@@ -63,11 +63,6 @@
         outline: none;
     }
 
-    .form-control[readonly] {
-        background-color: #f9fafb;
-        color: #6b7280;
-    }
-
     .form-row {
         margin-bottom: 1.5rem;
     }
@@ -100,18 +95,15 @@
         justify-content: flex-end;
         gap: 1rem;
     }
-
 </style>
 {% endblock %}
-
 
 {% block content %}
 <div class="form-container">
 
     <!-- Header -->
     <div class="page-header">
-        <h4>SỬA NHÂN VIÊN</h4>
-
+        <h4>THÊM NHÂN VIÊN MỚI</h4>
         <a href="{% url 'staff_employee_list' %}" class="btn btn-back">
             <i class="bi bi-arrow-left"></i> Quay lại
         </a>
@@ -119,80 +111,101 @@
 
     <!-- Form Card -->
     <div class="form-card">
-        <form method="post" novalidate>
+        <form method="post" id="form_create_employee" novalidate>
             {% csrf_token %}
+            {{ form.non_field_errors }}
 
             <div class="row">
 
-                <!-- Mã nhân viên -->
-                <div class="col-md-6 form-row">
-                    <label class="form-label">Mã nhân viên</label>
-                    <input type="text" class="form-control" value="{{ nhanvien.MaNhanVien }}" readonly>
-                </div>
-
                 <!-- Username -->
                 <div class="col-md-6 form-row">
-                    <label class="form-label">Tên đăng nhập</label>
-                    <input type="text" class="form-control" value="{{ nhanvien.user.username }}" readonly>
-                </div>
-
-                <!-- First name -->
-                <div class="col-md-6 form-row">
-                    <label class="form-label">Họ <span class="text-danger">*</span></label>
-                    <input type="text" name="first_name" class="form-control" value="{{ nhanvien.user.first_name }}" required>
-                </div>
-
-                <!-- Last name -->
-                <div class="col-md-6 form-row">
-                    <label class="form-label">Tên <span class="text-danger">*</span></label>
-                    <input type="text" name="last_name" class="form-control" value="{{ nhanvien.user.last_name }}" required>
+                    <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
+                    {{ form.username|add_class:"form-control" }}
+                    {{ form.username.errors }}
                 </div>
 
                 <!-- Email -->
                 <div class="col-md-6 form-row">
                     <label class="form-label">Email <span class="text-danger">*</span></label>
-                    <input type="email" name="email" class="form-control" value="{{ nhanvien.user.email }}" required>
+                    {{ form.email|add_class:"form-control" }}
+                    {{ form.email.errors }}
                 </div>
 
-                <!-- Role -->
+                <!-- Họ -->
+                <div class="col-md-6 form-row">
+                    <label class="form-label">Họ <span class="text-danger">*</span></label>
+                    {{ form.first_name|add_class:"form-control" }}
+                    {{ form.first_name.errors }}
+                </div>
+
+                <!-- Tên -->
+                <div class="col-md-6 form-row">
+                    <label class="form-label">Tên <span class="text-danger">*</span></label>
+                    {{ form.last_name|add_class:"form-control" }}
+                    {{ form.last_name.errors }}
+                </div>
+
+                <!-- Mật khẩu -->
+                <div class="col-md-6 form-row">
+                    <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
+                    {{ form.password1|add_class:"form-control" }}
+                    {{ form.password1.errors }}
+                </div>
+
+                <!-- Nhập lại mật khẩu -->
+                <div class="col-md-6 form-row">
+                    <label class="form-label">Nhập lại mật khẩu <span class="text-danger">*</span></label>
+                    {{ form.password2|add_class:"form-control" }}
+                    {{ form.password2.errors }}
+                </div>
+
+                <!-- Vai trò -->
                 <div class="col-md-6 form-row">
                     <label class="form-label">Vai trò <span class="text-danger">*</span></label>
-                    <select name="vai_tro" class="form-select" required>
-                        <option value="MANAGER" {% if nhanvien.VaiTro == 'MANAGER' %}selected{% endif %}>Quản lý</option>
-                        <option value="CONTENT" {% if nhanvien.VaiTro == 'CONTENT' %}selected{% endif %}>Nhân viên nội dung</option>
-                        <option value="RECEPTION" {% if nhanvien.VaiTro == 'RECEPTION' %}selected{% endif %}>Lễ tân</option>
-                        <option value="STAFF" {% if nhanvien.VaiTro == 'STAFF' %}selected{% endif %}>Chuyên viên</option>
-                    </select>
-                </div>
-                <!-- Nhóm chuyên viên -->
-                <div class="col-md-6 form-row">
-                    <label class="form-label">Nhóm chuyên viên</label>
-                    <select name="nhom_chuyen_vien" class="form-select">
-                        <option value="">--- Chọn nhóm ---</option>
-                        <option value="DA_MAT" {% if nhanvien.NhomChuyenVien == 'DA_MAT' %}selected{% endif %}>Chăm sóc da mặt</option>
-                        <option value="MASSAGE" {% if nhanvien.NhomChuyenVien == 'MASSAGE' %}selected{% endif %}>Massage thư giãn</option>
-                        <option value="NAIL" {% if nhanvien.NhomChuyenVien == 'NAIL' %}selected{% endif %}>Chăm sóc tay và chân</option>
-                        <option value="TOAN_THAN" {% if nhanvien.NhomChuyenVien == 'TOAN_THAN' %}selected{% endif %}>Liệu trình làm đẹp toàn thân</option>
-                    </select>
+                    {{ form.VaiTro|add_class:"form-select" }}
+                    {{ form.VaiTro.errors }}
                 </div>
 
-                <!-- Password -->
-                <div class="col-md-12 form-row">
-                    <label class="form-label">Đổi mật khẩu mới</label>
-                    <input type="password" name="new_password" class="form-control" placeholder="Để trống nếu không đổi">
+                <!-- Nhóm chuyên viên (ẩn hiện theo vai trò) -->
+                <div class="col-md-6 form-row" id="div_nhom_chuyen_vien" style="display:none;">
+                    <label class="form-label">Nhóm chuyên viên</label>
+                    {{ form.NhomChuyenVien|add_class:"form-select" }}
+                    {{ form.NhomChuyenVien.errors }}
                 </div>
 
             </div>
 
-            <!-- BUTTONS -->
+            <!-- Nút hành động -->
             <div class="form-actions">
                 <a href="{% url 'staff_employee_list' %}" class="btn btn-secondary-custom">Hủy</a>
                 <button type="submit" class="btn btn-primary-custom">
-                    <i class="bi bi-check-circle"></i> Lưu thay đổi
+                    <i class="bi bi-check-circle"></i> Tạo nhân viên
                 </button>
             </div>
-
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vaiTroSelect = document.getElementById('id_VaiTro');
+    const nhomDiv = document.getElementById('div_nhom_chuyen_vien');
+    const nhomSelect = document.getElementById('id_NhomChuyenVien');
+
+    function toggleNhomCV() {
+        if (vaiTroSelect.value === 'STAFF') {
+            nhomDiv.style.display = 'block';
+        } else {
+            nhomDiv.style.display = 'none';
+            if (nhomSelect) nhomSelect.value = '';
+        }
+    }
+
+    // Chạy lần đầu khi load trang
+    toggleNhomCV();
+
+    // Lắng nghe sự thay đổi
+    vaiTroSelect.addEventListener('change', toggleNhomCV);
+});
+</script>
 {% endblock %}

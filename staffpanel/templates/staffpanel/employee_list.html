@@ -23,7 +23,7 @@
         <button type="submit" class="btn btn-outline">Tìm</button>
     </form>
 
-    <a href="{% url 'staff_register' %}">
+    <a href="{% url 'staff_employee_add' %}">
         <button type="button" class="btn btn-primary">+ Thêm nhân viên</button>
     </a>
 
@@ -63,6 +63,7 @@
                     "email": "{{ e.user.email|default:'' }}",
                     "vaitro": "{{ e.get_VaiTro_display }}",
                     "vaitro_class": "{{ e.VaiTro|lower }}",
+                    "nhom": "{{ e.NhomChuyenVien }}",
                     "ngayvaolam": "{{ e.NgayVaoLam|date:'d/m/Y' }}",
                     "online": {{ e.is_online|yesno:"true,false" }},
                     "lastlogin": "{% if e.user.last_login %}{{ e.user.last_login|date:'d/m/Y H:i' }}{% else %}Chưa đăng nhập{% endif %}"
@@ -80,8 +81,15 @@
                 </td>
                 <td style="padding-left:8px;color:#4a5568;">{{ e.user.email|default:"—" }}</td>
                 <td style="text-align:center;">
-                    <span class="status-badge status-{{ e.VaiTro|lower }}">{{ e.get_VaiTro_display }}</span>
+                    {% if e.VaiTro == 'STAFF' %}
+                        {% with nhom=e.get_NhomChuyenVien_display %}
+                            <span class="status-badge status-staff">Chuyên viên{% if nhom %} - {{ nhom }}{% endif %}</span>
+                        {% endwith %}
+                    {% else %}
+                        <span class="status-badge status-{{ e.VaiTro|lower }}">{{ e.get_VaiTro_display }}</span>
+                    {% endif %}
                 </td>
+
                 <td style="text-align:center;">
                     <span class="status-badge {% if e.is_online %}status-online{% else %}status-offline{% endif %}">
                         {% if e.is_online %}Online{% else %}Offline{% endif %}
@@ -174,7 +182,25 @@
             document.getElementById('detail_username').textContent = data.username;
             document.getElementById('detail_hoten').textContent = data.hoten;
             document.getElementById('detail_email').textContent = data.email || '—';
-            document.getElementById('detail_vaitro').innerHTML = `<span class="status-badge status-${data.vaitro_class}">${data.vaitro}</span>`;
+            let vaitroText = '';
+            let vaitroClass = data.vaitro_class;
+
+            if (vaitroClass === 'staff') {
+                // Nếu là chuyên viên, ghép nhóm
+                const nhomMap = {
+                    'DA_MAT': 'Chăm sóc da mặt',
+                    'MASSAGE': 'Massage thư giãn',
+                    'NAIL': 'Chăm sóc tay và chân',
+                    'TOAN_THAN': 'Liệu trình làm đẹp toàn thân'
+                };
+                const nhomText = nhomMap[data.nhom] || '';
+                vaitroText = 'Chuyên viên' + (nhomText ? ' - ' + nhomText : '');
+            } else {
+                vaitroText = data.vaitro;
+            }
+
+            document.getElementById('detail_vaitro').innerHTML = `<span class="status-badge status-${vaitroClass}">${vaitroText}</span>`;
+
             document.getElementById('detail_ngayvaolam').textContent = data.ngayvaolam;
             document.getElementById('detail_status').textContent = data.online ? 'Online' : 'Offline';
             document.getElementById('detail_status').className = data.online ? 'status-badge status-online' : 'status-badge status-offline';

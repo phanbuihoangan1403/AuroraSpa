@@ -107,11 +107,6 @@
 
         {% with role=request.user.nhanvien.VaiTro %}
 
-        {# ===================== TỔNG QUAN (chỉ MANAGER) ===================== #}
-        {% if role == "MANAGER" %}
-            <div class="nav-section-title">Tổng quan</div>
-            <a href="{% url 'staff_dashboard' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Dashboard</a>
-        {% endif %}
 
         {# ===================== NỘI DUNG (MANAGER + CONTENT) ===================== #}
         {% if role == "MANAGER" or role == "CONTENT" %}
@@ -133,13 +128,9 @@
         {% if role == "MANAGER" %}
             <div class="nav-section-title">Nhân sự</div>
             <a href="{% url 'staff_employee_list' %}" class="nav-link {% block nav_employee %}{% endblock %}">Nhân viên</a>
-            <a href="{% url 'staff_log_list' %}" class="nav-link {% block nav_logs %}{% endblock %}">Nhật ký</a>
+
         {% endif %}
 
-        {# ===================== LỊCH HẸN CHUYÊN VIÊN (chỉ STAFF) ===================== #}
-        {% if role == 'STAFF' %}
-        <a href="{% url 'appointment_staff' %}" class="nav-link {% block nav_appointmentstaff %}{% endblock %}">Lịch hẹn của tôi</a>
-        {% endif %}
 
         {# ===================== TÀI KHOẢN (mọi vai trò đều thấy) ===================== #}
         <div class="nav-section-title">Tài khoản</div>

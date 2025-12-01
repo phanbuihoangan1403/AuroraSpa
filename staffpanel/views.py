@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
+from django.contrib.auth.models import User
 from aurora.models import (
     NhanVien, FAQ, Blog, DichVu, LichHen,
     KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu
@@ -30,9 +31,20 @@ from django.views.decorators.http import require_GET
 from aurora.utils import phan_nhan_vien_tu_dong   # ← Hàm tự động phân nhân viên
 # ========== AUTH ==========
 
+
+
 def staff_login(request):
+    # Nếu đã login rồi, chuyển hướng dựa trên VaiTro
     if request.user.is_authenticated and hasattr(request.user, 'nhanvien'):
-        return redirect('staff_dashboard')
+        vai_tro = request.user.nhanvien.VaiTro
+        if vai_tro == 'RECEPTION':
+            return redirect('staff_appointment_list')       # Trang lịch hẹn
+        elif vai_tro == 'CONTENT':
+            return redirect('staff_service_list')       # Trang dịch vụ
+        elif vai_tro == 'MANAGER':
+            return redirect('staff_employee_list')     # Trang nhân viên
+        else:
+            return redirect('staff_profile')       # Mặc định: hồ sơ
 
     if request.method == 'POST':
         form = StaffLoginForm(request, data=request.POST)
@@ -42,12 +54,20 @@ def staff_login(request):
                 messages.error(request, "Tài khoản này không thuộc nhân viên Aurora.")
             else:
                 login(request, user)
-                return redirect('staff_dashboard')
+                # Chuyển hướng dựa trên VaiTro
+                vai_tro = user.nhanvien.VaiTro
+                if vai_tro == 'RECEPTION':
+                    return redirect('staff_appointment_list')
+                elif vai_tro == 'CONTENT':
+                    return redirect('staff_service_list')
+                elif vai_tro == 'MANAGER':
+                    return redirect('staff_employee_list')
+                else:
+                    return redirect('staff_profile')  # Mặc định
     else:
         form = StaffLoginForm(request)
 
     return render(request, 'staffpanel/auth_login.html', {'form': form})
-
 
 @login_required
 def staff_logout(request):
@@ -88,25 +108,6 @@ def staff_profile(request):
         'user_form': user_form,
         'nv': nv,
     })
-
-
-# ========== DASHBOARD ==========
-
-@login_required
-def staff_dashboard(request):
-    nv = request.user.nhanvien
-
-    ctx = {
-        'nv': nv,
-        'tong_faq': FAQ.objects.count(),
-        'tong_blog': Blog.objects.count(),
-        'tong_dich_vu': DichVu.objects.count(),
-        'tong_lich_hen': LichHen.objects.count(),
-        'tong_khach_hang': KhachHang.objects.count(),
-        'nhan_vien_online': NhanVien.objects.filter(is_online=True),
-        'log_gan_day': NhatKyHoatDong.objects.select_related('nhan_vien')[:10],
-    }
-    return render(request, 'staffpanel/dashboard.html', ctx)
 
 
 # ========== FAQ (CONTENT + MANAGER) ==========
@@ -688,6 +689,39 @@ def staff_employee_list(request):
     })
 
 @manager_required
+def staff_employee_create(request):
+    if request.method == 'POST':
+        form = StaffRegisterForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+
+            # Kiểm tra username đã tồn tại chưa
+            if User.objects.filter(username=username).exists():
+                messages.error(request, f"Tên đăng nhập '{username}' đã tồn tại.")
+                return render(request, 'staffpanel/employee_create.html', {'form': form})
+
+            # Tạo user mới
+            user = User.objects.create_user(
+                username=username,
+                email=form.cleaned_data['email'],
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                password=form.cleaned_data['password1']
+            )
+
+            # Tạo NhanVien gán user
+            nv = form.save(commit=False)
+            nv.user = user
+            nv.save()
+
+            messages.success(request, "Đã tạo nhân viên mới thành công!")
+            return redirect('staff_employee_list')
+    else:
+        form = StaffRegisterForm()
+
+    return render(request, 'staffpanel/employee_create.html', {'form': form})
+
+@manager_required
 def staff_employee_edit(request, pk):
     nhanvien = get_object_or_404(NhanVien, MaNhanVien=pk)
     user = nhanvien.user
@@ -701,6 +735,7 @@ def staff_employee_edit(request, pk):
 
         # Cập nhật NhanVien
         nhanvien.VaiTro = request.POST.get('vai_tro')
+        nhanvien.NhomChuyenVien = request.POST.get('nhom_chuyen_vien', '')
         nhanvien.save()
 
         # Đổi mật khẩu nếu có nhập
@@ -749,10 +784,7 @@ def staff_employee_bulk_delete(request):
         messages.success(request, f'Đã xóa thành công {len(ids)} nhân viên!')
     return redirect('staff_employee_list')
 
-@manager_required
-def staff_log_list(request):
-    logs = NhatKyHoatDong.objects.select_related('nhan_vien')[:100]
-    return render(request, 'staffpanel/log_list.html', {'logs': logs})
+
 
 # ============== LOYALTY (RECEPTION + MANAGER) ==============
 from django.views.decorators.csrf import ensure_csrf_cookie

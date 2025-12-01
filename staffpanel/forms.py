@@ -30,39 +30,39 @@ class StaffLoginForm(AuthenticationForm):
 # ========================================
 # REGISTER FORM NHÂN VIÊN (CHO QUẢN LÝ)
 # ========================================
-class StaffRegisterForm(UserCreationForm):
-    email = forms.EmailField(required=True, label="Email")
-    vai_tro = forms.ChoiceField(choices=NhanVien.ROLE_CHOICES, label="Vai trò")
+class StaffRegisterForm(forms.ModelForm):
+    # Fields của User
+    username = forms.CharField(label="Tên đăng nhập", max_length=150, required=True)
+    email = forms.EmailField(label="Email", required=True)
+    first_name = forms.CharField(label="Họ", max_length=150, required=True)
+    last_name = forms.CharField(label="Tên", max_length=150, required=True)
+    password1 = forms.CharField(label="Mật khẩu", widget=forms.PasswordInput, required=True)
+    password2 = forms.CharField(label="Nhập lại mật khẩu", widget=forms.PasswordInput, required=True)
 
     class Meta:
-        model = User
-        fields = ("username", "email", "password1", "password2")
+        model = NhanVien
+        fields = ['VaiTro', 'NhomChuyenVien']
+        widgets = {
+            'VaiTro': forms.Select(),
+            'NhomChuyenVien': forms.Select(),
+        }
 
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data["email"]
-
-        if commit:
-            user.save()
-
-            NhanVien.objects.create(
-                user=user,
-                VaiTro=self.cleaned_data['vai_tro']
-            )
-
-        return user
-
-
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('password1') != cleaned_data.get('password2'):
+            raise forms.ValidationError("Mật khẩu không trùng khớp")
+        return cleaned_data
 # ========================================
 # HỒ SƠ NHÂN VIÊN
 # ========================================
 class StaffProfileForm(forms.ModelForm):
     class Meta:
-        model = NhanVien
-        fields = ['MaNhanVien', 'VaiTro']
+        model = User
+        fields = ['first_name', 'last_name', 'email']
         widgets = {
-            'MaNhanVien': forms.TextInput(attrs={'readonly': True}),
-            'VaiTro': forms.Select(attrs={'disabled': True}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Họ'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tên'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
         }
 
 

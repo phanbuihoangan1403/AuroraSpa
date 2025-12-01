@@ -9,7 +9,7 @@ urlpatterns = [
     path('profile/', views.staff_profile, name='staff_profile'),
 
     # dashboard
-    path('', views.staff_dashboard, name='staff_dashboard'),
+    path('', views.staff_profile, name='staff_dashboard'),
 
     # FAQ
     path('faq/', views.staff_faq_list, name='staff_faq_list'),
@@ -59,11 +59,11 @@ urlpatterns = [
 
     # Nhân viên + nhật ký
     path('employees/', views.staff_employee_list, name='staff_employee_list'),
-    path('employees/add/', views.staff_register, name='staff_employee_add'),  # dùng chung register
+    path('employees/add/', views.staff_employee_create, name='staff_employee_add'),  # dùng chung register
     path('employees/<str:pk>/edit/', views.staff_employee_edit, name='staff_employee_edit'),
     path('employees/<str:pk>/delete/', views.staff_employee_delete, name='staff_employee_delete'),
     path('employees/bulk-delete/', views.staff_employee_bulk_delete, name='staff_employee_bulk_delete'),
-    path('logs/', views.staff_log_list, name='staff_log_list'),
+#   path('logs/', views.staff_log_list, name='staff_log_list'),
 
 
 path('customers/bulk-delete/', views.staff_customer_bulk_delete, name='staff_customer_bulk_delete'),
