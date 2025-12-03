@@ -114,42 +114,116 @@ def tao_diem_tich_luy(sender, instance, created, **kwargs):
         )
 
 
-class FAQ (models.Model):
-    MaCauHoi = models.CharField(
-        max_length=5,
-        primary_key=True,
-        help_text='Mã câu hỏi'
-    )
-    MaNhanVien=models. ForeignKey('NhanVien', on_delete=models.CASCADE, help_text='Mã nhân viên')
-    CauHoi=models.CharField(
-        max_length=300,
-        help_text='Cau Hoi'
-    )
-    CauTraLoi=models.TextField(
-        help_text='Câu trả lời'
-    )
-    NgayCapNhat=models.DateTimeField(
-        auto_now=True,
-        help_text='Ngày cập nhật gần nhất'
-    )
-    TrangThaiHienThi=models.BooleanField(default=True, help_text="Trạng thái hiển thị")
+#==============================
+#       DANH MỤC FAQ
+# ==============================
+class DanhMucFAQ(models.Model):
+   MaDanhMuc = models.CharField(max_length=10, primary_key=True, editable=False)
+   TenDanhMuc = models.CharField(max_length=200, unique=True)
+   MoTaDanhMuc = models.TextField(blank=True, null=True)
+   TrangThaiHienThi = models.BooleanField(default=True)
+   NgayCapNhat = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        db_table = 'FAQ'
-        verbose_name = 'FAQ'
-        verbose_name_plural = 'FAQ'
 
-    def save(self, *args, **kwargs):
-        if not self.MaCauHoi:
-            last = FAQ.objects.order_by('-MaCauHoi').first()
-            if last:
-                so = int(last.MaCauHoi.replace("CH", "")) + 1
-            else:
-                so = 1
-            self.MaCauHoi = f"CH{so:03d}"
-        super().save(*args, **kwargs)
-    def __str__(self):
-        return f"{self.MaCauHoi} - {self.CauHoi}"
+   class Meta:
+       db_table = "DanhMucFAQ"
+       verbose_name_plural = "Danh mục FAQ"
+       ordering = ['MaDanhMuc']
+
+
+   def save(self, *args, **kwargs):
+       # Tự sinh mã danh mục DM0001
+       if not self.MaDanhMuc:
+           last = DanhMucFAQ.objects.order_by('-MaDanhMuc').first()
+           if last and last.MaDanhMuc.startswith("DM"):
+               try:
+                   num = int(last.MaDanhMuc[2:])
+               except:
+                   num = 0
+           else:
+               num = 0
+
+
+           new_num = num + 1
+           self.MaDanhMuc = f"DM{new_num:03d}"
+
+
+       super().save(*args, **kwargs)
+
+
+   def __str__(self):
+       return f"{self.TenDanhMuc}"
+
+
+class FAQ(models.Model):
+   MaCauHoi = models.CharField(max_length=10, primary_key=True, editable=False)
+   CauHoi = models.CharField(max_length=300)
+   CauTraLoi = models.TextField()
+
+
+   MaDanhMuc = models.ForeignKey(
+       DanhMucFAQ,
+       on_delete=models.SET_NULL,
+       null=True,
+       blank=True,
+       related_name="faq_list"
+   )
+
+
+   MaNhanVien=models. ForeignKey('NhanVien', on_delete=models.CASCADE, help_text='Mã nhân viên')
+   TrangThaiHienThi = models.BooleanField(default=True)
+   NgayCapNhat = models.DateTimeField(auto_now=True)
+
+
+   class Meta:
+       db_table = "FAQ"
+       ordering = ['-MaCauHoi']
+       verbose_name = "Câu hỏi thường gặp"
+       verbose_name_plural = "Câu hỏi thường gặp"
+
+
+   def save(self, *args, **kwargs):
+       # Tự sinh mã câu hỏi CH001
+       if not self.MaCauHoi:
+           last = FAQ.objects.order_by('-MaCauHoi').first()
+
+
+           if last and last.MaCauHoi.startswith("CH"):
+               try:
+                   num = int(last.MaCauHoi[2:])
+               except:
+                   num = 0
+           else:
+               num = 0
+
+
+           new_num = num + 1
+           new_code = f"CH{new_num:03d}"
+
+
+           # Đảm bảo không trùng
+           while FAQ.objects.filter(MaCauHoi=new_code).exists():
+               new_num += 1
+               new_code = f"CH{new_num:03d}"
+
+
+           self.MaCauHoi = new_code
+
+
+       # Nếu có truyền user từ view → cập nhật MaNhanVien
+       user = kwargs.pop('user', None)
+       if user:
+           self.MaNhanVien = user
+
+
+       super().save(*args, **kwargs)
+
+
+   def __str__(self):
+       return f"{self.MaCauHoi} - {self.CauHoi}"
+
+
+
 
 
 # MODEL: KHÁCH HÀNG

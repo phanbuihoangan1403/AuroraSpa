@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegisterForm
 from django.utils.timezone import localtime
-from aurora.models import Blog, DichVu, KhachHang, DiemTichLuy, LichSuTichDiem, FAQ, DanhMucDichVu
+from aurora.models import Blog, DichVu, KhachHang, DiemTichLuy, LichSuTichDiem, FAQ, DanhMucDichVu, DanhMucFAQ
 from django.utils import timezone
 from datetime import datetime
 import json
@@ -226,9 +226,28 @@ def dichvu_view(request, madanhmuc=None):
 
     return render(request, 'pages/dichvu.html', {'data': data})
 
+from django.db.models import Prefetch
+
 def faq_view(request):
-    faqs = FAQ.objects.filter(TrangThaiHienThi=True).order_by('NgayCapNhat')
-    return render(request, 'pages/faq.html', {'faqs': faqs})
+   categories = DanhMucFAQ.objects \
+       .prefetch_related(
+           Prefetch(
+               'faq_list',  # ← related_name chính xác là "faq_list"
+               queryset=FAQ.objects.filter(TrangThaiHienThi=True).order_by('MaCauHoi')
+           )
+       ) \
+       .filter(TrangThaiHienThi=True) \
+       .order_by('MaDanhMuc') \
+       .all()
+
+
+   # Loại bỏ danh mục không có FAQ nào hiển thị
+   categories = [cat for cat in categories if cat.faq_list.exists()]
+
+
+   return render(request, 'pages/faq.html', {
+       'categories': categories
+   })
 
 def lienhe_view(request):
     return render(request, 'pages/lienhe.html')

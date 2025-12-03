@@ -1,0 +1,235 @@
+{% extends 'staffpanel/base.html' %}
+{% load static %}
+
+{% block title %}Quản lý Danh mục FAQ{% endblock %}
+{% block nav_faq %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">DANH MỤC FAQ</h1>
+</div>
+
+<!-- THANH TÌM KIẾM + NÚT THÊM + XÓA HÀNG LOẠT -->
+<div style="margin-top:10px; display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap;">
+    <form method="get" style="display:flex; gap:8px; align-items:center;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên danh mục..."
+               style="padding:8px 12px; border-radius:8px; border:1px solid #d9cfc3; min-width:260px; font-size:14px;">
+        <button type="submit" class="btn btn-outline">Tìm</button>
+    </form>
+
+    <a href="{% url 'staff_faq_category_add' %}">
+        <button type="button" class="btn btn-primary">+ Thêm danh mục</button>
+    </a>
+
+    {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+    <button id="bulkDelete" class="btn btn-danger" style="opacity:0.5;cursor:not-allowed;" disabled>
+        Xóa đã chọn
+    </button>
+    {% endif %}
+</div>
+
+<!-- BẢNG DANH MỤC -->
+<div class="card" style="margin-top:16px;">
+    <table style="width:100%; table-layout:fixed; border-collapse:collapse;">
+        <thead style="background:#f8fafc;">
+            <tr>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <th style="width:50px;text-align:center;">
+                    <input type="checkbox" id="selectAll" class="custom-checkbox">
+                </th>
+                {% endif %}
+                <th style="width:100px;text-align:center;">Mã</th>
+                <th style="text-align:left;padding-left:12px;">Tên danh mục</th>
+                <th style="width:280px;">Mô tả</th>
+                <th style="width:110px;text-align:center;">Số câu hỏi</th>
+                <th style="width:100px;text-align:center;">Trạng thái</th>
+                <th style="width:140px;text-align:center;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr style="height:58px; border-bottom:1px solid #e2e8f0; cursor:pointer;" class="category-row"
+                data-json='{
+                    "madm": "{{ cat.MaDanhMuc }}",
+                    "tendm": "{{ cat.TenDanhMuc|escapejs }}",
+                    "mota": "{{ cat.MoTaDanhMuc|default:'—'|escapejs }}",
+                    "socauhoi": {{ cat.so_cau_hoi }},
+                    "trangthai": {{ cat.TrangThaiHienThi|yesno:"true,false" }}
+                }'>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="row-checkbox custom-checkbox" value="{{ cat.MaDanhMuc }}">
+                </td>
+                {% endif %}
+
+                <td style="text-align:center; font-weight:600;">{{ cat.MaDanhMuc }}</td>
+
+                <!-- Click tên → vào danh sách FAQ của danh mục đó -->
+                <td style="padding-left:12px;">
+                    <a href="{% url 'staff_faq_list_by_category' cat.MaDanhMuc %}"
+                       style="color:#214134; font-weight:600; text-decoration:none; display:block;">
+                        {{ cat.TenDanhMuc }}
+                    </a>
+                </td>
+
+                <td style="color:#555;">{{ cat.MoTaDanhMuc|default:"—"|truncatechars:70 }}</td>
+
+                <!-- SỐ CÂU HỎI HIỂN THỊ CHÍNH XÁC 100% -->
+                <td style="text-align:center; font-weight:700; color:#214134;">
+                    {{ cat.so_cau_hoi }}
+                </td>
+
+                <td style="text-align:center;">
+                    <label class="pretty-checkbox">
+                        <input type="checkbox" disabled {% if cat.TrangThaiHienThi %}checked{% endif %}>
+                        <span class="checkmark"></span>
+                    </label>
+                </td>
+
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <a href="{% url 'staff_faq_category_edit' cat.MaDanhMuc %}"
+                       style="color:#3182ce; font-weight:600;">Sửa</a>
+                    {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                    <span style="color:#cbd5e0; margin:0 8px;">|</span>
+                    <a href="#" style="color:#e53e3e; font-weight:600;"
+                       onclick="event.preventDefault(); deleteCategory('{{ cat.MaDanhMuc }}', '{{ cat.TenDanhMuc|escapejs }}')">
+                        Xóa
+                    </a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="{% if request.user.nhanvien.VaiTro == 'MANAGER' %}7{% else %}6{% endif %}"
+                    style="text-align:center; padding:70px 0; color:#718096; font-size:16px;">
+                    <div>Chưa có danh mục FAQ nào</div>
+                    <a href="{% url 'staff_faq_category_add' %}" style="color:#214134; text-decoration:underline; margin-top:8px; display:inline-block;">
+                        Tạo danh mục đầu tiên ngay!
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- MODAL CHI TIẾT DANH MỤC -->
+<div id="categoryModal" class="modal" style="display:none; align-items:center; justify-content:center; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.55); z-index:9999;">
+    <div class="modal-content" style="background:white; padding:32px; border-radius:12px; max-width:520px; width:90%; box-shadow:0 15px 40px rgba(0,0,0,0.3);">
+        <span class="close" onclick="closeCategoryDetail()" style="float:right; font-size:32px; cursor:pointer; color:#aaa;">×</span>
+        <h2 style="margin:0 0 24px 0; color:#214134; font-size:22px;">Chi tiết danh mục</h2>
+        <div style="font-size:15px; line-height:1.8;">
+            <div><strong>Mã danh mục:</strong> <span id="detail_madm" style="font-weight:600; color:#214134;"></span></div>
+            <div><strong>Tên danh mục:</strong> <span id="detail_tendm"></span></div>
+            <div><strong>Mô tả:</strong> <span id="detail_mota">—</span></div>
+            <div><strong>Số câu hỏi:</strong> <span id="detail_socauhoi" style="font-weight:700; color:#214134;"></span></div>
+            <div><strong>Trạng thái:</strong> <span id="detail_trangthai"></span></div>
+        </div>
+        <div style="margin-top:30px; text-align:right;">
+            <button class="btn btn-primary" onclick="editFromModal()">Sửa danh mục</button>
+            <button class="btn btn-outline" onclick="closeCategoryDetail()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<!-- STYLE SIÊU ĐẸP -->
+<style>
+    .custom-checkbox { width:17px; height:17px; accent-color:#28a745; cursor:pointer; }
+    .status-badge { display:inline-block; min-width:76px; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:600; text-align:center; }
+    .status-online { background:#d4edda; color:#155724; }
+    .status-offline { background:#f1f5f9; color:#64748b; }
+    .btn-outline { background:transparent; border:1px solid #cbd5e1; color:#4a5568; padding:9px 18px; border-radius:8px; font-weight:500; }
+    .btn-primary { background:#214134; color:white; border:none; padding:10px 22px; border-radius:8px; font-weight:600; }
+    .btn-primary:hover { background:#1a3429; }
+    .btn-danger { background:#e53e3e; color:white; border:none; padding:9px 18px; border-radius:8px; }
+    .card { background:white; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.08); overflow:hidden; }
+    tr:hover { background:#f8fafc; }
+    .modal-content { animation: fadeIn 0.3s; }
+    @keyframes fadeIn { from {opacity:0; transform:scale(0.95);} to {opacity:1; transform:scale(1);} }
+</style>
+
+<!-- SCRIPT HOÀN CHỈNH – SỐ CÂU HỎI CHẠY CHUẨN -->
+<script>
+    let currentCategory = null;
+
+    // Click dòng → mở modal
+    document.querySelectorAll('.category-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            const data = JSON.parse(this.dataset.json);
+            currentCategory = data;
+
+            document.getElementById('detail_madm').textContent = data.madm;
+            document.getElementById('detail_tendm').textContent = data.tendm;
+            document.getElementById('detail_mota').textContent = data.mota;
+            document.getElementById('detail_socauhoi').textContent = data.socauhoi;
+            document.getElementById('detail_trangthai').innerHTML = data.trangthai
+                ? '<span class="status-badge status-online">Hiển thị</span>'
+                : '<span class="status-badge status-offline">Ẩn</span>';
+
+            document.getElementById('categoryModal').style.display = 'flex';
+        });
+    });
+
+
+    function closeCategoryDetail() {
+        document.getElementById('categoryModal').style.display = 'none';
+    }
+
+    function editFromModal() {
+        if (currentCategory) {
+            window.location = `/staff/faq/categories/${currentCategory.madm}/edit/`;
+        }
+    }
+
+    function deleteCategory(ma, ten) {
+        if (!confirm(`XÓA danh mục "${ten}"?\nTất cả FAQ trong danh mục sẽ bị xóa vĩnh viễn!`)) return;
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = `/staff/faq/categories/${ma}/delete/`;
+        const c = document.createElement('input');
+        c.type = 'hidden'; c.name = 'csrfmiddlewaretoken'; c.value = '{{ csrf_token }}';
+        f.appendChild(c); document.body.appendChild(f); f.submit();
+    }
+
+    // Bulk delete mượt
+    const bulkBtn = document.getElementById('bulkDelete');
+    function updateBulkButton() {
+        const cnt = document.querySelectorAll('.row-checkbox:checked').length;
+        if (bulkBtn) {
+            bulkBtn.disabled = cnt === 0;
+            bulkBtn.textContent = cnt > 0 ? `Xóa đã chọn (${cnt})` : 'Xóa đã chọn';
+            bulkBtn.style.opacity = cnt > 0 ? '1' : '0.5';
+            bulkBtn.style.cursor = cnt > 0 ? 'pointer' : 'not-allowed';
+        }
+    }
+    if (document.getElementById('selectAll')) {
+        document.getElementById('selectAll').addEventListener('change', e => {
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = e.target.checked);
+            updateBulkButton();
+        });
+    }
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.addEventListener('change', updateBulkButton));
+    if (bulkBtn) {
+        bulkBtn.onclick = () => {
+            const ids = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.value);
+            if (ids.length === 0) return;
+            if (!confirm(`Xóa ${ids.length} danh mục đã chọn?\nKhông thể khôi phục!`)) return;
+            const f = document.createElement('form');
+            f.method = 'POST';
+            f.action = "{% url 'staff_faq_category_bulk_delete' %}";
+            const c = document.createElement('input');
+            c.type = 'hidden'; c.name = 'csrfmiddlewaretoken'; c.value = '{{ csrf_token }}';
+            f.appendChild(c);
+            ids.forEach(id => {
+                const i = document.createElement('input');
+                i.type = 'hidden'; i.name = 'ids'; i.value = id;
+                f.appendChild(i);
+            });
+            document.body.appendChild(f);
+            f.submit();
+        };
+    }
+    updateBulkButton();
+</script>
+{% endblock %}

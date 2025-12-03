@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from aurora.models import (
     NhanVien, FAQ, Blog, DichVu, DanhMucDichVu,
-    LichHen, KhachHang, DiemTichLuy
+    LichHen, KhachHang, DiemTichLuy, DanhMucFAQ
 )
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.utils import timezone  # Thêm import này để check ngày
@@ -69,15 +69,25 @@ class StaffProfileForm(forms.ModelForm):
 # ========================================
 # FAQ FORM
 # ========================================
+class CategoryForm(forms.ModelForm):
+   class Meta:
+       model = DanhMucFAQ
+       fields = ['TenDanhMuc', 'MoTaDanhMuc', 'TrangThaiHienThi']
+       widgets = {
+           'TenDanhMuc': forms.TextInput(attrs={'class': 'form-control'}),
+           'MoTaDanhMuc': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+           'TrangThaiHienThi': forms.CheckboxInput(),
+       }
 class FAQForm(forms.ModelForm):
-    class Meta:
-        model = FAQ
-        fields = ['CauHoi', 'CauTraLoi', 'TrangThaiHienThi']
-        widgets = {
-            'CauHoi': forms.TextInput(attrs={'class': 'form-control'}),
-            'CauTraLoi': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
-            'TrangThaiHienThi': forms.CheckboxInput(),
-        }
+   class Meta:
+       model = FAQ
+       fields = ['MaDanhMuc', 'CauHoi', 'CauTraLoi', 'TrangThaiHienThi']
+       widgets = {
+           'MaDanhMuc': forms.Select(attrs={'class': 'form-control'}),
+           'CauHoi': forms.TextInput(attrs={'class': 'form-control'}),
+           'CauTraLoi': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+           'TrangThaiHienThi': forms.CheckboxInput(),
+       }
 
 
 # ========================================

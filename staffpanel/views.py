@@ -15,8 +15,11 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from aurora.models import (
     NhanVien, FAQ, Blog, DichVu, LichHen,
-    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu
+    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu, DanhMucFAQ
 )
+from django.db.models import F, Count
+from django.http import HttpResponseForbidden, JsonResponse
+from django.views.decorators.http import require_GET
 from .models import NhatKyHoatDong
 from .forms import (
     StaffLoginForm, StaffRegisterForm,UserProfileForm,StaffProfileForm,
@@ -111,81 +114,308 @@ def staff_profile(request):
 
 
 # ========== FAQ (CONTENT + MANAGER) ==========
+# ========== DANH MỤC FAQ (CONTENT + MANAGER) ==========
+
+
+
+
+
+
+@content_required
+def staff_faq_category_list(request):
+   q = request.GET.get('q', '')
+
+
+   # SIÊU NHANH + HIỂN THỊ CHÍNH XÁC 100%
+   categories = DanhMucFAQ.objects.annotate(
+       so_cau_hoi=Count('faq_list')        # ← DÒNG THẦN THÁNH
+   ).order_by('MaDanhMuc')
+
+
+   if q:
+       categories = categories.filter(TenDanhMuc__icontains=q)
+
+
+   return render(request, 'staffpanel/faq_category_list.html', {
+       'categories': categories,
+       'q': q,
+   })
+
+
+@content_required
+def staff_faq_category_add(request):
+   if request.method == 'POST':
+       form = CategoryForm(request.POST)
+       if form.is_valid():
+           category = form.save(commit=False)
+           category.save()
+           messages.success(request, "Tạo danh mục thành công.")
+           return redirect('staff_faq_category_list')
+   else:
+       form = CategoryForm()
+   return render(request, 'staffpanel/faq_category_form.html', {'form': form})  # Template form mới
+
+
+@content_required
+def staff_faq_category_edit(request, pk):
+   category = get_object_or_404(DanhMucFAQ, pk=pk)
+   if request.method == 'POST':
+       form = CategoryForm(request.POST, instance=category)
+       if form.is_valid():
+           form.save()
+           messages.success(request, "Cập nhật danh mục thành công.")
+           return redirect('staff_faq_category_list')
+   else:
+       form = CategoryForm(instance=category)
+   return render(request, 'staffpanel/faq_category_form.html', {'form': form, 'category': category})
+
+
+@manager_required
+def staff_faq_category_delete(request, pk):
+   category = get_object_or_404(DanhMucFAQ, pk=pk)
+   if request.method == 'POST':
+       category.delete()
+       messages.success(request, "Xóa danh mục thành công.")
+       return redirect('staff_faq_category_list')
+   return HttpResponseForbidden("Invalid method")
+
+
+@manager_required
+def staff_faq_category_bulk_delete(request):
+   if request.method == 'POST':
+       ids = request.POST.getlist('ids')
+       DanhMucFAQ.objects.filter(MaDanhMuc__in=ids).delete()
+       messages.success(request, "Xóa hàng loạt thành công.")
+       return redirect('staff_faq_category_list')
+   return HttpResponseForbidden("Invalid method")
+
+
+# ========== FAQ THEO DANH MỤC ==========
+
+
+from django.views.decorators.cache import never_cache
+from django.http import HttpResponse
+
+
+
+
+@never_cache  # ← QUAN TRỌNG NHẤT: Không cho cache trang này
+@content_required
+def staff_faq_list_by_category(request, category_pk):
+   # SỬA: Dùng MaDanhMuc thay vì pk (vì model DanhMucFAQ dùng CharField primary_key)
+   category = get_object_or_404(DanhMucFAQ, MaDanhMuc=category_pk)  # ← SỬA DÒNG NÀY
+
+
+   q = request.GET.get('q', '')
+   faqs = FAQ.objects.filter(MaDanhMuc=category).order_by('MaCauHoi')
+
+
+   if q:
+       faqs = faqs.filter(Q(CauHoi__icontains=q) | Q(CauTraLoi__icontains=q))
+
+
+   response = render(request, 'staffpanel/faq_list_by_category.html', {
+       'faqs': faqs,
+       'category': category,
+       'q': q,
+   })
+
+
+   # BẮT BUỘC thêm header chống cache – xóa là mất ngay, không hiện ma nữa!
+   response['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+   response['Pragma'] = 'no-cache'
+   response['Expires'] = '0'
+
+
+   return response
+
+
+@content_required
+def staff_faq_add_in_category(request, category_pk):
+   category = get_object_or_404(DanhMucFAQ, pk=category_pk)
+   if request.method == 'POST':
+       form = FAQForm(request.POST)
+       if form.is_valid():
+           faq = form.save(commit=False)
+           faq.MaDanhMuc = category
+           faq.MaNhanVien = request.user.nhanvien
+           faq.save()
+           messages.success(request, "Tạo FAQ thành công.")
+           return redirect('staff_faq_list_by_category', category_pk=category_pk)
+   else:
+       form = FAQForm(initial={'MaDanhMuc': category})
+   return render(request, 'staffpanel/faq_form.html', {'form': form, 'category': category})
+
 
 @content_required
 def staff_faq_list(request):
-    q = request.GET.get('q', '')
-    faqs = FAQ.objects.all().order_by('MaCauHoi')
-    if q:
-        faqs = faqs.filter(CauHoi__icontains=q)
+   q = request.GET.get('q', '')
+   faqs = FAQ.objects.all().order_by('MaCauHoi')
+   if q:
+       faqs = faqs.filter(CauHoi__icontains=q)
 
-    return render(request, 'staffpanel/faq_list.html', {
-        'faqs': faqs,
-        'q': q,
-    })
+
+   return render(request, 'staffpanel/faq_list.html', {
+       'faqs': faqs,
+       'q': q,
+   })
+
+
 
 
 @content_required
 def staff_faq_edit(request, pk=None):
-    if pk:
-        faq = get_object_or_404(FAQ, pk=pk)
-        action = "Sửa FAQ"
-    else:
-        faq = FAQ()
-        action = "Tạo FAQ"
+   if pk:
+       faq = get_object_or_404(FAQ, MaCauHoi=pk)
+       action = "Sửa FAQ"
+   else:
+       faq = None          # ĐÃ SỬA: Không tạo object rỗng nữa → tránh nhầm lẫn thêm/sửa
+       action = "Tạo FAQ"
 
-    if request.method == 'POST':
-        form = FAQForm(request.POST, instance=faq)
-        if form.is_valid():
-            faq = form.save(commit=False)
-            faq.MaNhanVien = request.user.nhanvien
-            faq.save()
 
-            NhatKyHoatDong.objects.create(
-                nhan_vien=request.user.nhanvien,
-                hanh_dong=action,
-                doi_tuong='FAQ',
-                object_id=faq.MaCauHoi,
-                mo_ta=faq.CauHoi[:200]
-            )
+   if request.method == 'POST':
+       # Khi POST: nếu faq là None → tạo mới, nếu có pk → sửa
+       form = FAQForm(request.POST, instance=faq)
+       if form.is_valid():
+           faq_obj = form.save(commit=False)
+           faq_obj.MaNhanVien = request.user.nhanvien
+           faq_obj.save()
 
-            messages.success(request, "Lưu FAQ thành công.")
-            return redirect('staff_faq_list')
-    else:
-        form = FAQForm(instance=faq)
 
-    return render(request, 'staffpanel/faq_form.html', {'form': form, 'faq': faq})
+           NhatKyHoatDong.objects.create(
+               nhan_vien=request.user.nhanvien,
+               hanh_dong=action,
+               doi_tuong='FAQ',
+               object_id=faq_obj.MaCauHoi,
+               mo_ta=faq_obj.CauHoi[:200]
+           )
+
+
+           messages.success(request, "Lưu FAQ thành công.")
+           return redirect('staff_faq_list')
+   else:
+       form = FAQForm(instance=faq)
+
+
+   return render(request, 'staffpanel/faq_form.html', {
+       'form': form,
+       'faq': faq,                      # Khi thêm mới → faq = None
+       'category': faq.MaDanhMuc if faq else None  # ← tránh lỗi khi faq=None
+   })
 
 
 @content_required
 def staff_faq_delete(request, pk):
-    faq = get_object_or_404(FAQ, pk=pk)
-    if request.method == 'POST':
-        ma = faq.MaCauHoi
-        title = faq.CauHoi
-        faq.delete()
-        NhatKyHoatDong.objects.create(
-            nhan_vien=request.user.nhanvien,
-            hanh_dong="Xóa FAQ",
-            doi_tuong='FAQ',
-            object_id=ma,
-            mo_ta=title[:200]
-        )
-        messages.success(request, "Đã xóa FAQ.")
-        return redirect('staff_faq_list')
-    return render(request, 'staffpanel/confirm_delete.html', {'object': faq, 'title': faq.CauHoi})
+   try:
+       faq = FAQ.objects.get(MaCauHoi=pk)
+   except FAQ.DoesNotExist:
+       messages.error(request, "Câu hỏi không tồn tại hoặc đã bị xóa.")
+       return redirect('staff_faq_list')
+
+
+   if request.method == 'POST':
+       ma = faq.MaCauHoi
+       title = faq.CauHoi
+       faq.delete()
+       NhatKyHoatDong.objects.create(
+           nhan_vien=request.user.nhanvien,
+           hanh_dong="Xóa FAQ",
+           doi_tuong='FAQ',
+           object_id=ma,
+           mo_ta=title[:200]
+       )
+       messages.success(request, "Đã xóa FAQ thành công.")
+       return redirect('staff_faq_list')
+
+
+   # Nếu là GET → không render confirm nữa, chỉ redirect về list (vì confirm đã có JS)
+   return redirect('staff_faq_list')
+
+
+# THÊM VÀO CUỐI FILE views.py (sau staff_faq_delete)
+
+
+@manager_required
+def staff_faq_bulk_delete(request):
+   if request.method != 'POST':
+       return HttpResponseForbidden("Chỉ chấp nhận POST")
+
+
+   ids = request.POST.getlist('ids')
+   if not ids:
+       messages.error(request, "Không có mục nào được chọn.")
+       return redirect(request.META.get('HTTP_REFERER', 'staff_faq_category_list'))
+
+
+   deleted_count = FAQ.objects.filter(MaCauHoi__in=ids).delete()[0]
+
+
+   NhatKyHoatDong.objects.create(
+       nhan_vien=request.user.nhanvien,
+       hanh_dong="Xóa hàng loạt FAQ",
+       doi_tuong='FAQ',
+       mo_ta=f"Xóa {deleted_count} câu hỏi"
+   )
+
+
+   messages.success(request, f"Đã xóa {deleted_count} câu hỏi thành công.")
+   return redirect(request.META.get('HTTP_REFERER', 'staff_faq_category_list'))
+
 
 
 # ========== BLOG (CONTENT + MANAGER) ==========
 
 @content_required
 def staff_blog_list(request):
-    q = request.GET.get('q', '')
+    # XỬ LÝ XÓA NHIỀU
+    if request.method == 'POST' and 'bulk_delete' in request.POST:
+        blog_ids = request.POST.getlist('blog_ids')
+        if blog_ids:
+            deleted_count = Blog.objects.filter(MaBaiViet__in=blog_ids).count()
+            Blog.objects.filter(MaBaiViet__in=blog_ids).delete()
+
+            NhatKyHoatDong.objects.create(
+                nhan_vien=request.user.nhanvien,
+                hanh_dong="Xóa nhiều bài viết",
+                doi_tuong='Blog',
+                mo_ta=f"Xóa {deleted_count} bài viết"
+            )
+            messages.success(request, f"Đã xóa thành công {deleted_count} bài viết!")
+        else:
+            messages.warning(request, "Bạn chưa chọn bài viết nào để xóa!")
+        return redirect('staff_blog_list')
+
+    # ================== LỌC + TÌM KIẾM ==================
     blogs = Blog.objects.all().order_by('-NgayCapNhat')
+    # 1. Tìm kiếm tiêu đề
+    q = request.GET.get('q', '').strip()
     if q:
         blogs = blogs.filter(TieuDeBaiViet__icontains=q)
-    return render(request, 'staffpanel/blog_list.html', {'blogs': blogs, 'q': q})
 
+    # 2. Lọc trạng thái (0 = Nháp, 1 = Đăng)
+    status = request.GET.get('status')
+    if status in ('0', '1'):
+        blogs = blogs.filter(TrangThaiHienThi=status)
+
+    # 3. Lọc theo đúng 1 ngày (dùng NgayCapNhat)
+    date_filter = request.GET.get('date')
+    if date_filter:
+        try:
+            # __date sẽ tự lấy phần ngày (bỏ giờ phút giây)
+            blogs = blogs.filter(NgayCapNhat__date=date_filter)
+        except ValueError:
+            # Nếu ngày sai định dạng → bỏ qua
+            pass
+
+    # Nếu bạn dùng trường NgayDang thay vì NgayCapNhat thì đổi thành:
+    # blogs = blogs.filter(NgayDang__date=date_filter)
+
+    context = {
+        'blogs': blogs,
+        'q': q,  # giữ lại từ khóa tìm kiếm
+    }
+
+    return render(request, 'staffpanel/blog_list.html', context)
 
 @content_required
 def staff_blog_edit(request, pk=None):
@@ -197,12 +427,21 @@ def staff_blog_edit(request, pk=None):
         action = "Tạo bài viết"
 
     if request.method == 'POST':
-        form = BlogForm(request.POST, instance=blog)
+        # QUAN TRỌNG: Phải có request.FILES để xử lý ảnh!
+        form = BlogForm(request.POST, request.FILES, instance=blog)
+
         if form.is_valid():
             blog = form.save(commit=False)
             blog.MaNhanVien = request.user.nhanvien
+
+            # BẮT BUỘC PHẢI LẤY LẠI CÁC TRƯỜNG THỦ CÔNG TỪ POST
+            blog.TacGia = request.POST.get('tac_gia', '').strip()
+            blog.TrangThaiHienThi = request.POST.get('TrangThaiHienThi')  # ← DÒNG NÀY QUAN TRỌNG NHẤT!
+            blog.NgayDang = request.POST.get('ngay_dang')
+
             blog.save()
 
+            # Ghi nhật ký
             NhatKyHoatDong.objects.create(
                 nhan_vien=request.user.nhanvien,
                 hanh_dong=action,
@@ -210,13 +449,16 @@ def staff_blog_edit(request, pk=None):
                 object_id=blog.MaBaiViet,
                 mo_ta=blog.TieuDeBaiViet[:200]
             )
-            messages.success(request, "Lưu bài viết thành công.")
+            messages.success(request, "Lưu bài viết thành công!")
             return redirect('staff_blog_list')
     else:
         form = BlogForm(instance=blog)
 
-    return render(request, 'staffpanel/blog_form.html', {'form': form, 'blog': blog})
-
+    return render(request, 'staffpanel/blog_form.html', {
+        'form': form,
+        'blog': blog,
+        'now': timezone.now()
+    })
 
 @content_required
 def staff_blog_delete(request, pk):
@@ -236,16 +478,37 @@ def staff_blog_delete(request, pk):
         return redirect('staff_blog_list')
     return render(request, 'staffpanel/confirm_delete.html', {'object': blog, 'title': blog.TieuDeBaiViet})
 
-
 # ========== DỊCH VỤ (CONTENT + MANAGER) ==========
 
 @content_required
 def staff_service_list(request):
-    q = request.GET.get('q', '')
-    dv = DichVu.objects.select_related('MaDanhMuc').all()
+    # XỬ LÝ XÓA NHIỀU DỊCH VỤ (giữ nguyên như cũ)
+    if request.method == 'POST' and 'bulk_delete' in request.POST:
+        service_ids = request.POST.getlist('service_ids')
+        if service_ids:
+            deleted_count = DichVu.objects.filter(MaDichVu__in=service_ids).delete()[0]
+            messages.success(request, f"Đã xóa thành công {deleted_count} dịch vụ!")
+        else:
+            messages.warning(request, "Bạn chưa chọn dịch vụ nào để xóa!")
+        return redirect('staff_service_list')
+    # === BỔ SUNG: LẤY DANH MỤC VÀ LỌC THEO DANH MỤC === # Nếu chưa import thì thêm dòng này ở trên cùng file cũng được
+    q = request.GET.get('q', '').strip()
+    category_id = request.GET.get('category', '')
+    services = DichVu.objects.all().order_by('-MaDichVu')
+    # Tìm kiếm theo tên
     if q:
-        dv = dv.filter(TenDichVu__icontains=q)
-    return render(request, 'staffpanel/service_list.html', {'services': dv, 'q': q})
+        services = services.filter(TenDichVu__icontains=q)
+    # Lọc theo danh mục (nếu có chọn)
+    if category_id:
+        services = services.filter(MaDanhMuc_id=category_id)
+    # Lấy tất cả danh mục để hiển thị trong ô select
+    categories = DanhMucDichVu.objects.all().order_by('TenDanhMuc')
+    return render(request, 'staffpanel/service_list.html', {
+        'services': services,
+        'categories': categories,   # ← Dòng quan trọng nhất – giúp template hiện danh mục
+        'q': q,
+        # Nếu bạn có thêm phân trang thì thêm vào đây
+    })
 
 
 @content_required
@@ -258,9 +521,16 @@ def staff_service_edit(request, pk=None):
         action = "Tạo dịch vụ"
 
     if request.method == 'POST':
-        form = DichVuForm(request.POST, instance=dv)
+        form = DichVuForm(request.POST, request.FILES, instance=dv)
+
         if form.is_valid():
-            dv = form.save()
+            dv = form.save(commit=False)
+
+            # LẤY TRỰC TIẾP TỪ POST – ĐÚNG NGAY TỪ ĐẦU, KHÔNG CẦN ĐẢO!
+            trang_thai = request.POST.get('TrangThaiHienThi', '0')
+            dv.TrangThaiHienThi = 1 if trang_thai == '1' else 0
+
+            dv.save()
 
             NhatKyHoatDong.objects.create(
                 nhan_vien=request.user.nhanvien,
@@ -269,13 +539,15 @@ def staff_service_edit(request, pk=None):
                 object_id=dv.MaDichVu,
                 mo_ta=dv.TenDichVu[:200]
             )
-            messages.success(request, "Lưu dịch vụ thành công.")
+            messages.success(request, "Lưu dịch vụ thành công!")
             return redirect('staff_service_list')
     else:
         form = DichVuForm(instance=dv)
 
-    return render(request, 'staffpanel/service_form.html', {'form': form, 'dv': dv})
-
+    return render(request, 'staffpanel/service_form.html', {
+        'form': form,
+        'dv': dv
+    })
 
 @content_required
 def staff_service_delete(request, pk):
@@ -313,7 +585,7 @@ from .models import NhatKyHoatDong
 from .forms import (
     StaffLoginForm, StaffRegisterForm, UserProfileForm, StaffProfileForm,
     FAQForm, BlogForm, DichVuForm, LichHenForm,
-    KhachHangForm, DiemTichLuyForm
+    KhachHangForm,CategoryForm ,DiemTichLuyForm
 )
 from .permissions import manager_required, content_required, reception_required, staff_required
 
