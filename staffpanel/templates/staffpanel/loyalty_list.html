@@ -479,7 +479,7 @@
     <div style="margin-bottom:20px;display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;">
         <form method="get" style="display:flex;gap:6px;align-items:center;">
             <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo Mã KH hoặc Tên..."
-                   style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;">
+                   style="padding:9px 14px; border-radius:8px; border:1px solid #cbd5e0; min-width:180px; font-size:14px;">
 
             <div class="date-input-wrapper">
                 <svg class="date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -488,13 +488,20 @@
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                <input type="text" id="dateRange" name="date_range" class="date-input" placeholder="mm/dd/yyyy" readonly>
+                <input type="text" id="dateRange" name="date_range" class="date-input" placeholder="mm/dd/yyyy"
+                       style="padding:9px 14px 9px 38px; border-radius:8px; border:1px solid #cbd5e0; min-width:200px; font-size:14px; cursor:pointer; background:white;"
+                       readonly>
             </div>
 
             <button type="submit" class="btn btn-outline">Tìm</button>
         </form>
 
-
+        <form method="post" id="bulk-delete-form" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" name="bulk_delete" class="btn btn-danger" id="bulk-delete-btn" disabled>
+                Xóa khách hàng đã chọn
+            </button>
+        </form>
     </div>
 </div>
 
@@ -679,20 +686,7 @@
     function updateBulkUI() {
         const count = document.querySelectorAll('.cb-item:checked').length;
 
-        // Update bulk delete button
-        if (count > 0) {
-            bulkDeleteBtn.classList.add('active');
-            bulkDeleteBtn.disabled = false;
-            bulkDeleteBtn.style.opacity = '1';
-            bulkDeleteBtn.style.cursor = 'pointer';
-            bulkDeleteBtn.textContent = `Xóa ${count} khách hàng đã chọn`;
-        } else {
-            bulkDeleteBtn.classList.remove('active');
-            bulkDeleteBtn.disabled = true;
-            bulkDeleteBtn.style.opacity = '0.5';
-            bulkDeleteBtn.style.cursor = 'not-allowed';
-            bulkDeleteBtn.textContent = 'Xóa khách hàng đã chọn';
-        }
+
 
         // Update bulk section
         bulkSection.classList.toggle('show', count > 0);
