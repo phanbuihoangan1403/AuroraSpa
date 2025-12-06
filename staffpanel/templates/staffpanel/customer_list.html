@@ -5,39 +5,59 @@
 {% block nav_customer %}active{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">DANH SÁCH KHÁCH HÀNG</h1>
+
+<!-- TIÊU ĐỀ -->
+<div style="margin-bottom: 30px;">
+    <h1 style="margin:0; font-size:32px; font-weight:700; color:#1a202c;">
+        DANH SÁCH KHÁCH HÀNG
+    </h1>
 </div>
 
-<!-- THANH TÌM KIẾM + NÚT THÊM + NÚT XÓA  -->
-<div style="margin-top:10px; display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap;">
+<!-- THANH CÔNG CỤ  -->
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 15px; padding: 0 10px;">
 
-    <form method="get" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên, SĐT, email, mã khách hàng..."
-               style="padding:6px 10px; border-radius:8px; border:1px solid #d9cfc3; min-width:240px;">
-        <select name="customer_type" style="padding:6px 10px; border-radius:8px; border:1px solid #d9cfc3;">
+    <!-- Tìm kiếm + Lọc loại khách hàng -->
+    <form method="get" style="display:flex; gap:8px; align-items:center; margin:0;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên, SĐT email mã KH..."
+               style="padding:9px 14px; border-radius:8px; border:1px solid #cbd5e0; min-width:240px; font-size:14px;">
+
+        <select name="customer_type" onchange="this.form.submit()"
+                style="padding:9px 32px 9px 14px; border-radius:8px; border:1px solid #cbd5e0; font-size:14px;
+                       background:white url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23637085' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E\") no-repeat right 12px center;
+                       background-size:12px; appearance:none; cursor:pointer;">
             <option value="">Tất cả khách hàng</option>
             <option value="online" {% if customer_type == 'online' %}selected{% endif %}>Đăng ký Web/App</option>
             <option value="offline" {% if customer_type == 'offline' %}selected{% endif %}>Tạo tại cửa hàng</option>
         </select>
-        <button type="submit" class="btn btn-outline">Tìm</button>
+
+        <button type="submit" class="btn btn-outline"
+                style="padding:9px 18px; border-radius:8px; white-space:nowrap;">
+            Tìm
+        </button>
     </form>
 
+    <!-- Nút thêm khách hàng -->
     <a href="{% url 'staff_customer_add' %}">
-        <button type="button" class="btn btn-primary">+ Thêm khách hàng</button>
+        <button class="btn btn-primary"
+                style="padding:9px 24px; font-weight:600; border-radius:8px; background: #214134; white-space:nowrap;">
+            + Thêm khách hàng
+        </button>
     </a>
 
+    <!-- Nút xóa nhiều (chỉ MANAGER thấy) -->
     {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
-    <button id="bulkDelete" class="btn btn-danger"
-            style="background:#e53e3e;color:white;border:none;padding:8px 16px;border-radius:8px;font-weight:600;
-                   opacity:0.5;cursor:not-allowed;" disabled>
+    <button type="button" id="bulkDelete" class="btn btn-danger"
+            style="background:#e53e3e; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600;
+                   opacity:0.5; cursor:not-allowed; white-space:nowrap;"
+            disabled>
         Xóa đã chọn
     </button>
     {% endif %}
+
 </div>
 
-<!-- BẢNG KHÁCH HÀNG  -->
-<div class="card" style="margin-top:16px;">
+<!-- BẢNG KHÁCH HÀNG -->
+<div class="card">
     <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
         <thead style="background:#f8fafc;">
             <tr>
@@ -74,7 +94,7 @@
                 </td>
                 {% endif %}
 
-                <td style="text-align:center;">{{ kh.MaKhachHang }}</td>
+                <td style="text-align:center;color:#4a5568;">{{ kh.MaKhachHang }}</td>
                 <td style="padding-left:12px;">
                     <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ kh.HoTen }}">
                         {{ kh.HoTen }}
@@ -98,7 +118,7 @@
                     </a>
                     <span style="color:#cbd5e0; margin:0 8px;">|</span>
                     <a href="#"
-                       style="color:#e53e3e; font-weight:600;"
+                       style="color:#3182ce; font-weight:600;"
                        onclick="event.preventDefault(); this.closest('tr').click()">
                         Chi tiết
                     </a>
@@ -116,7 +136,7 @@
     </table>
 </div>
 
-<!-- MODAL CHI TIẾT  -->
+<!-- MODAL CHI TIẾT KHÁCH HÀNG  -->
 <div id="customerModal" style="display:none;position:fixed;inset:0;z-index:1050;align-items:center;justify-content:center;">
     <div class="modal-backdrop" onclick="closeCustomerDetail()" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);"></div>
     <div style="background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:540px;width:90%;position:relative;z-index:10;animation:zoomIn .3s;">
@@ -134,8 +154,8 @@
             <div><strong class="text-success">Điểm tích lũy:</strong> <span id="detail_diem" class="fw-bold fs-5 text-success"></span> điểm</div>
         </div>
         <div style="padding:1rem 1.5rem;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:right;border-radius:0 0 12px 12px;">
-            <button class="btn btn-search me-2" onclick="viewLoyalty()">Xem lịch sử điểm</button>
-            <button class="btn btn-search me-2" onclick="editFromModal()">Sửa thông tin</button>
+            <button class="btn btn-search me-2" onclick="viewLoyalty()" style="background: #214134; color: white">Xem lịch sử điểm</button>
+            <button class="btn btn-search me-2" onclick="editFromModal()" style="background: #214134; color: white">Sửa thông tin</button>
             <button class="btn btn-delete" onclick="closeCustomerDetail()">Đóng</button>
         </div>
     </div>
@@ -144,7 +164,6 @@
 <style>
     @keyframes zoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
 
-    /* Đồng bộ hoàn toàn với trang nhân viên */
     .custom-checkbox {
         width: 14px!important; height: 14px!important; cursor: pointer; accent-color: #28a745; margin:0;
     }
@@ -157,21 +176,13 @@
     .status-online  { background:#d4edda; color:#155724; }
     .status-offline { background:#e2e8f0; color:#718096; }
 
-    /* Nút chung – giống hệt trang nhân viên */
-    .btn-outline { background:transparent; border:1px solid #a0aec0; color:#4a5568; padding:6px 14px; border-radius:8px; font-weight:500; }
-    .btn-primary { background:#214134!important; color:white; border:none; padding:8px 16px; border-radius:8px; font-weight:600; }
-    .btn-primary:hover { background:#1a3429!important; }
-    .btn-danger { background:#e53e3e!important; color:white!important; border:none!important; transition:all .3s; }
-    .btn-danger:hover:not(:disabled) { background:#c53030!important; transform:translateY(-2px); box-shadow:0 6px 20px rgba(229,62,62,0.4); }
-    .btn-search { background:#214134; color:white; border:none; padding:8px 16px; border-radius:8px; }
-    .btn-delete { background:#e5e7eb; color:#6b7280; border:none; padding:8px 16px; border-radius:8px; }
-    .btn-delete:hover { background:#d1d5db; color:#4b5563; }
+    .btn-danger:hover:not(:disabled){background:#c53030!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(229,62,62,0.4)}
 </style>
 
 <script>
 let currentCustomer = null;
 
-// Click dòng → mở modal (giữ nguyên chức năng cũ)
+// Click dòng → mở modal
 document.querySelectorAll('.customer-row').forEach(row => {
     row.addEventListener('click', function(e) {
         if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON') return;
@@ -207,7 +218,7 @@ function viewLoyalty() {
     if (currentCustomer) window.location = '/staff/loyalty/?q=' + currentCustomer.makh;
 }
 
-// Checkbox + Xóa hàng loạt – giữ nguyên fetch + JSON như cũ
+// Checkbox + Xóa nhiều (giữ nguyên fetch)
 const selectAllBtn = document.getElementById('selectAll');
 if (selectAllBtn) {
     selectAllBtn.addEventListener('change', function() {
@@ -216,9 +227,7 @@ if (selectAllBtn) {
     });
 }
 
-document.querySelectorAll('.row-checkbox').forEach(cb => {
-    cb.addEventListener('change', toggleBulkDelete);
-});
+document.querySelectorAll('.row-checkbox').forEach(cb => cb.addEventListener('change', toggleBulkDelete));
 
 function toggleBulkDelete() {
     const btn = document.getElementById('bulkDelete');
@@ -259,11 +268,11 @@ if (bulkBtn) {
     });
 }
 
-// Đóng modal bằng ESC
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') closeCustomerDetail();
 });
 
 toggleBulkDelete();
 </script>
+
 {% endblock %}
