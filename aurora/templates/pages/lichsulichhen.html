@@ -443,7 +443,7 @@
 </div>
 
 <!-- Modal Hủy lịch -->
-<div id="cancelModal" class="modal-bg">
+<div id="cancelModal" class="modal-bg" data-malichhen="">
     <div class="modal">
         <span class="close-btn" onclick="closeModal()">×</span>
         <h2>HỦY LỊCH HẸN</h2>
@@ -456,9 +456,6 @@
     </div>
 </div>
 
-
-
-
 <script>
     function openModal(modalType, maLichHen='') {
         if (modalType.startsWith('detail')){
@@ -470,11 +467,18 @@
                             modal.querySelector('.detail-header').textContent = data.ten_dichvu;
                             modal.querySelector('.detail-description').innerHTML = data.mota_dichvu;
                             modal.querySelectorAll('.detail-content')[0].textContent = `${data.khunggio}, Ngày ${data.ngayhen}`;
-                            modal.querySelectorAll('.detail-content')[1].textContent = data.trangthai;
+                            if (data.trangthai === "Đã hủy" && data.lydo) {
+                                modal.querySelectorAll('.detail-content')[1].textContent = `${data.trangthai} - Lý do: ${data.lydo}`;
+                            } else {
+                                modal.querySelectorAll('.detail-content')[1].textContent = data.trangthai;
+                            }
                         });
         }
-        else if (modalType.startsWith('cancel')) document.getElementById('cancelModal').classList.add('active');
-        else if (modalType.startsWith('edit')) document.getElementById('editModal').classList.add('active');
+        else if (modalType.startsWith('cancel')){
+            const modal = document.getElementById('cancelModal');
+            modal.setAttribute('data-malichhen', maLichHen);
+            modal.classList.add('active');
+        }
     }
 
     function closeModal() {
@@ -483,17 +487,6 @@
         document.getElementById('editModal').classList.remove('active');
     }
 
-    function confirmCancel() {
-        alert('Hủy lịch thành công!');
-        closeModal();
-        showPage('lich-su');
-    }
-
-    function submitEdit() {
-        alert('Chỉnh sửa thành công!');
-        closeModal();
-        showPage('lich-su');
-    }
 </script>
 
 </body>

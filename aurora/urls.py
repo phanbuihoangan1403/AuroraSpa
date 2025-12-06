@@ -43,10 +43,11 @@ urlpatterns = [
     ), name='password_reset_complete'),
 # THÊM DÒNG NÀY: AJAX LẤY DỊCH VỤ
     path('ajax/lay-dich-vu/', LayDichVuView.as_view(), name='lay_dich_vu'),
-    path('ajax/available-times/', views.available_time_slots, name='available_times'),
+    path('ajax/available-times-slot/', views.available_time_slots, name='available_times_slot'),
     path('ajax/save-appointment/',views.save_appointment, name='save_appointment'),
     path('ajax/get-service-by-category/', views.get_service_by_category, name='get_service_by_category'),
 
 # API
-    path('api/lich-hen/<str:ma_lichhen>/', views.api_chi_tiet_lich_hen, name='api_lichhen_detail')
+    path('api/lich-hen/<str:ma_lichhen>/', views.api_chi_tiet_lich_hen, name='api_lichhen_detail'),
+    path('api/cancel-appointment/<str:ma_lichhen>', views.api_cancel_appointment, name='api_cancel_appointment'),
 ]

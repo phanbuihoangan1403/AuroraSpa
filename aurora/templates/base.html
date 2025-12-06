@@ -427,7 +427,9 @@
             .then(result => {
                 if (result.success) {
                     alert(`✅ Đặt lịch thành công!\n${data.dichvu}\nNgày: ${data.ngay} | Giờ: ${data.gio}`);
+                    // Làm rỗng form và chuyển sang page Lịch sử đã đặt
                     form.reset();
+                    window.location.href = "/lich-su-lich-hen/"
                 } else {
                     alert("❌ Lỗi khi lưu lịch: " + result.error);
                 }
@@ -435,23 +437,41 @@
             .catch(error => {
                 alert("⚠️ Lỗi kết nối: " + error);
             });
-
-            // Làm rỗng form và chuyển sang page Lịch sử đã đặt
-            form.reset();
-            window.location.href = "/lich-su-lich-hen/"
         }
 
         function confirmCancel() {
-            alert('Hủy lịch thành công!');
-            closeModal();
-            showPage('lich-su');
-        }
-        function confirmEdit() {
-            alert('Chỉnh sửa thành công!');
-            closeModal();
-            showPage('lich-su');
+            const modal = document.getElementById('cancelModal');
+            const maLichHen = modal.getAttribute('data-malichhen');
+            const lyDo = document.getElementById("lydohuy").value;
+
+            if (!lyDo.trim()) {
+                alert("Vui lòng nhập lý do hủy!");
+                return;
+            }
+
+            if (!confirm("Bạn có chắc chắn muốn hủy lịch hẹn này không?")) return;
+
+            fetch(`/api/cancel-appointment/${maLichHen}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken")
+                },
+                body: JSON.stringify({ ly_do_huy: lyDo })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);  // "Hủy lịch hẹn thành công!"
+                    location.reload();
+                } else {
+                    alert(data.message);  // Hiển thị message lỗi từ server, vd: "Không thể hủy lịch hẹn còn lại dưới 24 giờ!"
+                }
+            })
+            .catch(err => alert("❌ Hủy thất bại!"));
         }
     </script>
+    
     <script>
     function showPage(pageId) {
         const contents = document.querySelectorAll('.tab-content');

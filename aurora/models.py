@@ -263,15 +263,15 @@ class KhachHang(models.Model):
 
 # MODEL: LỊCH HẸN
 class LichHen(models.Model):
-    KHUNG_GIO_CHOICES = [
-        ("09:00 - 10:30", "09:00 - 10:30"),
-        ("10:30 - 12:00", "10:30 - 12:00"),
-        ("13:30 - 15:00", "13:30 - 15:00"),
-        ("15:00 - 16:30", "15:00 - 16:30"),
-        ("16:30 - 18:00", "16:30 - 18:00"),
-        ("18:00 - 19:30", "18:00 - 19:30"),
-        ("19:30 - 21:00", "19:30 - 21:00"),
-    ]
+    # KHUNG_GIO_CHOICES = [
+    #     ("09:00 - 10:30", "09:00 - 10:30"),
+    #     ("10:30 - 12:00", "10:30 - 12:00"),
+    #     ("13:30 - 15:00", "13:30 - 15:00"),
+    #     ("15:00 - 16:30", "15:00 - 16:30"),
+    #     ("16:30 - 18:00", "16:30 - 18:00"),
+    #     ("18:00 - 19:30", "18:00 - 19:30"),
+    #     ("19:30 - 21:00", "19:30 - 21:00"),
+    # ]
     # Trạng thái hợp lệ
     TRANG_THAI_CHOICES = [
         ('Đang chờ', 'Đang chờ'),
@@ -299,7 +299,8 @@ class LichHen(models.Model):
 
     # Thời gian
     NgayHen = models.DateField("Ngày đặt")
-    KhungGio = models.CharField(max_length=30, choices=KHUNG_GIO_CHOICES, blank=True, null=True)
+    # KhungGio = models.CharField(max_length=30, choices=KHUNG_GIO_CHOICES, blank=True, null=True)
+    KhungGio = models.ForeignKey('KhungGio', on_delete=models.PROTECT, related_name='lichhen_khunggio', null=True, blank=True)
     NhanVienThucHien = models.ForeignKey(
         'NhanVien',
         on_delete=models.SET_NULL,
@@ -311,6 +312,9 @@ class LichHen(models.Model):
     # Mã giảm giá & trạng thái
     MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
     TrangThai = models.CharField("Trạng thái", max_length=25, choices=TRANG_THAI_CHOICES, default='Đang chờ')
+
+    # Hủy Lịch
+    LyDo = models.CharField("Lý Do", max_length=255, blank=True, null=True)
 
     user = models.ForeignKey(
         User,
@@ -336,6 +340,31 @@ class LichHen(models.Model):
         super().save(*args, **kwargs)
 
 
+# MODEL: KHUNG GIO
+class KhungGio(models.Model):
+    MaKhungGio = models.CharField(
+        max_length=5,
+        primary_key=True,
+        validators=[MinLengthValidator(5)],
+        help_text="Mã định danh duy nhất cho khung giờ (VD: KG001, KG002, ...)"
+    )
+
+    GioBatDau = models.TimeField(
+        null=False,
+        help_text="Giờ bắt đầu khung giờ (HH:MM:SS)"
+    )
+
+    GioKetThuc = models.TimeField(
+        null=False,
+        help_text="Giờ kết thúc khung giờ (HH:MM:SS)"
+    )
+
+    class Meta:
+        db_table = 'KhungGio'
+        ordering = ['GioBatDau']
+
+    def __str__(self):
+        return f"{self.GioBatDau.strftime('%H:%M')} - {self.GioKetThuc.strftime('%H:%M')}"
 
 
 
