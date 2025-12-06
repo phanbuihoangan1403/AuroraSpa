@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from aurora.models import (
     NhanVien, FAQ, Blog, DichVu, DanhMucDichVu,
-    LichHen, KhachHang, DiemTichLuy, DanhMucFAQ
+    LichHen, KhachHang, DiemTichLuy, DanhMucFAQ, KhungGio
 )
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.utils import timezone  # Thêm import này để check ngày
@@ -138,9 +138,10 @@ class DichVuForm(forms.ModelForm):
 # LỊCH HẸN FORM
 # ========================================
 class LichHenForm(forms.ModelForm):
-    KhungGio = forms.ChoiceField(
-        choices=KHUNG_GIO_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-control'})
+    KhungGio = forms.ModelChoiceField(
+        queryset=KhungGio.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        label="Khung giờ"
     )
     nhan_vien_display = forms.CharField(  # Thêm field display read-only
         label='Nhân viên thực hiện',

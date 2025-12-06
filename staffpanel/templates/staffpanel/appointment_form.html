@@ -157,7 +157,7 @@ $(function(){
             if (res.available_times?.length) {
                 res.available_times.forEach(time => {
                     const sel = (time === selectedTime.trim()) ? 'selected' : '';
-                    $khunggio.append(`<option value="${time}" ${sel}>${time}</option>`);
+                    $khunggio.append(`<option value="${time.id}" ${sel}>${time.display}</option>`);
                 });
             } else {
                 $khunggio.append('<option value="" disabled>Không còn khung giờ trống</option>');

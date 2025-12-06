@@ -15,7 +15,7 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from aurora.models import (
     NhanVien, FAQ, Blog, DichVu, LichHen,
-    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu, DanhMucFAQ
+    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu, DanhMucFAQ, KhungGio
 )
 from django.db.models import F, Count
 from django.http import HttpResponseForbidden, JsonResponse
@@ -827,21 +827,15 @@ def ajax_get_services(request):
 
 @require_GET
 def ajax_available_times(request):
-    date_str = request.GET.get('date')
-    if not date_str:
-        return JsonResponse({'available_times': []})
+    selected_date = request.GET.get('date')
 
-    try:
-        from datetime import date
-        selected_date = date.fromisoformat(date_str)
-    except:
-        return JsonResponse({'available_times': []})
+    if not selected_date:
+        return JsonResponse({'error': 'Chưa chọn ngày'}, status=400)
 
-    # 7 khung giờ cố định
-    ALL_TIMES = [
-        "09:00 - 10:30", "10:30 - 12:00", "13:30 - 15:00",
-        "15:00 - 16:30", "16:30 - 18:00", "18:00 - 19:30", "19:30 - 21:00"
-    ]
+    MAX_SLOT = 4  # chỉ lấy những khung đã đủ 4+
+    available_time_response = []
+    # Tất cả khung giờ
+    all_times = KhungGio.objects.all()
 
     # Đếm số lịch hẹn từng khung giờ trong ngày
     from django.db.models import Count
@@ -850,16 +844,24 @@ def ajax_available_times(request):
         .filter(NgayHen=selected_date)
         .values('KhungGio')
         .annotate(count=Count('KhungGio'))
-        .filter(count__gte=4)  # chỉ lấy những khung đã đủ 4+
+        .filter(count__gte=MAX_SLOT) 
     )
 
     # Lấy danh sách khung giờ đã đầy (4 trở lên)
     full_times = {item['KhungGio'] for item in booked}
 
     # Chỉ trả về những khung còn dưới 4 người
-    available_times = [t for t in ALL_TIMES if t not in full_times]
+    available_times = [t for t in all_times if t not in full_times]
 
-    return JsonResponse({'available_times': available_times})
+    for slot in available_times:
+        available_time_response.append({
+                'id': slot.MaKhungGio,
+                'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
+                "max_slot": MAX_SLOT,
+            })
+
+    return JsonResponse({'available_times': available_time_response})
+
 # ========== KHÁCH HÀNG + ĐIỂM TÍCH LŨY (RECEPTION + MANAGER) ==========
 
 @reception_required
