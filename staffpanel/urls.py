@@ -12,24 +12,20 @@ urlpatterns = [
     path('', views.staff_profile, name='staff_dashboard'),
 
     # FAQ
-    path('faq/', views.staff_faq_list, name='staff_faq_list'),
-    path('faq/<str:pk>/edit/', views.staff_faq_edit, name='staff_faq_edit'),
-    path('faq/add/', views.staff_faq_edit, name='staff_faq_add'),
-    path('faq/<str:pk>/delete/', views.staff_faq_delete, name='staff_faq_delete'),
-    # Danh mục FAQ
+    path('faq/', views.staff_faq_category_list, name='staff_faq_category_list'),
     path('faq/categories/', views.staff_faq_category_list, name='staff_faq_category_list'),
     path('faq/categories/add/', views.staff_faq_category_add, name='staff_faq_category_add'),
     path('faq/categories/<str:pk>/edit/', views.staff_faq_category_edit, name='staff_faq_category_edit'),
     path('faq/categories/<str:pk>/delete/', views.staff_faq_category_delete, name='staff_faq_category_delete'),
     path('faq/categories/bulk-delete/', views.staff_faq_category_bulk_delete, name='staff_faq_category_bulk_delete'),
 
-    # FAQ theo danh mục (thay staff_faq:faq_list_by_category bằng tên thực nếu khác)
-    path('faq/categories/<str:category_pk>/faqs/', views.staff_faq_list_by_category, name='staff_faq_list_by_category'),
-
-    # Thêm FAQ mới (có thể truyền category_pk để mặc định danh mục)
-    path('faq/categories/<str:category_pk>/faqs/add/', views.staff_faq_add_in_category,
-         name='staff_faq_add_in_category'),
+    path('faq/categories/<str:category_pk>/', views.staff_faq_list_by_category, name='staff_faq_list_by_category'),
+    path('faq/categories/<str:category_pk>/add/', views.staff_faq_add_in_category, name='staff_faq_add_in_category'),
+    path('faq/categories/<str:category_pk>/edit/<str:pk>/', views.staff_faq_edit_in_category,
+         name='staff_faq_edit_in_category'),
     path('faq/bulk-delete/', views.staff_faq_bulk_delete, name='staff_faq_bulk_delete'),
+    path('faq/categories/<str:category_pk>/delete/<str:pk>/', views.staff_faq_delete_in_category,
+         name='staff_faq_delete_in_category'),
 
     # Blog
     path('blog/', views.staff_blog_list, name='staff_blog_list'),

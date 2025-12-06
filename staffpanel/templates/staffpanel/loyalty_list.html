@@ -475,7 +475,7 @@
     <h1 class="page-title">QUẢN LÝ ĐIỂM TÍCH LŨY</h1>
     </div>
 <div>
-    <!-- ĐẨY TOÀN BỘ THANH TÌM KIẾM + NÚT XÓA SANG BÊN PHẢI -->
+    <!-- THANH TÌM KIẾM  -->
     <div style="margin-bottom:20px;display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:12px;">
         <form method="get" style="display:flex;gap:6px;align-items:center;">
             <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo Mã KH hoặc Tên..."
@@ -494,16 +494,11 @@
             <button type="submit" class="btn btn-outline">Tìm</button>
         </form>
 
-        <form method="post" id="bulk-delete-form" style="margin:0;">
-            {% csrf_token %}
-            <button type="submit" name="bulk_delete" class="btn btn-danger" id="bulk-delete-btn" disabled>
-                Xóa khách hàng đã chọn
-            </button>
-        </form>
+
     </div>
 </div>
 
-<!-- Bulk Actions Bar (shows when checkboxes are selected) -->
+<!-- Bulk Actions Bar -->
 <div class="bulk-actions-bar" id="bulkSection">
     <form id="bulkForm" onsubmit="return bulkSubmit(event);">
         {% csrf_token %}

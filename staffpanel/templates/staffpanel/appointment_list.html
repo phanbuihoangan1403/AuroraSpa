@@ -22,7 +22,7 @@
                    style="min-width:280px; padding:10px 14px; border-radius:8px; border:1px solid #ddd; font-size:14px;">
             <button type="submit" class="btn btn-outline-secondary"
                     style="padding:8px 16px; border-radius:8px; border:1px solid #ddd;">
-                Tìm kiếm
+                Tìm
             </button>
         </form>
 
@@ -135,15 +135,15 @@
                     {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
                     <th style="width:50px;"><input type="checkbox" id="select-all" class="form-check-input"></th>
                     {% else %}<th style="width:50px;"></th>{% endif %}
-                    <th style="width:120px;">MÃ LỊCH HẸN</th>
-                    <th>NGÀY HẸN</th>
-                    <th>GIỜ</th>
-                    <th>TRẠNG THÁI</th>
-                    <th>KHÁCH HÀNG</th>
-                    <th>DỊCH VỤ</th>
+                    <th style="width:120px;">Mã LH</th>
+                    <th>Ngày hẹn</th>
+                    <th>Giờ</th>
+                    <th>Trạng thái</th>
+                    <th>Khách hàng</th>
+                    <th>Dịch vụ</th>
                     <!-- CỘT NHÂN VIÊN MỚI -->
-                    <th style="width:130px;">NHÂN VIÊN</th>
-                    <th style="width:160px; text-align:center;">HÀNH ĐỘNG</th>
+                    <th style="width:130px;">Nhân viên</th>
+                    <th style="width:160px; text-align:center;">Hành động</th>
                 </tr>
             </thead>
             <tbody>
