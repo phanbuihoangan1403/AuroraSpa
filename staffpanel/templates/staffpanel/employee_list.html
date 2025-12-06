@@ -8,7 +8,7 @@
     <h1 class="page-title">DANH SÁCH NHÂN VIÊN</h1>
 </div>
 
-<!-- THANH TÌM KIẾM + NÚT THÊM + NÚT XÓA – GIỐNG HỆT TRANG KHÁCH HÀNG -->
+<!-- THANH TÌM KIẾM + NÚT THÊM + NÚT XÓA -->
 <div style="margin-top:10px; display:flex; justify-content:flex-end; align-items:center; gap:12px; flex-wrap:wrap;">
     <form method="get" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
         <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên, email, mã nhân viên..."
@@ -35,7 +35,7 @@
     {% endif %}
 </div>
 
-<!-- BẢNG NHÂN VIÊN – GIỐNG HỆT TRANG KHÁCH HÀNG -->
+<!-- BẢNG NHÂN VIÊN  -->
 <div class="card" style="margin-top:16px;">
     <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
         <thead style="background:#f8fafc;">
@@ -139,6 +139,7 @@
             <button class="btn btn-delete" onclick="closeEmployeeDetail()">Đóng</button>
         </div>
     </div>
+
 </div>
 
 <style>

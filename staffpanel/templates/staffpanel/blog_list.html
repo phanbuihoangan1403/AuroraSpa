@@ -2,7 +2,7 @@
 {% block title %}Danh sách Blog{% endblock %}
 {% block nav_blog %}active{% endblock %}
 
-{% block content %}   <!-- ĐÃ SỬA: chỉ để 1 dấu {% -->
+{% block content %}
 
 <!-- TIÊU ĐỀ -->
 <div style="margin-bottom: 30px;">
@@ -11,7 +11,7 @@
     </h1>
 </div>
 
-<!-- THANH CÔNG CỤ ĐƯỢC ĐƯA LÊN TRÊN – SÁT NGAY TRÊN BẢNG (cách bảng 15px) -->
+<!-- THANH CÔNG CỤ -->
 <div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 15px; padding: 0 10px;">
 
     <!-- Lọc trạng thái -->
@@ -68,15 +68,13 @@
 
 </div>
 
-<!-- BẢNG DỮ LIỆU -->
+<!-- BẢNG -->
 <div class="card">
     <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
         <thead style="background:#f8fafc;">
             <tr>
-                <th style="width:50px;text-align:center;">
-                    <input type="checkbox" id="select-all" class="custom-checkbox">
-                </th>
-                <th style="width:80px;text-align:center;">ID</th>
+                <th style="width:50px;text-align:center;"><input type="checkbox" id="select-all" class="custom-checkbox"></th>
+                <th style="width:80px;text-align:center;">Mã BV</th> <!-- Đã bỏ in đậm ở tbody -->
                 <th style="text-align:left;padding-left:12px;">Tiêu đề</th>
                 <th style="width:110px;text-align:center;">Hiển thị</th>
                 <th style="width:150px;text-align:center;">Cập nhật</th>
@@ -84,34 +82,33 @@
                 <th style="width:140px;text-align:center;">Hành động</th>
             </tr>
         </thead>
+
         <tbody>
         {% for blog in blogs %}
             <tr style="height:56px;border-bottom:1px solid #e2e8f0;">
                 <td style="text-align:center;">
-                    <input type="checkbox" name="blog_ids" value="{{ blog.MaBaiViet }}"
-                           class="custom-checkbox blog-checkbox" form="bulk-delete-form">
+                    <input type="checkbox" name="blog_ids" value="{{ blog.MaBaiViet }}" class="custom-checkbox blog-checkbox" form="bulk-delete-form">
                 </td>
-                <td style="text-align:center;font-weight:600;color:#4a5568;">{{ blog.MaBaiViet }}</td>
+
+                <!-- *** ID KHÔNG IN ĐẬM NỮA *** -->
+                <td style="text-align:center;color:#4a5568;">{{ blog.MaBaiViet }}</td>
+
                 <td style="padding-left:12px;">
                     <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;" title="{{ blog.TieuDeBaiViet }}">
                         {{ blog.TieuDeBaiViet }}
                     </div>
                 </td>
+
                 <td style="text-align:center;">
-                    {% if blog.TrangThaiHienThi == 1 %}
-                        <span class="status-badge status-published">Đăng</span>
-                    {% elif blog.TrangThaiHienThi == 0 %}
-                        <span class="status-badge status-draft">Nháp</span>
-                    {% else %}
-                        <span class="status-badge status-unknown">Không xác định</span>
-                    {% endif %}
+                    <input type="checkbox" class="custom-checkbox" {% if blog.TrangThaiHienThi == 1 %}checked{% endif %} disabled>
                 </td>
-                <td style="text-align:center;font-size:13.5px;color:#718096;">
-                    {{ blog.NgayCapNhat|date:"H:i d/m/Y" }}
-                </td>
+
+                <td style="text-align:center;font-size:13.5px;color:#718096;">{{ blog.NgayCapNhat|date:"H:i d/m/Y" }}</td>
+
                 <td style="text-align:center;color:#4a5568;">
                     {{ blog.MaNhanVien.user.get_full_name|default:blog.MaNhanVien.user.username }}
                 </td>
+
                 <td style="text-align:center;">
                     <a href="{% url 'staff_blog_edit' blog.MaBaiViet %}" style="color:#3182ce;font-weight:600;">Sửa</a>
                     <span style="color:#cbd5e0;margin:0 8px;">|</span>
@@ -122,11 +119,7 @@
                 </td>
             </tr>
         {% empty %}
-            <tr>
-                <td colspan="7" style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">
-                    Chưa có blog nào.
-                </td>
-            </tr>
+            <tr><td colspan="7" style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">Chưa có blog nào.</td></tr>
         {% endfor %}
         </tbody>
     </table>
@@ -137,32 +130,25 @@
 <style>
     .custom-checkbox{width:14px!important;height:14px!important;cursor:pointer;accent-color:#28a745;margin:0}
     th,td{padding:8px 12px!important;vertical-align:middle!important}
-    .status-badge{display:inline-block;min-width:55px;padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600;text-align:center}
-    .status-published{background:#d4edda;color:#155724}
-    .status-draft{background:#fff3cd;color:#856404}
-    .status-unknown{background:#e2e8f0;color:#718096}
     .btn-danger:hover:not(:disabled){background:#c53030!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(229,62,62,0.4)}
 </style>
 
 <script>
-    const selectAll = document.getElementById('select-all');
-    const checkboxes = document.querySelectorAll('.blog-checkbox');
-    const bulkBtn = document.getElementById('bulk-delete-btn');
-    function updateBulkButton() {
-        const count = document.querySelectorAll('.blog-checkbox:checked').length;
-        bulkBtn.disabled = count === 0;
-        bulkBtn.style.opacity = count > 0 ? '1' : '0.5';
-        bulkBtn.style.cursor = count > 0 ? 'pointer' : 'not-allowed';
-        bulkBtn.textContent = count > 0 ? `Xóa ${count} blog đã chọn` : 'Xóa blog đã chọn';
+    const selectAll=document.getElementById('select-all');
+    const checkboxes=document.querySelectorAll('.blog-checkbox');
+    const bulkBtn=document.getElementById('bulk-delete-btn');
+    function updateBulkButton(){
+        const count=document.querySelectorAll('.blog-checkbox:checked').length;
+        bulkBtn.disabled=count===0;
+        bulkBtn.style.opacity=count>0?'1':'0.5';
+        bulkBtn.style.cursor=count>0?'pointer':'not-allowed';
+        bulkBtn.textContent=count>0?`Xóa ${count} blog đã chọn`:'Xóa blog đã chọn';
     }
-    selectAll?.addEventListener('change', e => {
-        checkboxes.forEach(cb => cb.checked = e.target.checked);
-        updateBulkButton();
-    });
-    checkboxes.forEach(cb => cb.addEventListener('change', updateBulkButton));
-    document.getElementById('bulk-delete-form').addEventListener('submit', e => {
-        const count = document.querySelectorAll('.blog-checkbox:checked').length;
-        if (!confirm(`XÓA ${count} blog đã chọn?\nHành động này không thể hoàn tác!`)) e.preventDefault();
+    selectAll?.addEventListener('change',e=>{checkboxes.forEach(c=>c.checked=e.target.checked);updateBulkButton();});
+    checkboxes.forEach(c=>c.addEventListener('change',updateBulkButton));
+    document.getElementById('bulk-delete-form').addEventListener('submit',e=>{
+        const count=document.querySelectorAll('.blog-checkbox:checked').length;
+        if(!confirm(`XÓA ${count} blog đã chọn?\nHành động này không thể hoàn tác!`))e.preventDefault();
     });
     updateBulkButton();
 </script>

@@ -26,7 +26,7 @@
     </form>
 
     <a href="{% url 'staff_faq_add_in_category' category.MaDanhMuc %}">
-        <button class="btn btn-primary">+ Thêm FAQ mới “{{ category.TenDanhMuc }}” </button>
+        <button class="btn btn-primary">+ Thêm FAQ mới</button>
     </a>
 
     {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
@@ -46,7 +46,7 @@
                     <input type="checkbox" id="selectAll" class="custom-checkbox">
                 </th>
                 {% endif %}
-                <th style="width:100px; text-align:center;">Mã</th>
+                <th style="width:100px; text-align:center;">Mã CH</th>
                 <th style="text-align:left; padding-left:12px;">Câu hỏi</th>
                 <th style="width:110px; text-align:center;">Trạng thái</th>
                 <th style="width:150px; text-align:center;">Cập nhật</th>
@@ -80,11 +80,26 @@
                 </td>
                 <td style="text-align:center;">{{ faq.NgayCapNhat|date:"d/m/Y H:i" }}</td>
                 <td style="text-align:center;" onclick="event.stopPropagation()">
-                    <a href="{% url 'staff_faq_edit' faq.MaCauHoi %}" style="color:#3182ce; font-weight:600;">Sửa</a>
+                    <!-- NÚT SỬA -->
+                    <a href="{% url 'staff_faq_add_in_category' category.MaDanhMuc %}?edit={{ faq.MaCauHoi }}"
+                       style="color:#3182ce; font-weight:600;">Sửa</a>
+
+                    <!-- NÚT XÓA – DÙNG FORM POST, KHÔNG DÙNG JS CŨ NỮA -->
                     {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
                     <span style="color:#cbd5e0; margin:0 8px;">|</span>
-                    <a href="#" style="color:#e53e3e; font-weight:600;"
-                       onclick="event.preventDefault(); deleteFAQ('{{ faq.MaCauHoi }}', '{{ faq.CauHoi|escapejs|truncatechars:50 }}')">
+
+                    <form method="post" action="{% url 'staff_faq_bulk_delete' %}" style="display:inline;" id="delete-form-{{ forloop.counter }}">
+                        {% csrf_token %}
+                        <input type="hidden" name="ids" value="{{ faq.MaCauHoi }}">
+                    </form>
+
+                    <a href="javascript:void(0)"
+                       style="color:#e53e3e; font-weight:600; text-decoration:underline; text-decoration-color:#e53e3e; cursor:pointer;"
+                       onclick="
+                           if (confirm('XÓA câu hỏi này?\n\n{{ faq.CauHoi|truncatechars:80|escapejs }}\n\nKhông thể khôi phục!')) {
+                               document.getElementById('delete-form-{{ forloop.counter }}').submit();
+                           }
+                       ">
                         Xóa
                     </a>
                     {% endif %}
@@ -122,7 +137,6 @@
     </div>
 </div>
 
-<!-- STYLE ĐẸP NHƯ EMPLOYEE -->
 <style>
     .custom-checkbox { width:16px!important; height:16px!important; cursor:pointer; accent-color:#28a745; }
     .status-badge { display:inline-block; min-width:72px; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; text-align:center; }
@@ -130,18 +144,14 @@
     .status-offline { background:#e2e8f0; color:#718096; }
     .btn-outline { background:transparent; border:1px solid #a0aec0; color:#4a5568; padding:9px 18px; border-radius:8px; font-weight:500; cursor:pointer; }
     .btn-primary { background:#214134; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; }
-    .btn-primary:hover { background:#1a3429; }
     .btn-danger { background:#e53e3e; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; }
-    .btn-danger:hover:not(:disabled) { background:#c53030; }
     .card { background:white; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,0.05); overflow:hidden; }
     tr:hover { background:#f8fafc; }
 </style>
 
-<!-- SCRIPT HOÀN CHỈNH – KHÔNG CÒN LỖI -->
 <script>
     let currentFAQ = null;
 
-    // Click dòng → mở modal
     document.querySelectorAll('.faq-row').forEach(row => {
         row.addEventListener('click', function(e) {
             if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
@@ -167,23 +177,11 @@
 
     function editFromModal() {
         if (currentFAQ) {
-            window.location = `/staff/faq/${currentFAQ.mach}/edit/`;
+            window.location = "{% url 'staff_faq_add_in_category' category.MaDanhMuc %}?edit=" + currentFAQ.mach;
         }
     }
 
-    function deleteFAQ(ma, cauhoi) {
-        if (!confirm(`Xóa câu hỏi:\n"${cauhoi}" ?\nKhông thể khôi phục!`)) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/staff/faq/${ma}/delete/`;  // DÙNG ĐƯỜNG DẪN CỨNG → KHÔNG BỊ NoReverseMatch
-        const csrf = document.createElement('input');
-        csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
-        form.appendChild(csrf);
-        document.body.appendChild(form);
-        form.submit();
-    }
-
-    // BULK DELETE HOẠT ĐỘNG MƯỢT
+    // BULK DELETE
     const selectAll = document.getElementById('selectAll');
     const bulkBtn = document.getElementById('bulkDelete');
 
@@ -194,9 +192,7 @@
         });
     }
 
-    document.querySelectorAll('.row-checkbox').forEach(cb => {
-        cb.addEventListener('change', updateBulkButton);
-    });
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.addEventListener('change', updateBulkButton));
 
     function updateBulkButton() {
         const checked = document.querySelectorAll('.row-checkbox:checked').length;
@@ -220,18 +216,16 @@
             const csrf = document.createElement('input');
             csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
             form.appendChild(csrf);
-
             selected.forEach(id => {
-                const input = document.createElement('input');
-                input.type = 'hidden'; input.name = 'ids'; input.value = id;
-                form.appendChild(input);
+                const i = document.createElement('input');
+                i.type = 'hidden'; i.name = 'ids'; i.value = id;
+                form.appendChild(i);
             });
-
             document.body.appendChild(form);
             form.submit();
         });
     }
 
-    updateBulkButton(); // khởi chạy lần đầu
+    updateBulkButton();
 </script>
 {% endblock %}

@@ -38,7 +38,7 @@
                     <input type="checkbox" id="selectAll" class="custom-checkbox">
                 </th>
                 {% endif %}
-                <th style="width:100px;text-align:center;">Mã</th>
+                <th style="width:100px;text-align:center;">Mã DM</th>
                 <th style="text-align:left;padding-left:12px;">Tên danh mục</th>
                 <th style="width:280px;">Mô tả</th>
                 <th style="width:110px;text-align:center;">Số câu hỏi</th>
@@ -62,20 +62,18 @@
                 </td>
                 {% endif %}
 
-                <td style="text-align:center; font-weight:600;">{{ cat.MaDanhMuc }}</td>
+                <td style="text-align:center; color:#214134;">{{ cat.MaDanhMuc }}</td>
 
-                <!-- Click tên → vào danh sách FAQ của danh mục đó -->
                 <td style="padding-left:12px;">
                     <a href="{% url 'staff_faq_list_by_category' cat.MaDanhMuc %}"
-                       style="color:#214134; font-weight:600; text-decoration:none; display:block;">
+                       style="color:#214134; text-decoration:none; display:block;">
                         {{ cat.TenDanhMuc }}
                     </a>
                 </td>
 
                 <td style="color:#555;">{{ cat.MoTaDanhMuc|default:"—"|truncatechars:70 }}</td>
 
-                <!-- SỐ CÂU HỎI HIỂN THỊ CHÍNH XÁC 100% -->
-                <td style="text-align:center; font-weight:700; color:#214134;">
+                <td style="text-align:center; color:#214134;">
                     {{ cat.so_cau_hoi }}
                 </td>
 
