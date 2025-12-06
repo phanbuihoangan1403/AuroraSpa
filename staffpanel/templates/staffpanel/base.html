@@ -26,7 +26,12 @@
                   font-weight:600; color:#214134; font-size:14px; }
         .content { padding:24px 32px 40px; }
         .page-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-        .page-title { font-size:24px; font-weight:700; letter-spacing:.5px; }
+        .page-title {
+            font-size: 32px !important;
+            font-weight: 700 !important;
+            color: #1a1a1a !important;
+            margin-bottom: 24px !important;
+        }
         .btn { border:none; border-radius:8px; padding:8px 14px; font-size:14px; cursor:pointer; }
         .btn-primary { background:#2f5c48; color:#fff; }
         .btn-outline { background:transparent; border:1px solid #d6cbbd; color:#4b463c; }
@@ -40,6 +45,58 @@
         .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; }
         .badge-success { background:#e3f4eb; color:#256c3b; }
         .badge-muted { background:#f0ede7; color:#7a6f62; }
+        /* ==================== ĐỒNG BỘ CĂN CHỈNH BẢNG CHO TOÀN BỘ STAFF PANEL ==================== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        /* Cột checkbox đầu tiên */
+        table th:first-child,
+        table td:first-child {
+            width: 50px !important;
+            text-align: center !important;
+            padding: 10px 8px !important;
+        }
+
+        /* Tất cả các ô bảng đều thoáng hơn */
+        table th,
+        table td {
+            padding: 12px 10px !important;
+            vertical-align: middle !important;
+        }
+
+        /* Nền header bảng nhẹ nhàng, hiện đại */
+        thead tr {
+            background: #f6f3ee !important;
+        }
+
+        /* Cột cuối cùng (thường là Hành động) căn giữa + rộng vừa đủ */
+        table th:last-child,
+        table td:last-child {
+            width: 110px !important;
+            text-align: center !important;
+        }
+
+        /* Các cột có class text-center thì căn giữa thật */
+        table th.text-center,
+        table td.text-center {
+            text-align: center !important;
+        }
+
+        /* Hover đẹp hơn */
+        tr:hover td {
+            background: #f1f5f9 !important;
+        }
+
+        /* Badge điểm nhỏ gọn */
+        .badge-point,
+        .badge {
+            min-width: 48px;
+            display: inline-block;
+            text-align: center;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -48,27 +105,42 @@
     <aside class="sidebar">
         <div class="brand">Aurora Spa</div>
 
-        <div class="nav-section-title">Tổng quan</div>
-        <a href="{% url 'staff_dashboard' %}" class="nav-link {% block nav_dashboard %}{% endblock %}">Dashboard</a>
+        {% with role=request.user.nhanvien.VaiTro %}
 
-        <div class="nav-section-title">Nội dung</div>
-        <a href="{% url 'staff_blog_list' %}" class="nav-link {% block nav_blog %}{% endblock %}">Blog</a>
-        <a href="{% url 'staff_service_list' %}" class="nav-link {% block nav_service %}{% endblock %}">Dịch vụ</a>
-        <a href="{% url 'staff_faq_list' %}" class="nav-link {% block nav_faq %}{% endblock %}">FAQ</a>
 
-        <div class="nav-section-title">Vận hành</div>
-        <a href="{% url 'staff_appointment_list' %}" class="nav-link {% block nav_appointment %}{% endblock %}">Lịch hẹn</a>
-        <a href="{% url 'staff_customer_list' %}" class="nav-link {% block nav_customer %}{% endblock %}">Khách hàng</a>
-        <a href="{% url 'staff_loyalty_list' %}" class="nav-link {% block nav_loyalty %}{% endblock %}">Điểm tích lũy</a>
+        {# ===================== NỘI DUNG (MANAGER + CONTENT) ===================== #}
+        {% if role == "MANAGER" or role == "CONTENT" %}
+            <div class="nav-section-title">Nội dung</div>
+            <a href="{% url 'staff_blog_list' %}" class="nav-link {% block nav_blog %}{% endblock %}">Blog</a>
+            <a href="{% url 'staff_service_list' %}" class="nav-link {% block nav_service %}{% endblock %}">Dịch vụ</a>
+            <a href="{% url 'staff_faq_category_list' %}" class="nav-link {% block nav_faq %}{% endblock %}">FAQ</a>
+        {% endif %}
 
-        <div class="nav-section-title">Nhân sự</div>
-        <a href="{% url 'staff_employee_list' %}" class="nav-link {% block nav_employee %}{% endblock %}">Nhân viên</a>
-        <a href="{% url 'staff_log_list' %}" class="nav-link {% block nav_logs %}{% endblock %}">Nhật ký</a>
+        {# ===================== VẬN HÀNH (MANAGER + RECEPTION) ===================== #}
+        {% if role == "MANAGER" or role == "RECEPTION" %}
+            <div class="nav-section-title">Vận hành</div>
+            <a href="{% url 'staff_appointment_list' %}" class="nav-link {% block nav_appointment %}{% endblock %}">Lịch hẹn</a>
+            <a href="{% url 'staff_customer_list' %}" class="nav-link {% block nav_customer %}{% endblock %}">Khách hàng</a>
+            <a href="{% url 'staff_loyalty_list' %}" class="nav-link {% block nav_loyalty %}{% endblock %}">Điểm tích lũy</a>
+        {% endif %}
 
+        {# ===================== NHÂN SỰ (chỉ MANAGER) ===================== #}
+        {% if role == "MANAGER" %}
+            <div class="nav-section-title">Nhân sự</div>
+            <a href="{% url 'staff_employee_list' %}" class="nav-link {% block nav_employee %}{% endblock %}">Nhân viên</a>
+
+        {% endif %}
+
+
+        {# ===================== TÀI KHOẢN (mọi vai trò đều thấy) ===================== #}
         <div class="nav-section-title">Tài khoản</div>
         <a href="{% url 'staff_profile' %}" class="nav-link">Hồ sơ</a>
         <a href="{% url 'staff_logout' %}" class="nav-link">Đăng xuất</a>
+
+        {% endwith %}
     </aside>
+
+
 
     <div class="main">
         <header class="topbar">

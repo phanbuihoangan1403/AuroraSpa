@@ -30,3 +30,4 @@ def role_required(*roles):
 manager_required = role_required('MANAGER')
 content_required = role_required('MANAGER', 'CONTENT')
 reception_required = role_required('MANAGER', 'RECEPTION')
+staff_required = role_required('STAFF')

@@ -6,9 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from .forms import RegisterForm
 from django.utils.timezone import localtime
-from aurora.models import Blog, DichVu, KhachHang, DiemTichLuy, LichSuTichDiem, FAQ, DanhMucDichVu
-
-from datetime import datetime
+from aurora.models import Blog, DichVu, KhachHang, DiemTichLuy, LichSuTichDiem, FAQ, DanhMucDichVu, DanhMucFAQ, KhungGio
+from django.utils import timezone
+from datetime import datetime, timedelta
 import json
 from django.http import JsonResponse #JAVA
 from django.views import View #JAVA
@@ -23,47 +23,68 @@ def save_appointment(request):
         try:
             data = json.loads(request.body)
 
-            # Lấy thông tin từ request
             HoTen = data.get('hoten')
             Email = data.get('email')
             DienThoai = data.get('sdt')
             MaDanhMuc = data.get('danhmuc')
             MaDichVu = data.get('dichvu')
-            NgayHen = data.get('ngay')  # định dạng "YYYY-MM-DD"
-            KhungGio = data.get('gio')
+            NgayHen = data.get('ngay')  # YYYY-MM-DD
+            MaKhungGio = data.get('gio')
             MaGiamGia = data.get('magiamgia', '')
 
             # Kiểm tra bắt buộc
-            if not all([HoTen, Email, DienThoai, MaDichVu, NgayHen, KhungGio]):
-                return JsonResponse({'success': False, 'error': 'Thiếu dữ liệu bắt buộc'})
+            if not all([HoTen, Email, DienThoai, MaDichVu, NgayHen, MaKhungGio]):
+                return JsonResponse({'success': False, 'error': 'Vui lòng điền đầy đủ thông tin bắt buộc'})
 
-            # Lấy dịch vụ và danh mục
-            dich_vu = DichVu.objects.get(MaDichVu=MaDichVu)
-            danh_muc = DanhMucDichVu.objects.get(MaDanhMuc=MaDanhMuc) if MaDanhMuc else None
+            # Lấy đối tượng dịch vụ
+            khung_gio = get_object_or_404(KhungGio, MaKhungGio=MaKhungGio)
+            danh_muc = get_object_or_404(DanhMucDichVu, MaDanhMuc=MaDanhMuc)
+            dich_vu = get_object_or_404(DichVu, MaDichVu=MaDichVu)
 
-            # Lưu lịch hẹn
+            # Chuyển ngày string → date object
+            ngay_hen_date = datetime.strptime(NgayHen, "%Y-%m-%d").date()
+
+            # TỰ ĐỘNG PHÂN NHÂN VIÊN – QUAN TRỌNG NHẤT
+            from aurora.utils import phan_nhan_vien_tu_dong
+            nhan_vien = phan_nhan_vien_tu_dong(
+                ma_danh_muc=MaDanhMuc,
+                ngay_hen=ngay_hen_date,
+                khung_gio=KhungGio
+            )
+
+            # Tạo lịch hẹn với nhân viên đã được phân (hoặc NULL nếu kín lịch)
             lich_hen = LichHen.objects.create(
-                user=request.user,
+                user=request.user if request.user.is_authenticated else None,  # ← DÒNG QUAN TRỌNG NHẤT
                 HoTen=HoTen,
                 Email=Email,
                 DienThoai=DienThoai,
                 DanhMucDichVu=danh_muc,
                 DichVu=dich_vu,
-                NgayHen=datetime.strptime(NgayHen, "%Y-%m-%d").date(),
-                KhungGio=KhungGio,
-                MaGiamGia=MaGiamGia
+                NgayHen=ngay_hen_date,
+                KhungGio=khung_gio,
+                MaGiamGia=MaGiamGia or None,
+                TrangThai='Đang chờ',  # hoặc 'Đã xác nhận' tùy bạn
+                NhanVienThucHien=nhan_vien  # ← ĐÂY LÀ CHỖ QUAN TRỌNG NHẤT
             )
 
-            return JsonResponse({'success': True, 'message': 'Đặt lịch thành công!', 'MaLichHen': lich_hen.MaLichHen})
+            # Trả về thông báo đẹp cho khách
+            if nhan_vien:
+                ten_nv = f"{nhan_vien.MaNhanVien} - {nhan_vien.user.get_full_name() or nhan_vien.user.username}"
+                msg = f"Đặt lịch thành công! Chúng tôi đã phân nhân viên <strong>{ten_nv}</strong> thực hiện cho bạn."
+            else:
+                msg = "Đặt lịch thành công! Hiện tại tất cả chuyên viên đều kín lịch, chúng tôi sẽ liên hệ sớm để sắp xếp."
 
-        except DichVu.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Dịch vụ không tồn tại'})
-        except DanhMucDichVu.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Danh mục không tồn tại'})
+            return JsonResponse({
+                'success': True,
+                # 'message': msg,
+                'MaLichHen': lich_hen.MaLichHen
+            })
+
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': 'Đã có lỗi xảy ra, vui lòng thử lại sau.', 'err': e})
 
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+    return JsonResponse({'success': False, 'error': 'Invalid request'}, status=400)
+
 
 
 ## 2. Lấy khung giờ còn trống
@@ -76,13 +97,35 @@ def available_time_slots(request):
     if not selected_date:
         return JsonResponse({'error': 'Chưa chọn ngày'}, status=400)
 
-    # Lấy danh sách giờ đã đặt cho ngày đó
-    booked_times = LichHen.objects.filter(NgayHen=selected_date).values_list('KhungGio', flat=True)
+    MAX_SLOT = 4  # chỉ lấy những khung đã đủ 4+
+    available_time_response = []
+    # Tất cả khung giờ
+    all_times = KhungGio.objects.all()
 
-    # Lọc ra các khung giờ còn trống
-    available_times = [t for t in ALL_TIME_SLOTS if t not in booked_times]
+    # Đếm số lịch hẹn từng khung giờ trong ngày
+    from django.db.models import Count
+    booked = (
+        LichHen.objects
+        .filter(NgayHen=selected_date)
+        .values('KhungGio')
+        .annotate(count=Count('KhungGio'))
+        .filter(count__gte=MAX_SLOT) 
+    )
 
-    return JsonResponse({'available_times': available_times})
+    # Lấy danh sách khung giờ đã đầy (4 trở lên)
+    full_times = {item['KhungGio'] for item in booked}
+
+    # Chỉ trả về những khung còn dưới 4 người
+    available_times = [t for t in all_times if t not in full_times]
+
+    for slot in available_times:
+        available_time_response.append({
+                'id': slot.MaKhungGio,
+                'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
+                "max_slot": MAX_SLOT,
+            })
+
+    return JsonResponse({'available_times': available_time_response})
 
 
 ## 3. Lấy dịch vụ theo danh mục (AJAX)
@@ -100,6 +143,67 @@ def get_service_by_category(request):
     return JsonResponse({'dich_vu_list': data})
 
 
+## 4. Hủy lịch hẹn
+def api_cancel_appointment(request, ma_lichhen):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+
+            # Lấy thông tin từ request
+            MaLichHen = ma_lichhen
+            LyDoHuy = data.get('ly_do_huy')
+
+            # Kiểm tra lý do
+            if not LyDoHuy:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Vui lòng nhập lý do hủy!'
+                })
+
+            # Tìm lịch hẹn
+            lichHen = LichHen.objects.get(MaLichHen=MaLichHen)
+
+            # ✅ Không được hủy khi đã hoàn thành
+            if lichHen.TrangThai == 'Đã hủy':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Lịch hẹn đã hoàn thành, không thể hủy!'
+                })
+
+            # ✅ Không được hủy khi còn lại trong 24h
+            lich_datetime = datetime.combine(lichHen.NgayHen, lichHen.KhungGio.GioBatDau)
+            now = datetime.now()
+
+            if lich_datetime - now < timedelta(hours=24):
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Không thể hủy lịch hẹn còn lại dưới 24 giờ!'
+                })
+
+            # ✅ Cập nhật trạng thái & lý do
+            lichHen.TrangThai = 'Đã hủy'
+            lichHen.LyDo = LyDoHuy
+            lichHen.save()
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Hủy lịch hẹn thành công!'
+            })
+
+        except LichHen.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'message': 'Không tìm thấy lịch hẹn!'
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': str(e)
+            })
+
+
+@login_required(login_url='login')
 ### 4. Đặt lịch hẹn
 def datlichhen_view(request):
     khachhang, created = KhachHang.objects.get_or_create(user=request.user)
@@ -123,16 +227,17 @@ def api_chi_tiet_lich_hen(request, ma_lichhen):
         'ten_dichvu': lich.DichVu.TenDichVu,
         'mota_dichvu': lich.DichVu.MoTa,
         'ngayhen': lich.NgayHen.strftime("%d/%m/%Y"),
-        'khunggio': lich.KhungGio,
+        'khunggio': str(lich.KhungGio),
         'trangthai': lich.TrangThai,
         'thoigian_dat': lich.NgayHen.strftime("%Hh %d/%m/%Y"),
+        'lydo': lich.LyDo
     }
     return JsonResponse(data)
 
 
 @login_required
 def lichsulichhen_view(request):
-    appointments = LichHen.objects.filter(user=request.user).select_related('DichVu')
+    appointments = LichHen.objects.filter(user=request.user).select_related('DichVu').order_by('NgayHen', 'KhungGio__MaKhungGio')
     return render(request, 'pages/lichsulichhen.html', {'appointments': appointments})
 
 
@@ -208,9 +313,28 @@ def dichvu_view(request, madanhmuc=None):
 
     return render(request, 'pages/dichvu.html', {'data': data})
 
+from django.db.models import Prefetch
+
 def faq_view(request):
-    faqs = FAQ.objects.filter(TrangThaiHienThi=True).order_by('NgayCapNhat')
-    return render(request, 'pages/faq.html', {'faqs': faqs})
+   categories = DanhMucFAQ.objects \
+       .prefetch_related(
+           Prefetch(
+               'faq_list',  # ← related_name chính xác là "faq_list"
+               queryset=FAQ.objects.filter(TrangThaiHienThi=True).order_by('MaCauHoi')
+           )
+       ) \
+       .filter(TrangThaiHienThi=True) \
+       .order_by('MaDanhMuc') \
+       .all()
+
+
+   # Loại bỏ danh mục không có FAQ nào hiển thị
+   categories = [cat for cat in categories if cat.faq_list.exists()]
+
+
+   return render(request, 'pages/faq.html', {
+       'categories': categories
+   })
 
 def lienhe_view(request):
     return render(request, 'pages/lienhe.html')
@@ -252,7 +376,7 @@ def diem_view(request):
     rows = []
     for tx in history:
         rows.append({
-            "date": localtime(tx.NgayGiaoDich),
+            "date": timezone.localtime(tx.NgayGiaoDich),
             "detail": tx.ChiTietGiaoDich,
             "delta": tx.SoDiemThayDoi,
             "balance_after": running_balance

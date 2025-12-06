@@ -4,50 +4,264 @@
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">LỊCH HẸN</h1>
+    <h1 class="page-title">DANH SÁCH LỊCH HẸN</h1>
+</div>
 
-    <form method="get" style="display:flex;gap:8px;">
-        <select name="trang_thai" style="padding:6px 10px;border-radius:8px;border:1px solid #d9cfc3;">
-            <option value="">Tất cả trạng thái</option>
-            <option value="Chờ" {% if trang_thai == "Chờ" %}selected{% endif %}>Chờ xác nhận</option>
-            <option value="Đã xác nhận" {% if trang_thai == "Đã xác nhận" %}selected{% endif %}>Đã xác nhận</option>
-            <option value="Đã hủy" {% if trang_thai == "Đã hủy" %}selected{% endif %}>Đã hủy</option>
-            <option value="Hoàn thành" {% if trang_thai == "Hoàn thành" %}selected{% endif %}>Hoàn thành</option>
-        </select>
-        <button class="btn btn-outline">Lọc</button>
+<!-- THANH CÔNG CỤ -->
+<div style="margin-bottom:30px; display:flex; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+        <!-- Ô TÌM KIẾM -->
+        <form method="get" style="display:flex; gap:8px; align-items:center;">
+            {% if request.GET.ngay %}<input type="hidden" name="ngay" value="{{ request.GET.ngay }}">{% endif %}
+            {% if request.GET.trang_thai %}<input type="hidden" name="trang_thai" value="{{ request.GET.trang_thai }}">{% endif %}
+            {% if request.GET.dich_vu %}<input type="hidden" name="dich_vu" value="{{ request.GET.dich_vu }}">{% endif %}
+
+            <input type="text" name="q" value="{{ request.GET.q|default:'' }}"
+                   placeholder="Tìm tên khách, dịch vụ, mã lịch hẹn..."
+                   class="form-control"
+                   style="min-width:280px; padding:10px 14px; border-radius:8px; border:1px solid #ddd; font-size:14px;">
+            <button type="submit" class="btn btn-outline-secondary"
+                    style="padding:8px 16px; border-radius:8px; border:1px solid #ddd;">
+                Tìm
+            </button>
+        </form>
+
+        <!-- NÚT BỘ LỌC -->
+        <button type="button" id="filter-btn" class="btn btn-outline-secondary"
+                style="padding:8px 20px; border-radius:8px; font-weight:600; white-space:nowrap; border:1px solid #ddd;">
+            Bộ lọc
+            <span id="filter-count"
+                  style="background:#3182ce;color:white;border-radius:50%;width:20px;height:20px;font-size:11px;display:inline-flex;align-items:center;justify-content:center;margin-left:6px;opacity:0;">
+                0
+            </span>
+        </button>
+    </div>
+
+    <a href="{% url 'staff_appointment_create' %}" class="btn btn-primary"
+       style="padding:8px 20px; border-radius:8px; font-weight:600; white-space:nowrap;text-decoration: none;">
+        + Thêm lịch hẹn mới
+    </a>
+
+    {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
+    <form method="post" action="{% url 'staff_appointment_bulk_delete' %}" id="bulk-delete-form" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger"
+                style="background:#e53e3e;color:white;border:none;padding:8px 20px;border-radius:8px;font-weight:600;
+                       opacity:0.5;cursor:not-allowed; white-space:nowrap;"
+                id="bulk-delete-btn" disabled>
+            Xóa lịch hẹn đã chọn
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- POPUP BỘ LỌC -->
+<div id="filter-popup" style="display:none; position:absolute; top:120px; right:20px; background:white; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,0.15); padding:24px; width:380px; z-index:1000; font-family:system-ui;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:12px; border-bottom:1px solid #f3f4f6;">
+        <h5 style="margin:0; font-size:16px; font-weight:600; color:#111827;">Bộ lọc nâng cao</h5>
+        <button type="button" id="close-filter" style="background:none;border:none;font-size:24px;cursor:pointer;color:#9ca3af;">×</button>
+    </div>
+
+    <form method="get" id="filter-form">
+        {% if request.GET.q %}
+        <input type="hidden" name="q" value="{{ request.GET.q }}">
+        {% endif %}
+
+        <div style="margin-bottom:18px;">
+            <label style="display:block; margin-bottom:8px; font-size:14px; color:#374151; font-weight:600;">Ngày hẹn</label>
+            <div style="position:relative;">
+                <input type="date" name="ngay" value="{{ request.GET.ngay }}" class="form-control"
+                       style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:14px; height:44px; box-sizing:border-box;">
+                <div style="position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:#6b7280;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-bottom:18px;">
+            <label style="display:block; margin-bottom:8px; font-size:14px; color:#374151; font-weight:600;">Trạng thái</label>
+            <select name="trang_thai" class="form-control"
+                    style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:14px;">
+                <option value="">Tất cả trạng thái</option>
+                {% for choice in form.TrangThai.field.choices %}
+                    <option value="{{ choice.0 }}" {% if request.GET.trang_thai == choice.0|stringformat:"s" %}selected{% endif %}>
+                        {{ choice.1 }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="margin-bottom:24px;">
+            <label style="display:block; margin-bottom:8px; font-size:14px; color:#374151; font-weight:600;">Dịch vụ</label>
+            <select name="dich_vu" class="form-control"
+                    style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid #d1d5db; font-size:14px;">
+                <option value="">Tất cả dịch vụ</option>
+                {% for dv in dich_vu_list %}
+                    <option value="{{ dv.MaDichVu }}"
+                        {% if request.GET.dich_vu == dv.MaDichVu|stringformat:"s" %}selected{% endif %}>
+                        {{ dv.TenDichVu }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button type="button" id="clear-filter" class="btn btn-outline-secondary"
+                    style="padding:8px 16px; border-radius:8px; border:1px solid #d1d5db;">
+                Xóa bộ lọc
+            </button>
+            <button type="submit" class="btn btn-primary"
+                    style="padding:8px 20px; border-radius:8px; font-weight:600;">
+                Áp dụng
+            </button>
+        </div>
     </form>
 </div>
 
+<!-- Overlay -->
+<div id="filter-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:999;"></div>
+
+<!-- BẢNG DANH SÁCH -->
 <div class="card">
-    <table>
-        <thead>
-        <tr>
-            <th>Mã LH</th>
-            <th>Khách hàng</th>
-            <th>Dịch vụ</th>
-            <th>Ngày</th>
-            <th>Giờ</th>
-            <th>Trạng thái</th>
-            <th>Hành động</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for lh in lich_hen %}
-            <tr>
-                <td>{{ lh.MaLichHen }}</td>
-                <td>{{ lh.HoTen }}</td>
-                <td>{{ lh.DichVu.TenDichVu }}</td>
-                <td>{{ lh.NgayHen|date:"d/m/Y" }}</td>
-                <td>{{ lh.KhungGio }}</td>
-                <td>{{ lh.TrangThai }}</td>
-                <td>
-                    <a href="{% url 'staff_appointment_edit' lh.MaLichHen %}">Cập nhật</a>
-                </td>
-            </tr>
-        {% empty %}
-            <tr><td colspan="7" style="text-align:center;">Không có lịch hẹn.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-responsive">
+        <table class="table table-hover" style="margin-bottom:0;">
+            <thead style="background:#f8f9fa;">
+                <tr>
+                    {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
+                    <th style="width:50px;"><input type="checkbox" id="select-all" class="form-check-input"></th>
+                    {% else %}<th style="width:50px;"></th>{% endif %}
+                    <th style="width:120px;">Mã LH</th>
+                    <th>Ngày hẹn</th>
+                    <th>Giờ</th>
+                    <th>Trạng thái</th>
+                    <th>Khách hàng</th>
+                    <th>Dịch vụ</th>
+                    <!-- CỘT NHÂN VIÊN MỚI -->
+                    <th style="width:130px;">Nhân viên</th>
+                    <th style="width:160px; text-align:center;">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lh in lich_hen %}
+                <tr data-id="{{ lh.MaLichHen }}">
+                    {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
+                    <td><input type="checkbox" name="ids" value="{{ lh.MaLichHen }}" class="form-check-input appointment-checkbox" form="bulk-delete-form"></td>
+                    {% else %}<td></td>{% endif %}
+                    <td>{{ lh.MaLichHen }}</td>
+                    <td>{{ lh.NgayHen|date:"d/m/Y" }}</td>
+                    <td>{{ lh.KhungGio }}</td>
+                    <td>
+                        {% if lh.TrangThai == "Đang chờ" %}<span class="badge bg-warning text-dark">Đang chờ</span>
+                        {% elif lh.TrangThai == "Đang thực hiện" %}<span class="badge bg-primary">Đang thực hiện</span>
+                        {% elif lh.TrangThai == "Hoàn thành" %}<span class="badge bg-success">Hoàn thành</span>
+                        {% elif lh.TrangThai == "Đã hủy" %}<span class="badge bg-danger">Đã hủy</span>
+                        {% else %}<span class="badge bg-light text-dark">{{ lh.TrangThai }}</span>{% endif %}
+                    </td>
+                    <td>{{ lh.HoTen|default:"-" }}</td>
+                    <td>{{ lh.DichVu.TenDichVu|default:"-" }}</td>
+
+                    <!-- CỘT NHÂN VIÊN -->
+                    <td>
+                        {% if lh.NhanVienThucHien %}
+                            <strong>{{ lh.NhanVienThucHien.MaNhanVien }}</strong><br>
+                            <small class="text-muted">{{ lh.NhanVienThucHien.user.get_full_name|default:"Chuyên viên" }}</small>
+                        {% else %}
+                            <span class="text-danger">Chưa phân công</span>
+                        {% endif %}
+                    </td>
+
+                    <td style="text-align:center; white-space:nowrap;">
+                        <a href="{% url 'staff_appointment_detail' lh.MaLichHen %}" style="color:#3182ce;font-weight:600;text-decoration:underline;">Xem</a>
+                        <span style="color:#cbd5e0;margin:0 8px;">|</span>
+                        <a href="{% url 'staff_appointment_edit' lh.MaLichHen %}" style="color:#3182ce;font-weight:600;text-decoration:underline;">Sửa</a>
+                        {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
+                        <span style="color:#cbd5e0;margin:0 8px;">|</span>
+                        <form method="post" action="{% url 'staff_appointment_delete' lh.MaLichHen %}" style="display:inline;" onsubmit="return confirm('XÓA lịch hẹn #{{ lh.MaLichHen }}?\nHành động này không thể hoàn tác!');">
+                            {% csrf_token %}
+                            <button type="submit" style="background:none;border:none;color:#e53e3e;font-weight:600;text-decoration:underline;padding:0;cursor:pointer;">Xóa</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if request.user.is_superuser or request.user.nhanvien.VaiTro == 'MANAGER' %}10{% else %}9{% endif %}"
+                        style="text-align:center; padding:60px; color:#888;">
+                        Không có lịch hẹn nào.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<style>
+    table.table th, table.table td, table.table .badge {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+        font-size: 14px !important;
+    }
+</style>
+
+<script>
+    // Popup lọc
+    document.getElementById('filter-btn').addEventListener('click', () => {
+        document.getElementById('filter-popup').style.display = 'block';
+        document.getElementById('filter-overlay').style.display = 'block';
+    });
+    document.getElementById('close-filter').addEventListener('click', () => {
+        document.getElementById('filter-popup').style.display = 'none';
+        document.getElementById('filter-overlay').style.display = 'none';
+    });
+    document.getElementById('filter-overlay').addEventListener('click', () => {
+        document.getElementById('filter-popup').style.display = 'none';
+        document.getElementById('filter-overlay').style.display = 'none';
+    });
+
+    // Xóa bộ lọc
+    document.getElementById('clear-filter').addEventListener('click', () => {
+        document.querySelectorAll('#filter-form select, #filter-form input[type=date]').forEach(el => el.value = '');
+        document.getElementById('filter-form').submit();
+    });
+
+    // Đếm số bộ lọc
+    function updateFilterCount() {
+        let count = 0;
+        if ('{{ request.GET.ngay }}') count++;
+        if ('{{ request.GET.trang_thai }}') count++;
+        if ('{{ request.GET.dich_vu }}') count++;
+        const badge = document.getElementById('filter-count');
+        badge.textContent = count;
+        badge.style.opacity = count > 0 ? '1' : '0';
+    }
+    updateFilterCount();
+
+    // JS xóa nhiều
+    {% if request.user.is_superuser or request.user.nhanvien.VaiTro == "MANAGER" %}
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.appointment-checkbox');
+    const bulkBtn = document.getElementById('bulk-delete-btn');
+
+    function updateBulkButton() {
+        const checkedCount = document.querySelectorAll('.appointment-checkbox:checked').length;
+        bulkBtn.disabled = checkedCount === 0;
+        bulkBtn.style.opacity = checkedCount > 0 ? '1' : '0.5';
+        bulkBtn.style.cursor = checkedCount > 0 ? 'pointer' : 'not-allowed';
+        bulkBtn.textContent = checkedCount > 0 ? `Xóa ${checkedCount} lịch hẹn đã chọn` : 'Xóa lịch hẹn đã chọn';
+    }
+    selectAll?.addEventListener('change', e => { checkboxes.forEach(cb => cb.checked = e.target.checked); updateBulkButton(); });
+    checkboxes.forEach(cb => cb.addEventListener('change', updateBulkButton));
+    document.getElementById('bulk-delete-form').addEventListener('submit', e => {
+        const count = document.querySelectorAll('.appointment-checkbox:checked').length;
+        if (!confirm(`Xóa ${count} lịch hẹn đã chọn?\nHành động này không thể hoàn tác!`)) e.preventDefault();
+    });
+    updateBulkButton();
+    {% endif %}
+</script>
+
 {% endblock %}

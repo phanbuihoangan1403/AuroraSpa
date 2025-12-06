@@ -1,0 +1,77 @@
+{% extends "staffpanel/base.html" %}
+{% block title %}Chi tiết lịch hẹn #{{ lh.MaLichHen }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">Chi tiết lịch hẹn #{{ lh.MaLichHen }}</h1>
+</div>
+
+<div class="card appointment-detail-page" style="max-width:700px;">
+    <table class="table table-bordered">
+        <tr><th>Mã lịch hẹn</th><td>{{ lh.MaLichHen }}</td></tr>
+        <tr><th>Khách hàng</th><td>{{ lh.HoTen|default:"-" }}</td></tr>
+        <tr><th>Số điện thoại</th><td>{{ lh.DienThoai|default:"-" }}</td></tr>
+        <tr><th>Dịch vụ</th><td>{{ lh.DichVu.TenDichVu|default:"-" }}</td></tr>
+        <tr><th>Ngày hẹn</th><td>{{ lh.NgayHen|date:"d/m/Y" }}</td></tr>
+        <tr><th>Khung giờ</th><td>{{ lh.KhungGio }}</td></tr>
+        <tr><th>Nhân viên thực hiện</th><td>{{ lh.NhanVienThucHien.MaNhanVien }} - {{ lh.NhanVienThucHien.user.username|default:"Chưa phân" }}</td></tr>
+        <tr><th>Trạng thái</th><td>{{ lh.TrangThai }}</td></tr>
+        <tr><th>Ghi chú</th><td>{{ lh.GhiChu|default:"Không có" }}</td></tr>
+    </table>
+
+    <div style="margin-top: 24px;">
+        <a href="{% url 'staff_appointment_list' %}" class="btn btn-outline">
+            <strong>← Quay lại danh sách</strong>
+        </a>
+    </div>
+</div>
+
+<style>
+    /* Giới hạn phạm vi: chỉ trang có class appointment-detail-page */
+    .appointment-detail-page table th,
+    .appointment-detail-page table td {
+        color: #111 !important;
+        font-size: 14px !important;
+        padding: 12px 14px !important;
+        vertical-align: middle !important;
+        border: 1px solid #ddd !important;
+    }
+
+    .appointment-detail-page table th {
+        background: #f8f9fa;
+        font-weight: 600 !important;
+        width: 35%;
+        text-align: left;
+    }
+
+    .appointment-detail-page table tr:nth-child(even) {
+        background: #fcfcfc;
+    }
+
+    .appointment-detail-page {
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        background: #fff;
+    }
+
+    .appointment-detail-page .btn.btn-outline {
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid #214134 !important;
+    background-color: #214134 !important;
+    color: #fff !important;
+    font-weight: 600;
+    }
+
+    .appointment-detail-page .btn.btn-outline:hover {
+        background: #1a332a !important;
+        border-color: #1a332a !important;
+        color: #fff !important;
+    }
+
+</style>
+
+
+{% endblock %}

@@ -1,34 +1,41 @@
 {% extends "staffpanel/base.html" %}
+{% load widget_tweaks %}
+
 {% block title %}Hồ sơ nhân viên{% endblock %}
 
 {% block content %}
 <div class="page-header">
     <h1 class="page-title">Hồ sơ nhân viên</h1>
 </div>
-<div class="card" style="max-width:720px;display:grid;grid-template-columns:1.1fr 1fr;gap:24px;">
+
+<div class="card" style="max-width:720px; display:grid; grid-template-columns:1.1fr 1fr; gap:24px; padding:24px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.05);">
+
+    <!-- Thông tin tài khoản -->
     <div>
         <h3>Thông tin tài khoản</h3>
         <form method="post">
             {% csrf_token %}
-            <h4 style="margin-bottom:8px;">Thông tin cá nhân</h4>
-            {% for field in user_form %}
-                <div style="margin-bottom:10px;">
-                    <label style="font-size:13px;">{{ field.label }}</label>
-                    {{ field }}
-                </div>
-            {% endfor %}
 
-            <h4 style="margin:16px 0 8px;">Thông tin nhân viên</h4>
-            {% for field in nv_form %}
-                <div style="margin-bottom:10px;">
-                    <label style="font-size:13px;">{{ field.label }}</label>
-                    {{ field }}
-                </div>
-            {% endfor %}
-            <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+            <h4 style="margin-bottom:12px;">Thông tin cá nhân</h4>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px; display:block; margin-bottom:4px;">Họ</label>
+                {{ user_form.first_name|add_class:"form-control" }}
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px; display:block; margin-bottom:4px;">Tên</label>
+                {{ user_form.last_name|add_class:"form-control" }}
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="font-size:13px; display:block; margin-bottom:4px;">Email</label>
+                {{ user_form.email|add_class:"form-control" }}
+            </div>
+
+
+            <button type="submit" class="btn btn-primary" style="padding:0.625rem 2rem; border-radius:8px;">Lưu thay đổi</button>
         </form>
     </div>
 
+    <!-- Vai trò & trạng thái -->
     <div>
         <h3>Vai trò & Trạng thái</h3>
         <p>Mã nhân viên: <strong>{{ nv.MaNhanVien }}</strong></p>
@@ -42,5 +49,22 @@
             {% endif %}
         </p>
     </div>
+
 </div>
+
+
+<style>
+    .form-control {
+        padding: 0.625rem 1rem;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        transition: all 0.2s;
+    }
+    .form-control:focus {
+        border-color: #214134;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+        outline: none;
+    }
+</style>
 {% endblock %}

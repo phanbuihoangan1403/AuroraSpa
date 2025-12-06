@@ -1,44 +1,297 @@
-{% extends "staffpanel/base.html" %}
-{% block title %}Nhân viên{% endblock %}
+{% extends 'staffpanel/base.html' %}
+{% load static %}
+{% block title %}Quản lý nhân viên{% endblock %}
 {% block nav_employee %}active{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">NHÂN VIÊN</h1>
 
-    <a href="{% url 'staff_register' %}">
-        <button class="btn btn-primary">+ Thêm nhân viên</button>
-    </a>
+<!-- TIÊU ĐỀ -->
+<div style="margin-bottom: 30px;">
+    <h1 style="margin:0; font-size:32px; font-weight:700; color:#1a202c;">
+        DANH SÁCH NHÂN VIÊN
+    </h1>
 </div>
 
+<!-- THANH CÔNG CỤ  -->
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 15px; padding: 0 10px;">
+
+    <!-- Tìm kiếm + Lọc vai trò -->
+    <form method="get" style="display:flex; gap:8px; align-items:center; margin:0;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Tìm tên, email, mã nhân viên..."
+               style="padding:9px 14px; border-radius:8px; border:1px solid #cbd5e0; min-width:220px; font-size:14px;">
+
+        <select name="vai_tro" onchange="this.form.submit()"
+                style="padding:9px 32px 9px 14px; border-radius:8px; border:1px solid #cbd5e0; font-size:14px;
+                       background:white url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23637085' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E\") no-repeat right 12px center;
+                       background-size:12px; appearance:none; cursor:pointer;">
+            <option value="">Tất cả vai trò</option>
+            <option value="MANAGER" {% if current_vai_tro == 'MANAGER' %}selected{% endif %}>Quản lý</option>
+            <option value="CONTENT" {% if current_vai_tro == 'CONTENT' %}selected{% endif %}>Nội dung</option>
+            <option value="RECEPTION" {% if current_vai_tro == 'RECEPTION' %}selected{% endif %}>Lễ tân</option>
+            <option value="STAFF" {% if current_vai_tro == 'STAFF' %}selected{% endif %}>Chuyên viên</option>
+        </select>
+
+        <button type="submit" class="btn btn-outline"
+                style="padding:9px 18px; border-radius:8px; white-space:nowrap;">
+            Tìm
+        </button>
+    </form>
+
+    <!-- Tạo nhân viên mới -->
+    <a href="{% url 'staff_employee_add' %}">
+        <button class="btn btn-primary"
+                style="padding:9px 24px; font-weight:600; border-radius:8px; background: #214134; white-space:nowrap;">
+            + Thêm nhân viên
+        </button>
+    </a>
+
+    <!-- Xóa nhiều (chỉ MANAGER mới thấy) -->
+    {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+    <button type="button" id="bulkDelete" class="btn btn-danger"
+            style="background:#e53e3e; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600;
+                   opacity:0.5; cursor:not-allowed; white-space:nowrap;"
+            disabled>
+        Xóa đã chọn
+    </button>
+    {% endif %}
+
+</div>
+
+<!-- BẢNG NHÂN VIÊN -->
 <div class="card">
-    <table>
-        <thead>
-        <tr>
-            <th>Mã NV</th>
-            <th>Tài khoản</th>
-            <th>Vai trò</th>
-            <th>Online</th>
-        </tr>
+    <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
+        <thead style="background:#f8fafc;">
+            <tr>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <th style="width:50px;text-align:center;">
+                    <input type="checkbox" id="selectAll" class="custom-checkbox">
+                </th>
+                {% endif %}
+                <th style="width:90px;text-align:center;">Mã NV</th>
+                <th style="text-align:left;padding-left:12px;">Họ tên</th>
+                <th style="width:200px;text-align:left;">Email</th>
+                <th style="width:120px;text-align:center;">Vai trò</th>
+                <th style="width:100px;text-align:center;">Trạng thái</th>
+                <th style="width:140px;text-align:center;">Hành động</th>
+            </tr>
         </thead>
         <tbody>
-        {% for e in employees %}
-            <tr>
-                <td>{{ e.MaNhanVien }}</td>
-                <td>{{ e.user.username }}</td>
-                <td>{{ e.get_VaiTro_display }}</td>
-                <td>
-                    {% if e.is_online %}
-                        <span class="badge badge-success">Online</span>
+            {% for e in employees %}
+            <tr style="height:56px;border-bottom:1px solid #e2e8f0;" class="employee-row"
+                data-json='{
+                    "manv": "{{ e.MaNhanVien }}",
+                    "hoten": "{{ e.user.get_full_name|default:e.user.username|escapejs }}",
+                    "username": "{{ e.user.username }}",
+                    "email": "{{ e.user.email|default:'' }}",
+                    "vaitro": "{{ e.get_VaiTro_display }}",
+                    "vaitro_class": "{{ e.VaiTro|lower }}",
+                    "nhom": "{{ e.NhomChuyenVien }}",
+                    "ngayvaolam": "{{ e.NgayVaoLam|date:'d/m/Y' }}",
+                    "online": {{ e.is_online|yesno:"true,false" }},
+                    "lastlogin": "{% if e.user.last_login %}{{ e.user.last_login|date:'d/m/Y H:i' }}{% else %}Chưa đăng nhập{% endif %}"
+                }'>
+                {% if request.user.nhanvien.VaiTro == 'MANAGER' %}
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="row-checkbox custom-checkbox" value="{{ e.MaNhanVien }}">
+                </td>
+                {% endif %}
+                <td style="text-align:center;color:#4a5568;">{{ e.MaNhanVien }}</td>
+                <td style="padding-left:12px;">
+                    <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ e.user.get_full_name|default:e.user.username }}">
+                        {{ e.user.get_full_name|default:e.user.username }}
+                    </div>
+                </td>
+                <td style="padding-left:8px;color:#4a5568;">{{ e.user.email|default:"—" }}</td>
+                <td style="text-align:center;">
+                    {% if e.VaiTro == 'STAFF' %}
+                        {% with nhom=e.get_NhomChuyenVien_display %}
+                            <span class="status-badge status-staff">Chuyên viên{% if nhom %} - {{ nhom }}{% endif %}</span>
+                        {% endwith %}
                     {% else %}
-                        <span class="badge badge-muted">Offline</span>
+                        <span class="status-badge status-{{ e.VaiTro|lower }}">{{ e.get_VaiTro_display }}</span>
                     {% endif %}
                 </td>
+                <td style="text-align:center;">
+                    <span class="status-badge {% if e.is_online %}status-online{% else %}status-offline{% endif %}">
+                        {% if e.is_online %}Online{% else %}Offline{% endif %}
+                    </span>
+                </td>
+                <td style="text-align:center;" onclick="event.stopPropagation()">
+                    <a href="{% url 'staff_employee_edit' e.MaNhanVien %}"
+                       style="color:#3182ce;font-weight:600;text-decoration:underline;">Sửa</a>
+                    <span style="color:#cbd5e0;margin:0 8px;">|</span>
+                    <a href="#" style="color:#e53e3e;font-weight:600;"
+                       onclick="event.preventDefault(); deleteEmployee('{{ e.MaNhanVien }}', '{{ e.user.get_full_name|default:e.user.username|escapejs }}')">
+                        Xóa
+                    </a>
+                </td>
             </tr>
-        {% empty %}
-            <tr><td colspan="4">Không có nhân viên.</td></tr>
-        {% endfor %}
+            {% empty %}
+            <tr>
+                <td colspan="{% if request.user.nhanvien.VaiTro == 'MANAGER' %}7{% else %}6{% endif %}"
+                    style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">
+                    Chưa có nhân viên nào
+                </td>
+            </tr>
+            {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- MODAL CHI TIẾT NHÂN VIÊN -->
+<div id="employeeModal" style="display:none;position:fixed;inset:0;z-index:1050;align-items:center;justify-content:center;">
+    <div class="modal-backdrop" onclick="closeEmployeeDetail()" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);"></div>
+    <div style="background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:540px;width:90%;position:relative;z-index:10;animation:zoomIn .3s;">
+        <div style="background:#214134;color:white;padding:1.25rem 1.5rem;border-radius:12px 12px 0 0;font-size:1.125rem;font-weight:600;">
+            Thông tin nhân viên
+        </div>
+        <div style="padding:1.5rem;line-height:1.8;">
+            <div><strong>Mã NV:</strong> <span id="detail_manv" class="fw-bold text-primary"></span></div>
+            <div><strong>Tên đăng nhập:</strong> <span id="detail_username"></span></div>
+            <div><strong>Họ tên:</strong> <span id="detail_hoten" class="fw-bold"></span></div>
+            <div><strong>Email:</strong> <span id="detail_email"></span></div>
+            <div><strong>Vai trò:</strong> <span id="detail_vaitro"></span></div>
+            <div><strong>Ngày vào làm:</strong> <span id="detail_ngayvaolam"></span></div>
+            <div><strong>Trạng thái:</strong> <span id="detail_status" class="status-badge"></span></div>
+            <div><strong>Đăng nhập lần cuối:</strong> <span id="detail_lastlogin"></span></div>
+        </div>
+        <div style="padding:1rem 1.5rem;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:right;border-radius:0 0 12px 12px;">
+            <button class="btn btn-search me-2" onclick="editFromModal()" style="background: #214134; color: white">Sửa thông tin</button>
+            <button class="btn btn-delete" onclick="closeEmployeeDetail()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes zoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+    .custom-checkbox{width:14px!important;height:14px!important;cursor:pointer;accent-color:#28a745;margin:0;}
+    th, td{padding:8px 12px!important;vertical-align:middle!important;font-size:14px;}
+    .status-badge{
+        display:inline-block;min-width:70px;padding:3px 10px;border-radius:999px;
+        font-size:11.5px;font-weight:600;text-align:center;
+    }
+    .status-manager{background:#fed7d7;color:#9b2c2c;}
+    .status-content{background:#bfdbfe;color:#1e40af;}
+    .status-reception{background:#d1fae5;color:#065f46;}
+    .status-staff{background:#fffbeb;}
+    .status-online{background:#d4edda;color:#155724;}
+    .status-offline{background:#e2e8f0;color:#718096;}
+
+    .btn-danger:hover:not(:disabled){background:#c53030!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(229,62,62,0.4)}
+</style>
+
+<script>
+    let currentEmployee = null;
+
+    // Click dòng → mở modal
+    document.querySelectorAll('.employee-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') return;
+            const data = JSON.parse(this.dataset.json);
+            currentEmployee = data;
+
+            document.getElementById('detail_manv').textContent = data.manv;
+            document.getElementById('detail_username').textContent = data.username;
+            document.getElementById('detail_hoten').textContent = data.hoten;
+            document.getElementById('detail_email').textContent = data.email || '—';
+
+            let vaitroText = '';
+            let vaitroClass = data.vaitro_class;
+
+            if (vaitroClass === 'staff') {
+                const nhomMap = {
+                    'DA_MAT': 'Chăm sóc da mặt',
+                    'MASSAGE': 'Massage thư giãn',
+                    'NAIL': 'Chăm sóc tay và chân',
+                    'TOAN_THAN': 'Liệu trình làm đẹp toàn thân'
+                };
+                const nhomText = nhomMap[data.nhom] || '';
+                vaitroText = 'Chuyên viên' + (nhomText ? ' - ' + nhomText : '');
+            } else {
+                vaitroText = data.vaitro;
+            }
+
+            document.getElementById('detail_vaitro').innerHTML = `<span class="status-badge status-${vaitroClass}">${vaitroText}</span>`;
+            document.getElementById('detail_ngayvaolam').textContent = data.ngayvaolam;
+            document.getElementById('detail_status').textContent = data.online ? 'Online' : 'Offline';
+            document.getElementById('detail_status').className = data.online ? 'status-badge status-online' : 'status-badge status-offline';
+            document.getElementById('detail_lastlogin').textContent = data.lastlogin;
+
+            document.getElementById('employeeModal').style.display = 'flex';
+        });
+    });
+
+    function closeEmployeeDetail() {
+        document.getElementById('employeeModal').style.display = 'none';
+    }
+    function editFromModal() {
+        if (currentEmployee) window.location = `/staff/employees/${currentEmployee.manv}/edit/`;
+    }
+
+    // Xóa từng nhân viên
+    function deleteEmployee(maNV, tenNV) {
+        if (!confirm(`Bạn có chắc muốn xóa nhân viên "${tenNV}"?\nHành động này không thể hoàn tác!`)) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/staff/employees/${maNV}/delete/`;
+        const csrf = document.createElement('input');
+        csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+        form.appendChild(csrf);
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // CHECKBOX + XÓA NHIỀU
+    const selectAllBtn = document.getElementById('selectAll');
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('change', function() {
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
+            toggleBulkDelete();
+        });
+    }
+    document.querySelectorAll('.row-checkbox').forEach(cb => cb.addEventListener('change', toggleBulkDelete));
+
+    function toggleBulkDelete() {
+        const btn = document.getElementById('bulkDelete');
+        if (!btn) return;
+        const count = document.querySelectorAll('.row-checkbox:checked').length;
+        btn.disabled = count === 0;
+        btn.textContent = count > 0 ? `Xóa đã chọn (${count})` : 'Xóa đã chọn';
+        btn.style.opacity = count > 0 ? '1' : '0.5';
+        btn.style.cursor = count > 0 ? 'pointer' : 'not-allowed';
+    }
+
+    const bulkBtn = document.getElementById('bulkDelete');
+    if (bulkBtn) {
+        bulkBtn.addEventListener('click', function () {
+            const selected = [...document.querySelectorAll('.row-checkbox:checked')].map(cb => cb.value);
+            if (selected.length === 0) return;
+            if (!confirm(`Xóa ${selected.length} nhân viên đã chọn?\nKhông thể khôi phục!`)) return;
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "staff_employee_bulk_delete" %}';
+            const csrf = document.createElement('input');
+            csrf.type = 'hidden'; csrf.name = 'csrfmiddlewaretoken'; csrf.value = '{{ csrf_token }}';
+            form.appendChild(csrf);
+            selected.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden'; input.name = 'ids[]'; input.value = id;
+                form.appendChild(input);
+            });
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+
+    // Đóng modal bằng ESC
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeEmployeeDetail();
+    });
+
+    toggleBulkDelete();
+</script>
+
 {% endblock %}
+
+

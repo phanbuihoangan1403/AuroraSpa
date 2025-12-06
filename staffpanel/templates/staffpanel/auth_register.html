@@ -1,24 +1,147 @@
 {% extends "staffpanel/base.html" %}
+{% load widget_tweaks %}
+
 {% block title %}Tạo tài khoản nhân viên{% endblock %}
+{% block nav_employee %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        background: transparent;
+        border: none;
+        padding: 0 0 1.5rem 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h4 {
+        color: #374151;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .form-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 2rem;
+    }
+
+    .form-label {
+        color: #374151;
+        font-weight: 500;
+        font-size: 0.9375rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .form-select {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 0.625rem 1rem;
+        font-size: 0.9375rem;
+        color: #374151;
+        transition: all 0.2s;
+    }
+
+    .form-control::placeholder {
+        color: #9ca3af;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #214134;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+        outline: none;
+    }
+
+    .form-row {
+        margin-bottom: 1.5rem;
+    }
+
+    .btn {
+        border-radius: 8px;
+        padding: 0.625rem 2rem;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary-custom {
+        background-color: #214134 !important;
+        color: white !important;
+    }
+
+    .btn-secondary-custom {
+        background-color: #e5e7eb !important;
+        color: #6b7280 !important;
+    }
+
+    .form-actions {
+        margin-top: 2.5rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1 class="page-title">Tạo tài khoản nhân viên</h1>
-</div>
-<div class="card" style="max-width:520px;">
-    <form method="post">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        {% for field in form %}
-            <div style="margin-bottom:10px;">
-                <label style="font-size:13px;">{{ field.label }}</label>
-                {{ field }}
-                {% for err in field.errors %}
-                    <div style="font-size:12px;color:#b3261e;">{{ err }}</div>
+<div class="form-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <h4>TẠO TÀI KHOẢN NHÂN VIÊN</h4>
+        <a href="{% url 'staff_employee_list' %}" class="btn btn-back">
+            <i class="bi bi-arrow-left"></i> Quay lại
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="form-card">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="row">
+                {% for field in form %}
+                    <div class="col-md-6 form-row">
+                        <label class="form-label">{{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}</label>
+
+                        {% if field|add_class:"form-control" %}
+                            {{ field|add_class:"form-control" }}
+                        {% else %}
+                            {{ field }}
+                        {% endif %}
+
+                        {% for err in field.errors %}
+                            <div style="font-size:12px;color:#b3261e;">{{ err }}</div>
+                        {% endfor %}
+                    </div>
                 {% endfor %}
             </div>
-        {% endfor %}
-        <button class="btn btn-primary" type="submit">Tạo tài khoản</button>
-    </form>
+
+            <!-- BUTTONS -->
+            <div class="form-actions">
+                <a href="{% url 'staff_employee_list' %}" class="btn btn-secondary-custom">Hủy</a>
+                <button type="submit" class="btn btn-primary-custom">
+                    <i class="bi bi-check-circle"></i> Tạo tài khoản
+                </button>
+            </div>
+
+        </form>
+    </div>
 </div>
 {% endblock %}

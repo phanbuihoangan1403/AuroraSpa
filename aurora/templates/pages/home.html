@@ -54,7 +54,7 @@
 .home-page .why-icon { font-size: 18px; font-weight: 600; color: var(--gold); margin-bottom: 16px; line-height: 1.4; min-height: 50px; display: flex; align-items: center; justify-content: center; }
 .home-page .why-card p { font-size: 15px; color: #444; line-height: 1.75; margin: 0; flex-grow: 1; }
 
-/* ===== BANNER DỊCH VỤ – BO GÓC TRÒN NHƯ CÁC CARD KHÁC ===== */
+/* ===== BANNER DỊCH VỤ ===== */
 .home-page .service-intro-banner {
     position: relative;
     width: 2000px;
@@ -66,14 +66,14 @@
     align-items: center;
     justify-content: center;
     z-index: 2;
-    border-radius: 24px;          /* BO GÓC TRÒN */
-    box-shadow: 0 12px 32px rgba(0,0,0,0.12); /* ĐỒNG BỘ ĐỔ BÓNG */
+    border-radius: 24px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
 }
 .home-page .service-intro-banner .banner-bg {
     position: absolute;
     inset: 0;
     z-index: -1;
-    border-radius: 24px;          /* BO GÓC CHO ẢNH NỀN */
+    border-radius: 24px;
     overflow: hidden;
 }
 .home-page .service-intro-banner .banner-bg img {
@@ -180,23 +180,30 @@
     margin-bottom: 20px;
 }
 
-/* ===== NỀN BE + KHÔNG ĐỘNG VÀO KHOẢNG CÁCH ===== */
+
 .home-page .why-section,
+/* FORCE */
+.home-page .why-section {
+    padding-bottom: 100px !important;
+}
 .home-page .services-section,
 .home-page .carousel-section {
     background: var(--light);
-    padding: 100px 0;
+    padding: 60px 0;
 }
 .home-page .services-section {
     padding-top: 0;
 }
 
-/* RESPONSIVE */
+
+.home-page .services-section { background: var(--light); }
+
+/* RESPONSIVE  */
 @media (max-width: 1600px) {
     .home-page .service-intro-banner {
         width: 1400px;
         height: 420px;
-        margin-bottom: 30px !important;
+        margin-bottom: 100px !important;   /* giữ nguyên 100px như bạn muốn */
     }
 }
 @media (max-width: 1200px) {
@@ -216,7 +223,7 @@
         width: 100%;
         height: 400px;
         margin: 0 auto 20px !important;
-        border-radius: 20px; /* vẫn đẹp trên mobile */
+        border-radius: 20px;
     }
     .home-page .banner-content h2 { font-size: 2.4rem; }
     .home-page .banner-content p { font-size: 1.1rem; margin-bottom: 24px; }
@@ -335,3 +342,4 @@
     </section>
 </div>
 {% endblock %}
+

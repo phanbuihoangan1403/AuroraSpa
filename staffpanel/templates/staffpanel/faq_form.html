@@ -1,27 +1,96 @@
 {% extends "staffpanel/base.html" %}
-{% block title %}{{ faq.MaCauHoi|default:"Tạo FAQ" }}{% endblock %}
+{% load static %}
+{% block title %}{% if faq.pk %}Chỉnh sửa FAQ{% else %}Thêm câu hỏi mới{% endif %}{% endblock %}
 {% block nav_faq %}active{% endblock %}
 
 {% block content %}
 <div class="page-header">
-    <h1 class="page-title">
-        {% if faq.MaCauHoi %}Chỉnh sửa FAQ {{ faq.MaCauHoi }}{% else %}Tạo mới FAQ{% endif %}
-    </h1>
+    <h1 class="page-title">{% if faq.pk %}Chỉnh sửa FAQ{% else %}Thêm câu hỏi mới{% endif %}</h1>
+    {% if category %}
+        <a href="{% url 'staff_faq_list_by_category' category.MaDanhMuc %}" class="btn btn-outline"
+           style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;color:#7f8c8d;">
+            ← Quay lại danh mục “{{ category.TenDanhMuc }}”
+        </a>
+    {% else %}
+        <a href="{% url 'staff_faq_list' %}" class="btn btn-outline"
+           style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;color:#7f8c8d;">
+            ← Quay lại danh sách
+        </a>
+    {% endif %}
 </div>
-<div class="card" style="max-width:720px;">
-    <form method="post">
+
+<div class="card" style="max-width:750px;">
+    <form method="post" style="padding:35px 40px;">
         {% csrf_token %}
-        {% for field in form %}
-            <div style="margin-bottom:12px;">
-                <label style="font-size:13px;">{{ field.label }}</label>
-                {{ field }}
-                {% for err in field.errors %}
-                    <div style="font-size:12px;color:#b3261e;">{{ err }}</div>
-                {% endfor %}
-            </div>
-        {% endfor %}
-        <button class="btn btn-primary" type="submit">Lưu</button>
-        <a href="{% url 'staff_faq_list' %}" class="btn btn-outline" style="margin-left:8px;">Hủy</a>
+
+        <div style="margin-bottom:26px;">
+            <label style="font-weight:600;display:block;margin-bottom:9px;font-size:15px;">
+                Câu hỏi <span style="color:#e53e3e;">*</span>
+            </label>
+            <input type="text" name="CauHoi" value="{{ faq.CauHoi|default:'' }}" required
+                   placeholder="Ví dụ: Liệu trình chăm sóc da mụn bao lâu thì hiệu quả?"
+                   class="form-control"
+                   style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:8px;font-size:15px;">
+        </div>
+
+        <div style="margin-bottom:30px;">
+            <label style="font-weight:600;display:block;margin-bottom:9px;font-size:15px;">
+                Câu trả lời <span style="color:#e53e3e;">*</span>
+            </label>
+            <textarea name="CauTraLoi" rows="16" required class="form-control"
+                      placeholder="Viết câu trả lời chi tiết, dễ hiểu, thân thiện với khách hàng..."
+                      style="width:100%;padding:14px 16px;border:1px solid #ddd;border-radius:8px;font-size:15px;resize:vertical;">{{ faq.CauTraLoi|default:'' }}</textarea>
+        </div>
+
+        <div style="margin-bottom:40px;">
+            <label style="display:flex;align-items:center;gap:12px;font-size:15px;color:#2d3748;cursor:pointer;user-select:none;">
+                <input type="checkbox" name="TrangThaiHienThi"
+                       {% if faq.TrangThaiHienThi != False %}checked{% endif %}
+                       id="id_TrangThaiHienThi">
+                <span>Hiển thị trên trang FAQ của khách hàng</span>
+            </label>
+        </div>
+
+        <div style="display:flex;gap:14px;justify-content:flex-end;padding-top:22px;border-top:1px solid #eee;">
+            {% if category %}
+                <a href="{% url 'staff_faq_list_by_category' category.MaDanhMuc %}">
+            {% else %}
+                <a href="{% url 'staff_faq_list' %}">
+            {% endif %}
+                <button type="button" class="btn btn-secondary"
+                        style="background:#95a5a6;color:white;padding:12px 32px;border-radius:8px;font-weight:600;">
+                    Hủy
+                </button>
+            </a>
+            <button type="submit" class="btn btn-success"
+                    style="background:#2F5C48;color:white;padding:12px 40px;border-radius:8px;font-weight:600;font-size:15px;">
+                {% if faq.pk %}Cập nhật{% else %}Tạo câu hỏi{% endif %}
+            </button>
+        </div>
     </form>
 </div>
+
+<style>
+    .form-control {
+        font-size: 15px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 12px 14px;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: #27ae60;
+        box-shadow: 0 0 0 4px rgba(39,174,96,0.15);
+    }
+</style>
+
+<script>
+    const label = document.querySelector('label[for="id_TrangThaiHienThi"]');
+    if (label) {
+        label.addEventListener('click', function(e) {
+            const cb = document.getElementById('id_TrangThaiHienThi');
+            if (e.target !== cb) cb.checked = !cb.checked;
+        });
+    }
+</script>
 {% endblock %}

@@ -8,38 +8,6 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import User
 from ckeditor.fields import RichTextField
 from django.db import transaction
-class QuyDoiDiem(models.Model):
-    MaQuyDoi = models.CharField(
-        primary_key=True,   # thêm khóa chính
-        max_length=5,
-        help_text='Mã quy đổi'
-    )
-    GiaTriDiem = models.IntegerField(
-        help_text='Giá trị điểm (số điểm cần để quy đổi)'
-    )
-    GiaTriQuyDoi = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text='Giá trị quy đổi tương ứng (VNĐ)'
-    )
-
-    class Meta:
-        db_table = 'QuyDoiDiem'
-        verbose_name = 'Quy Đổi Điểm'
-        verbose_name_plural = 'Quy Đổi Điểm'
-
-    def save(self, *args, **kwargs):
-        if not self.MaQuyDoi:
-            last = QuyDoiDiem.objects.order_by('-MaQuyDoi').first()
-            if last:
-                so = int(last.MaQuyDoi.replace("QD", "")) + 1
-            else:
-                so = 1
-            self.MaQuyDoi = f"QD{so:03d}"
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return self.MaQuyDoi
 
 class LichSuTichDiem(models.Model):
     MaGiaoDich = models.CharField(
@@ -66,13 +34,7 @@ class LichSuTichDiem(models.Model):
         auto_now_add=True,
         help_text='Ngày giao dịch'
     )
-    MaQuyDoi = models.ForeignKey(
-        'QuyDoiDiem',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        help_text="Chính sách quy đổi được áp dụng (nếu có)"
-    )
+    NgayCapNhat = models.DateTimeField(auto_now=True)
     MaKhachHang = models.ForeignKey(
         'KhachHang',
         on_delete=models.CASCADE,
@@ -81,51 +43,54 @@ class LichSuTichDiem(models.Model):
     SoDiemThayDoi = models.IntegerField(
         help_text="Số điểm thay đổi (+ hoặc -)"
     )
+    NguoiThucHien = models.ForeignKey(
+        'NhanVien',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='Nhân viên thực hiện giao dịch (tăng/giảm điểm)'
+    )
 
-    def save(self, *args, **kwargs):
-        from .models import DiemTichLuy
+    HanhDong = models.CharField(
+        max_length=10,
+        choices=[('+', 'Tăng'), ('-', 'Giảm')],
+        null=True,
+        blank=True,
+        help_text='Giao dịch là cộng hay trừ điểm'
+    )
 
-        # === 1. Tạo mã tự động ===
+    # === Trong aurora/models.py - class LichSuTichDiem ===
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None, current_user=None):
+        if current_user and current_user.is_authenticated and hasattr(current_user, 'nhanvien'):
+            self.NguoiThucHien = current_user.nhanvien
+
+        if self.SoDiemThayDoi > 0:
+            self.HanhDong = '+'
+        elif self.SoDiemThayDoi < 0:
+            self.HanhDong = '-'
+
         if not self.MaGiaoDich:
             last = LichSuTichDiem.objects.order_by('-MaGiaoDich').first()
             so = int(last.MaGiaoDich.replace("GD", "")) + 1 if last else 1
             self.MaGiaoDich = f"GD{so:03d}"
 
-        # === 2. Tính delta (chênh lệch điểm so với lần trước) ===
-        old_value = 0
-        if self.pk:  # nếu đang sửa bản ghi
-            try:
-                old_obj = LichSuTichDiem.objects.get(pk=self.pk)
-                old_value = old_obj.SoDiemThayDoi
-            except LichSuTichDiem.DoesNotExist:
-                old_value = 0
-
-        delta = self.SoDiemThayDoi - old_value
-
-        # === 3. Cập nhật ví điểm theo delta ===
         with transaction.atomic():
+            super().save(force_insert, force_update, using, update_fields)
+
             wallet, _ = DiemTichLuy.objects.select_for_update().get_or_create(
                 MaKhachHang=self.MaKhachHang,
-                defaults={"SoDiemHienTai": 0}
+                defaults={'SoDiemHienTai': 0}
             )
+            if self.SoDiemThayDoi < 0 and wallet.SoDiemHienTai + self.SoDiemThayDoi < 0:
+                raise ValidationError("Không đủ điểm để thực hiện giao dịch này!")
 
-            # Kiểm tra không trừ quá số điểm hiện có
-            if delta < 0 and wallet.SoDiemHienTai + delta < 0:
-                raise ValidationError("Không thể trừ quá số điểm hiện có!")
-
-            # Lưu lịch sử giao dịch
-            super().save(*args, **kwargs)
-
-            # Cập nhật ví điểm
-            DiemTichLuy.objects.filter(MaKhachHang=self.MaKhachHang).update(
-                SoDiemHienTai=F('SoDiemHienTai') + delta
-            )
-
+            wallet.SoDiemHienTai = F('SoDiemHienTai') + self.SoDiemThayDoi
+            wallet.save()
     def clean(self):
         # Ràng buộc giá trị hợp lệ theo loại giao dịch
-        if self.LoaiGiaoDich == 'Tích điểm' and self.SoDiemThayDoi < 0:
+        if self.LoaiGiaoDich == 'Tích điểm' and self.SoDiemThayDoi <= 0:
             raise ValidationError("Giao dịch 'Tích điểm' phải là số dương.")
-        if self.LoaiGiaoDich == 'Quy đổi điểm' and self.SoDiemThayDoi > 0:
+        if self.LoaiGiaoDich == 'Quy đổi điểm' and self.SoDiemThayDoi >= 0:
             raise ValidationError("Giao dịch 'Quy đổi điểm' phải là số âm.")
 
     class Meta:
@@ -149,42 +114,116 @@ def tao_diem_tich_luy(sender, instance, created, **kwargs):
         )
 
 
-class FAQ (models.Model):
-    MaCauHoi = models.CharField(
-        max_length=5,
-        primary_key=True,
-        help_text='Mã câu hỏi'
-    )
-    MaNhanVien=models. ForeignKey('NhanVien', on_delete=models.CASCADE, help_text='Mã nhân viên')
-    CauHoi=models.CharField(
-        max_length=300,
-        help_text='Cau Hoi'
-    )
-    CauTraLoi=models.TextField(
-        help_text='Câu trả lời'
-    )
-    NgayCapNhat=models.DateTimeField(
-        auto_now=True,
-        help_text='Ngày cập nhật gần nhất'
-    )
-    TrangThaiHienThi=models.BooleanField(default=True, help_text="Trạng thái hiển thị")
+#==============================
+#       DANH MỤC FAQ
+# ==============================
+class DanhMucFAQ(models.Model):
+   MaDanhMuc = models.CharField(max_length=10, primary_key=True, editable=False)
+   TenDanhMuc = models.CharField(max_length=200, unique=True)
+   MoTaDanhMuc = models.TextField(blank=True, null=True)
+   TrangThaiHienThi = models.BooleanField(default=True)
+   NgayCapNhat = models.DateTimeField(auto_now=True)
 
-    class Meta:
-        db_table = 'FAQ'
-        verbose_name = 'FAQ'
-        verbose_name_plural = 'FAQ'
 
-    def save(self, *args, **kwargs):
-        if not self.MaCauHoi:
-            last = FAQ.objects.order_by('-MaCauHoi').first()
-            if last:
-                so = int(last.MaCauHoi.replace("CH", "")) + 1
-            else:
-                so = 1
-            self.MaCauHoi = f"CH{so:03d}"
-        super().save(*args, **kwargs)
-    def __str__(self):
-        return f"{self.MaCauHoi} - {self.CauHoi}"
+   class Meta:
+       db_table = "DanhMucFAQ"
+       verbose_name_plural = "Danh mục FAQ"
+       ordering = ['MaDanhMuc']
+
+
+   def save(self, *args, **kwargs):
+       # Tự sinh mã danh mục DM0001
+       if not self.MaDanhMuc:
+           last = DanhMucFAQ.objects.order_by('-MaDanhMuc').first()
+           if last and last.MaDanhMuc.startswith("DM"):
+               try:
+                   num = int(last.MaDanhMuc[2:])
+               except:
+                   num = 0
+           else:
+               num = 0
+
+
+           new_num = num + 1
+           self.MaDanhMuc = f"DM{new_num:03d}"
+
+
+       super().save(*args, **kwargs)
+
+
+   def __str__(self):
+       return f"{self.TenDanhMuc}"
+
+
+class FAQ(models.Model):
+   MaCauHoi = models.CharField(max_length=10, primary_key=True, editable=False)
+   CauHoi = models.CharField(max_length=300)
+   CauTraLoi = models.TextField()
+
+
+   MaDanhMuc = models.ForeignKey(
+       DanhMucFAQ,
+       on_delete=models.SET_NULL,
+       null=True,
+       blank=True,
+       related_name="faq_list"
+   )
+
+
+   MaNhanVien=models. ForeignKey('NhanVien', on_delete=models.CASCADE, help_text='Mã nhân viên')
+   TrangThaiHienThi = models.BooleanField(default=True)
+   NgayCapNhat = models.DateTimeField(auto_now=True)
+
+
+   class Meta:
+       db_table = "FAQ"
+       ordering = ['-MaCauHoi']
+       verbose_name = "Câu hỏi thường gặp"
+       verbose_name_plural = "Câu hỏi thường gặp"
+
+
+   def save(self, *args, **kwargs):
+       # Tự sinh mã câu hỏi CH001
+       if not self.MaCauHoi:
+           last = FAQ.objects.order_by('-MaCauHoi').first()
+
+
+           if last and last.MaCauHoi.startswith("CH"):
+               try:
+                   num = int(last.MaCauHoi[2:])
+               except:
+                   num = 0
+           else:
+               num = 0
+
+
+           new_num = num + 1
+           new_code = f"CH{new_num:03d}"
+
+
+           # Đảm bảo không trùng
+           while FAQ.objects.filter(MaCauHoi=new_code).exists():
+               new_num += 1
+               new_code = f"CH{new_num:03d}"
+
+
+           self.MaCauHoi = new_code
+
+
+       # Nếu có truyền user từ view → cập nhật MaNhanVien
+       user = kwargs.pop('user', None)
+       if user:
+           self.MaNhanVien = user
+
+
+       super().save(*args, **kwargs)
+
+
+   def __str__(self):
+       return f"{self.MaCauHoi} - {self.CauHoi}"
+
+
+
 
 
 # MODEL: KHÁCH HÀNG
@@ -224,6 +263,15 @@ class KhachHang(models.Model):
 
 # MODEL: LỊCH HẸN
 class LichHen(models.Model):
+    # KHUNG_GIO_CHOICES = [
+    #     ("09:00 - 10:30", "09:00 - 10:30"),
+    #     ("10:30 - 12:00", "10:30 - 12:00"),
+    #     ("13:30 - 15:00", "13:30 - 15:00"),
+    #     ("15:00 - 16:30", "15:00 - 16:30"),
+    #     ("16:30 - 18:00", "16:30 - 18:00"),
+    #     ("18:00 - 19:30", "18:00 - 19:30"),
+    #     ("19:30 - 21:00", "19:30 - 21:00"),
+    # ]
     # Trạng thái hợp lệ
     TRANG_THAI_CHOICES = [
         ('Đang chờ', 'Đang chờ'),
@@ -251,11 +299,22 @@ class LichHen(models.Model):
 
     # Thời gian
     NgayHen = models.DateField("Ngày đặt")
-    KhungGio = models.CharField("Khung giờ", max_length=10,null=True, blank=True)  # có thể thêm choices nếu muốn
-
+    # KhungGio = models.CharField(max_length=30, choices=KHUNG_GIO_CHOICES, blank=True, null=True)
+    KhungGio = models.ForeignKey('KhungGio', on_delete=models.PROTECT, related_name='lichhen_khunggio', null=True, blank=True)
+    NhanVienThucHien = models.ForeignKey(
+        'NhanVien',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='lichhen_thuchien',
+        verbose_name="Nhân viên thực hiện"
+    )
     # Mã giảm giá & trạng thái
     MaGiamGia = models.CharField("Mã giảm giá", max_length=20, blank=True, null=True)
     TrangThai = models.CharField("Trạng thái", max_length=25, choices=TRANG_THAI_CHOICES, default='Đang chờ')
+
+    # Hủy Lịch
+    LyDo = models.CharField("Lý Do", max_length=255, blank=True, null=True)
 
     user = models.ForeignKey(
         User,
@@ -279,6 +338,36 @@ class LichHen(models.Model):
                 so = 1
             self.MaLichHen = f"LH{so:03d}"
         super().save(*args, **kwargs)
+
+
+# MODEL: KHUNG GIO
+class KhungGio(models.Model):
+    MaKhungGio = models.CharField(
+        max_length=5,
+        primary_key=True,
+        validators=[MinLengthValidator(5)],
+        help_text="Mã định danh duy nhất cho khung giờ (VD: KG001, KG002, ...)"
+    )
+
+    GioBatDau = models.TimeField(
+        null=False,
+        help_text="Giờ bắt đầu khung giờ (HH:MM:SS)"
+    )
+
+    GioKetThuc = models.TimeField(
+        null=False,
+        help_text="Giờ kết thúc khung giờ (HH:MM:SS)"
+    )
+
+    class Meta:
+        db_table = 'KhungGio'
+        ordering = ['GioBatDau']
+
+    def __str__(self):
+        return f"{self.GioBatDau.strftime('%H:%M')} - {self.GioKetThuc.strftime('%H:%M')}"
+
+
+
 
 
 # MODEL: DANH MỤC DỊCH VỤ
@@ -403,7 +492,25 @@ class NhanVien(models.Model):
         ('MANAGER', 'Quản lý'),
         ('CONTENT', 'Nhân viên nội dung'),
         ('RECEPTION', 'Nhân viên lễ tân'),
+        ('STAFF', 'Chuyên viên'),
     ]
+    # aurora/models.py – thêm vào class NhanVien
+
+    NHOM_CHUYEN_VIEN_CHOICES = [
+        ('DA_MAT', 'Chăm sóc da mặt'),
+        ('MASSAGE', 'Massage thư giãn'),
+        ('NAIL', 'Chăm sóc tay và chân'),
+        ('TOAN_THAN', 'Liệu trình làm đẹp toàn thân'),
+    ]
+
+    NhomChuyenVien = models.CharField(
+        max_length=20,
+        choices=NHOM_CHUYEN_VIEN_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Nhóm chuyên môn của chuyên viên"
+    )
+
     VaiTro = models.CharField(max_length=20, choices=ROLE_CHOICES, default='RECEPTION')
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     MaNhanVien = models.CharField(max_length=5, primary_key=True, blank=True)

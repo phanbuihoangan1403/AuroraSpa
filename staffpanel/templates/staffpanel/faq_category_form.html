@@ -1,0 +1,88 @@
+{% extends "staffpanel/base.html" %}
+{% load static %}
+{% block title %}{% if category %}Chỉnh sửa danh mục{% else %}Thêm danh mục mới{% endif %}{% endblock %}
+{% block nav_faq %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">{% if category %}Chỉnh sửa danh mục{% else %}Thêm danh mục mới{% endif %}</h1>
+    <a href="{% url 'staff_faq_category_list' %}" class="btn btn-outline"
+       style="padding:8px 16px;border:1px solid #ddd;border-radius:8px;color:#7f8c8d;">
+        ← Quay lại danh sách
+    </a>
+</div>
+
+<div class="card" style="max-width:750px;">
+    <form method="post" style="padding:35px 40px;">
+        {% csrf_token %}
+
+        <!-- TÊN DANH MỤC -->
+        <div style="margin-bottom:26px;">
+            <label style="font-weight:600;display:block;margin-bottom:9px;font-size:15px;">
+                Tên danh mục <span style="color:#e53e3e;">*</span>
+            </label>
+            <input type="text" name="TenDanhMuc" value="{{ category.TenDanhMuc|default:'' }}" required
+                   placeholder="Ví dụ: Chăm sóc da, Điều trị mụn, Spa & Massage..."
+                   class="form-control"
+                   style="width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:8px;font-size:15px;">
+        </div>
+
+        <!-- MÔ TẢ -->
+        <div style="margin-bottom:30px;">
+            <label style="font-weight:600;display:block;margin-bottom:9px;font-size:15px;">
+                Mô tả ngắn (hiển thị dưới tên danh mục)
+            </label>
+            <textarea name="MoTaDanhMuc" rows="4" class="form-control"
+                      placeholder="Mô tả ngắn gọn về danh mục này (tùy chọn)..."
+                      style="width:100%;padding:14px 16px;border:1px solid #ddd;border-radius:8px;font-size:15px;resize:vertical;">{{ category.MoTaDanhMuc|default:'' }}</textarea>
+        </div>
+
+        <!-- TRẠNG THÁI HIỂN THỊ -->
+        <div style="margin-bottom:40px;">
+            <label style="display:flex;align-items:center;gap:12px;font-size:15px;color:#2d3748;cursor:pointer;user-select:none;">
+                <input type="checkbox" name="TrangThaiHienThi"
+                       {% if category.TrangThaiHienThi|default:True %}checked{% endif %}
+                       id="id_TrangThaiHienThi">
+                <span>Trạng thái hiển thị</span>
+            </label>
+        </div>
+
+        <!-- NÚT HỦY – LƯU -->
+        <div style="display:flex;gap:14px;justify-content:flex-end;padding-top:22px;border-top:1px solid #eee;">
+            <a href="{% url 'staff_faq_category_list' %}">
+                <button type="button" class="btn btn-secondary"
+                        style="background:#95a5a6;color:white;padding:12px 32px;border-radius:8px;font-weight:600;">
+                    Hủy
+                </button>
+            </a>
+            <button type="submit" class="btn btn-success"
+                    style="background:#2F5C48;color:white;padding:12px 40px;border-radius:8px;font-weight:600;font-size:15px;">
+                {% if category %}Cập nhật{% else %}Tạo danh mục{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-control {
+        font-size: 15px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+        padding: 12px 14px;
+    }
+    .form-control:focus {
+        outline: none;
+        border-color: #27ae60;
+        box-shadow: 0 0 0 4px rgba(39,174,96,0.15);
+    }
+</style>
+
+<script>
+    document.querySelectorAll('label[for="id_TrangThaiHienThi"]').forEach(label => {
+        label.addEventListener('click', function(e) {
+            const cb = document.getElementById('id_TrangThaiHienThi');
+            if (e.target !== cb) cb.checked = !cb.checked;
+        });
+    });
+</script>
+{% endblock %}

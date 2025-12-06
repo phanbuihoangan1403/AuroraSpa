@@ -9,13 +9,23 @@ urlpatterns = [
     path('profile/', views.staff_profile, name='staff_profile'),
 
     # dashboard
-    path('', views.staff_dashboard, name='staff_dashboard'),
+    path('', views.staff_profile, name='staff_dashboard'),
 
     # FAQ
-    path('faq/', views.staff_faq_list, name='staff_faq_list'),
-    path('faq/add/', views.staff_faq_edit, name='staff_faq_add'),
-    path('faq/<str:pk>/edit/', views.staff_faq_edit, name='staff_faq_edit'),
-    path('faq/<str:pk>/delete/', views.staff_faq_delete, name='staff_faq_delete'),
+    path('faq/', views.staff_faq_category_list, name='staff_faq_category_list'),
+    path('faq/categories/', views.staff_faq_category_list, name='staff_faq_category_list'),
+    path('faq/categories/add/', views.staff_faq_category_add, name='staff_faq_category_add'),
+    path('faq/categories/<str:pk>/edit/', views.staff_faq_category_edit, name='staff_faq_category_edit'),
+    path('faq/categories/<str:pk>/delete/', views.staff_faq_category_delete, name='staff_faq_category_delete'),
+    path('faq/categories/bulk-delete/', views.staff_faq_category_bulk_delete, name='staff_faq_category_bulk_delete'),
+
+    path('faq/categories/<str:category_pk>/', views.staff_faq_list_by_category, name='staff_faq_list_by_category'),
+    path('faq/categories/<str:category_pk>/add/', views.staff_faq_add_in_category, name='staff_faq_add_in_category'),
+    path('faq/categories/<str:category_pk>/edit/<str:pk>/', views.staff_faq_edit_in_category,
+         name='staff_faq_edit_in_category'),
+    path('faq/bulk-delete/', views.staff_faq_bulk_delete, name='staff_faq_bulk_delete'),
+    path('faq/categories/<str:category_pk>/delete/<str:pk>/', views.staff_faq_delete_in_category,
+         name='staff_faq_delete_in_category'),
 
     # Blog
     path('blog/', views.staff_blog_list, name='staff_blog_list'),
@@ -31,17 +41,41 @@ urlpatterns = [
 
     # Lịch hẹn
     path('appointments/', views.staff_appointment_list, name='staff_appointment_list'),
-    path('appointments/<str:pk>/edit/', views.staff_appointment_edit, name='staff_appointment_edit'),
-
+    path('appointments/add/', views.staff_appointment_create, name='staff_appointment_create'),
+    path('appointments/bulk-delete/', views.staff_appointment_bulk_delete, name='staff_appointment_bulk_delete'),
+    path('appointments/<str:ma_lich_hen>/', views.staff_appointment_detail, name='staff_appointment_detail'),
+    path('appointments/<str:ma_lich_hen>/edit/', views.staff_appointment_edit, name='staff_appointment_edit'),
+    path('appointments/<str:ma_lich_hen>/delete/', views.staff_appointment_delete, name='staff_appointment_delete'),
+    # ====================== AJAX CHO THÊM/SỬA LỊCH HẸN ======================
+    path('ajax/get-services/', views.ajax_get_services, name='ajax_get_services'),
+    path('ajax/available-times/', views.ajax_available_times, name='available_times'),
     # Khách hàng
-    path('customers/', views.staff_customer_list, name='staff_customer_list'),
-    path('customers/<str:pk>/edit/', views.staff_customer_edit, name='staff_customer_edit'),
-
-    # Điểm tích lũy
+    path('customer/', views.staff_customer_list, name='staff_customer_list'),
+    path('customer/add/', views.staff_customer_edit, name='staff_customer_add'),
+    path('customer/edit/<str:pk>/', views.staff_customer_edit, name='staff_customer_edit'),
+# Điểm tích lũy
     path('loyalty/', views.staff_loyalty_list, name='staff_loyalty_list'),
-    path('loyalty/<str:pk>/edit/', views.staff_loyalty_edit, name='staff_loyalty_edit'),
+
+    # Lấy lịch sử + trả về is_manager để ẩn/hiện nút Xóa/Edit
+    path('loyalty/history/<str:makh>/', views.staff_loyalty_history_ajax, name='staff_loyalty_history_ajax'),
+
+    # Cộng/trừ điểm nhanh (dùng cho nút +10/-10 hoặc trong popup)
+    path('loyalty/update/', views.staff_loyalty_update_ajax, name='staff_loyalty_update_ajax'),
+
+    # Bulk update (checkbox nhiều khách)
+    path('loyalty/bulk-update/', views.staff_loyalty_update_ajax, name='staff_loyalty_bulk_update_ajax'),
+    # → Dùng chung 1 view với update bình thường, vì nó nhận list makh[] tự động
+
 
     # Nhân viên + nhật ký
     path('employees/', views.staff_employee_list, name='staff_employee_list'),
-    path('logs/', views.staff_log_list, name='staff_log_list'),
+    path('employees/add/', views.staff_employee_create, name='staff_employee_add'),  # dùng chung register
+    path('employees/<str:pk>/edit/', views.staff_employee_edit, name='staff_employee_edit'),
+    path('employees/<str:pk>/delete/', views.staff_employee_delete, name='staff_employee_delete'),
+    path('employees/bulk-delete/', views.staff_employee_bulk_delete, name='staff_employee_bulk_delete'),
+#   path('logs/', views.staff_log_list, name='staff_log_list'),
+
+
+path('customers/bulk-delete/', views.staff_customer_bulk_delete, name='staff_customer_bulk_delete'),
+
 ]

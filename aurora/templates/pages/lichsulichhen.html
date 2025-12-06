@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% block body_class %}datlich-body{% endblock %}
 {% block content %}
 <!DOCTYPE html>
 <html lang="vi">
@@ -8,13 +8,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aurora Spa - Lịch hẹn</title>
     <style>
-        body {
-            font-family: "Segoe UI", sans-serif;
-            background-color: #faf6f0;
-            margin: 0;
-            padding: 0;
-            color: #333;
-        }
 
         /* Container */
         .container {
@@ -410,7 +403,7 @@
                     <th>TRẠNG THÁI</th>
                     <th>CHI TIẾT</th>
                     <th>HỦY LỊCH</th>
-                    <th>CHỈNH SỬA</th>
+
                 </tr>
             </thead>
             <tbody>
@@ -422,10 +415,10 @@
                     <td>{{appt.TrangThai}}</td>
                     <td><i class="icon" onclick="openModal('detail', '{{ appt.MaLichHen }}')">👁</i></td>
                     <td><i class="cancel-icon" onclick="openModal('cancel', '{{ appt.MaLichHen }}' )">✖</i></td>
-                    <td><i class="edit-icon" onclick="openModal('edit', '{{ appt.MaLichHen }}')">✎</i></td>
+
                 </tr>
                 {% empty %}
-                <tr><td colspan="7">Bạn chưa có lịch hẹn nào</td></tr>
+                <tr><td colspan="6">Bạn chưa có lịch hẹn nào</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -436,7 +429,7 @@
 <div id="detailModal" class="modal-bg">
     <div class="modal">
         <span class="close-btn" onclick="closeModal()">×</span>
-        <h2>Lịch hẹn chi tiết</h2>
+        <h2>LỊCH HẸN CHI TIẾT</h2>
         <div class="appointment-box">
             <div class="detail-header">Chăm Sóc Da Thư Giãn Với Sản Phẩm Hữu Cơ - 70 Phút</div>
             <div class="detail-description"></div>
@@ -450,10 +443,10 @@
 </div>
 
 <!-- Modal Hủy lịch -->
-<div id="cancelModal" class="modal-bg">
+<div id="cancelModal" class="modal-bg" data-malichhen="">
     <div class="modal">
         <span class="close-btn" onclick="closeModal()">×</span>
-        <h2>Hủy lịch hẹn</h2>
+        <h2>HỦY LỊCH HẸN</h2>
         <form>
             <label for="lydohuy">Lý do hủy *</label>
             <input type="text" id="lydohuy" placeholder="Nhập lý do hủy" required>
@@ -462,65 +455,6 @@
         </form>
     </div>
 </div>
-
-<!-- Modal Chỉnh sửa -->
-<div id="editModal" class="modal-bg">
-    <div class="modal">
-        <span class="close-btn" onclick="closeModal()">×</span>
-        <h2>Chỉnh sửa lịch hẹn</h2>
-        <form id="edit-form">
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 18px;">
-                <div>
-                    <label for="hoten_edit">Họ và tên *</label>
-                    <input type="text" id="hoten_edit" placeholder="Họ và tên của bạn" required>
-                </div>
-                <div>
-                    <label for="email_edit">Email *</label>
-                    <input type="email" id="email_edit" placeholder="Email của bạn" required>
-                </div>
-                <div>
-                    <label for="sdt_edit">SĐT di động *</label>
-                    <input type="text" id="sdt_edit" placeholder="" required>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 2.1fr 1fr; gap: 20px; margin-bottom: 18px;">
-                <div>
-                    <label for="danhmuc_edit">Danh mục dịch vụ *</label>
-                    <select id="danhmuc_edit" required>
-                        <option value="">-- Chọn danh mục --</option>
-                        <option value="cham_soc_da">Chăm sóc da</option>
-                        <option value="massage">Massage thư giãn</option>
-                        <option value="tri_lieu_co_the">Trị liệu cơ thể</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="dichvu_edit">Dịch vụ *</label>
-                    <select id="dichvu_edit" required>
-                        <option value="">-- Chọn dịch vụ --</option>
-                    </select>
-                </div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 18px;">
-                <div>
-                    <label for="ngay_edit">Ngày đặt *</label>
-                    <input type="date" id="ngay_edit" required>
-                </div>
-                <div>
-                    <label for="khunggio_edit">Khung giờ *</label>
-                    <select id="khunggio_edit" required>
-                        <option value="">-- Chọn ngày trước --</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="magiamgia_edit">Mã giảm giá</label>
-                    <input type="text" id="magiamgia_edit" placeholder="Nhập mã (nếu có)">
-                </div>
-            </div>
-            <button type="button" onclick="submitEdit()">CẬP NHẬT</button>
-        </form>
-    </div>
-</div>
-
 
 <script>
     function openModal(modalType, maLichHen='') {
@@ -533,11 +467,18 @@
                             modal.querySelector('.detail-header').textContent = data.ten_dichvu;
                             modal.querySelector('.detail-description').innerHTML = data.mota_dichvu;
                             modal.querySelectorAll('.detail-content')[0].textContent = `${data.khunggio}, Ngày ${data.ngayhen}`;
-                            modal.querySelectorAll('.detail-content')[1].textContent = data.trangthai;
+                            if (data.trangthai === "Đã hủy" && data.lydo) {
+                                modal.querySelectorAll('.detail-content')[1].textContent = `${data.trangthai} - Lý do: ${data.lydo}`;
+                            } else {
+                                modal.querySelectorAll('.detail-content')[1].textContent = data.trangthai;
+                            }
                         });
         }
-        else if (modalType.startsWith('cancel')) document.getElementById('cancelModal').classList.add('active');
-        else if (modalType.startsWith('edit')) document.getElementById('editModal').classList.add('active');
+        else if (modalType.startsWith('cancel')){
+            const modal = document.getElementById('cancelModal');
+            modal.setAttribute('data-malichhen', maLichHen);
+            modal.classList.add('active');
+        }
     }
 
     function closeModal() {
@@ -546,17 +487,6 @@
         document.getElementById('editModal').classList.remove('active');
     }
 
-    function confirmCancel() {
-        alert('Hủy lịch thành công!');
-        closeModal();
-        showPage('lich-su');
-    }
-
-    function submitEdit() {
-        alert('Chỉnh sửa thành công!');
-        closeModal();
-        showPage('lich-su');
-    }
 </script>
 
 </body>
