@@ -340,9 +340,15 @@ def staff_faq_bulk_delete(request):
 
 @content_required
 def staff_blog_list(request):
-    # XỬ LÝ XÓA NHIỀU
+    # ================== XÓA NHIỀU (CHỈ MANAGER) ==================
     if request.method == 'POST' and 'bulk_delete' in request.POST:
-        blog_ids = request.POST.getlist('blog_ids')
+
+        # Chặn CONTENT gửi POST trái phép
+        if request.user.nhanvien.VaiTro != "MANAGER":
+            return HttpResponseForbidden("Bạn không có quyền xóa nhiều bài viết.")
+
+        blog_ids = request.POST.getlist('selected_blogs')  # ĐÃ SỬA
+
         if blog_ids:
             deleted_count = Blog.objects.filter(MaBaiViet__in=blog_ids).count()
             Blog.objects.filter(MaBaiViet__in=blog_ids).delete()
@@ -356,39 +362,37 @@ def staff_blog_list(request):
             messages.success(request, f"Đã xóa thành công {deleted_count} bài viết!")
         else:
             messages.warning(request, "Bạn chưa chọn bài viết nào để xóa!")
+
         return redirect('staff_blog_list')
 
     # ================== LỌC + TÌM KIẾM ==================
     blogs = Blog.objects.all().order_by('-NgayCapNhat')
+
     # 1. Tìm kiếm tiêu đề
     q = request.GET.get('q', '').strip()
     if q:
         blogs = blogs.filter(TieuDeBaiViet__icontains=q)
 
-    # 2. Lọc trạng thái (0 = Nháp, 1 = Đăng)
+    # 2. Lọc trạng thái
     status = request.GET.get('status')
     if status in ('0', '1'):
         blogs = blogs.filter(TrangThaiHienThi=status)
 
-    # 3. Lọc theo đúng 1 ngày (dùng NgayCapNhat)
+    # 3. Lọc theo ngày
     date_filter = request.GET.get('date')
     if date_filter:
         try:
-            # __date sẽ tự lấy phần ngày (bỏ giờ phút giây)
             blogs = blogs.filter(NgayCapNhat__date=date_filter)
         except ValueError:
-            # Nếu ngày sai định dạng → bỏ qua
             pass
-
-    # Nếu bạn dùng trường NgayDang thay vì NgayCapNhat thì đổi thành:
-    # blogs = blogs.filter(NgayDang__date=date_filter)
 
     context = {
         'blogs': blogs,
-        'q': q,  # giữ lại từ khóa tìm kiếm
+        'q': q,
     }
 
     return render(request, 'staffpanel/blog_list.html', context)
+
 
 @content_required
 def staff_blog_edit(request, pk=None):
@@ -433,7 +437,7 @@ def staff_blog_edit(request, pk=None):
         'now': timezone.now()
     })
 
-@content_required
+@manager_required
 def staff_blog_delete(request, pk):
     blog = get_object_or_404(Blog, pk=pk)
     if request.method == 'POST':
@@ -551,7 +555,6 @@ def staff_service_delete(request, pk):
         messages.success(request, "Đã xóa dịch vụ.")
         return redirect('staff_service_list')
     return render(request, 'staffpanel/confirm_delete.html', {'object': dv, 'title': dv.TenDichVu})
-
 
 # ========== LỊCH HẸN (RECEPTION + MANAGER) ==========
 from django.shortcuts import render, redirect, get_object_or_404

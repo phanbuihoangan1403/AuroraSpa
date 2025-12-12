@@ -18,7 +18,7 @@
     <form method="get" style="margin:0;">
         <select name="category" onchange="this.form.submit()"
                 style="padding:8px 15px 8px 10px; border-radius:7px; border:1px solid #cbd5e0; font-size:14px;
-                       background:white url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23637085' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E\") no-repeat right 12px center;
+                       background:white url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' fill=\'%23637085\' viewBox=\'0 0 16 16\'%3E%3Cpath d=\'M4.646 6.646a.5.5 0 0 1 .708 0L8 9.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z\'/%3E%3C/svg%3E') no-repeat right 12px center;
                        background-size:12px; appearance:none;cursor:pointer; min-width:180px;">
             <option value="">Tất cả danh mục</option>
             {% for cat in categories %}
@@ -42,24 +42,27 @@
         {% if request.GET.date %}<input type="hidden" name="date" value="{{ request.GET.date }}">{% endif %}
     </form>
 
-    <!-- NÚT THÊM DỊCH VỤ + TẠO DANH MỤC MỚI -->
+    <!-- NÚT THÊM DỊCH VỤ -->
     <div style="display:flex; gap:12px; flex-wrap:wrap;">
         <a href="{% url 'staff_service_add' %}">
-            <button style="padding:9px 24px; font-weight:600; border-radius:8px;  background: #214134; color:white; border:none; cursor:pointer; white-space:nowrap;">
+            <button style="padding:9px 24px; font-weight:600; border-radius:8px; background:#214134; color:white; border:none;">
                 + Thêm dịch vụ
             </button>
         </a>
 
-    <!-- XÓA NHIỀU -->
-    <form method="post" id="bulk-delete-form" style="margin:0;">
-        {% csrf_token %}
-        <button type="submit" name="bulk_delete" class="btn btn-danger"
-                style="background:#e53e3e; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600;
-                       opacity:0.5; cursor:not-allowed;"
-                id="bulk-delete-btn" disabled>
-            Xóa dịch vụ đã chọn
-        </button>
-    </form>
+        <!-- XÓA NHIỀU – CHỈ MANAGER -->
+        {% if request.user.nhanvien.VaiTro == "MANAGER" %}
+        <form method="post" id="bulk-delete-form" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" name="bulk_delete" class="btn btn-danger"
+                    style="background:#e53e3e; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600;
+                           opacity:0.5; cursor:not-allowed;"
+                    id="bulk-delete-btn" disabled>
+                Xóa dịch vụ đã chọn
+            </button>
+        </form>
+        {% endif %}
+    </div>
 </div>
 
 <!-- BẢNG DỮ LIỆU -->
@@ -67,64 +70,82 @@
     <table style="width:100%; table-layout:fixed; border-collapse:collapse;">
         <thead style="background:#f8fafc;">
             <tr>
-                <th style="width:50px; text-align:center;">
-                    <input type="checkbox" id="select-all" class="custom-checkbox">
+                <th style="width:50px;text-align:center;">
+                    <!-- Checkbox ALL — LUÔN HIỂN THỊ -->
+                    <input type="checkbox" id="select-all" class="custom-checkbox"
+                        {% if request.user.nhanvien.VaiTro != "MANAGER" %}
+                            disabled style="cursor:not-allowed;"
+                        {% endif %}>
                 </th>
                 <th style="width:80px; text-align:center;">Mã DV</th>
                 <th style="text-align:left; padding-left:12px;">Tên dịch vụ</th>
                 <th style="width:140px; text-align:center;">Danh mục</th>
                 <th style="width:120px; text-align:center;">Giá</th>
                 <th style="width:110px; text-align:center;">Trạng thái</th>
-                <th style="width:140px; text-align:center;">Hành động</th>
+                <th style="width:160px; text-align:center;">Hành động</th>
             </tr>
         </thead>
+
         <tbody>
         {% for dv in services %}
             <tr style="height:56px; border-bottom:1px solid #e2e8f0;">
 
-                <!-- CHECKBOX -->
+                <!-- CHECKBOX — LUÔN HIỂN THỊ NHƯNG CHỈ MANAGER CLICK ĐƯỢC -->
                 <td style="text-align:center;">
-                    <input type="checkbox" name="service_ids" value="{{ dv.MaDichVu }}"
-                           class="custom-checkbox service-checkbox" form="bulk-delete-form">
+                    <input type="checkbox"
+                        class="custom-checkbox service-checkbox"
+                        {% if request.user.nhanvien.VaiTro == "MANAGER" %}
+                            name="service_ids" value="{{ dv.MaDichVu }}" form="bulk-delete-form"
+                        {% else %}
+                            disabled style="cursor:not-allowed;"
+                        {% endif %}>
                 </td>
 
-                <!-- ID (ĐÃ BỎ IN ĐẬM) -->
+                <!-- ID -->
                 <td style="text-align:center; color:#1a202c;">
                     {{ dv.MaDichVu }}
                 </td>
 
-                <!-- TÊN DỊCH VỤ -->
+                <!-- TÊN -->
                 <td style="padding-left:12px; color:#1a202c;">
-                    <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;"
-                         title="{{ dv.TenDichVu }}">{{ dv.TenDichVu }}</div>
+                    <div style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ dv.TenDichVu }}">
+                        {{ dv.TenDichVu }}
+                    </div>
                 </td>
 
                 <!-- DANH MỤC -->
-                <td style="text-align:center; color:#1a202c;">
-                    {{ dv.MaDanhMuc.TenDanhMuc }}
-                </td>
+                <td style="text-align:center;">{{ dv.MaDanhMuc.TenDanhMuc }}</td>
 
-                <!-- GIÁ (ĐÃ BỎ IN ĐẬM) -->
-                <td style="text-align:center; color:#1a202c;">
-                    {{ dv.GiaTien|floatformat:"0" }} đ
-                </td>
+                <!-- GIÁ -->
+                <td style="text-align:center;">{{ dv.GiaTien|floatformat:"0" }} đ</td>
 
                 <!-- TRẠNG THÁI -->
                 <td style="text-align:center;">
-                    <input type="checkbox"
-                           class="custom-checkbox"
-                           {% if dv.TrangThaiHienThi %}checked{% endif %}
-                           disabled>
+                    <input type="checkbox" class="custom-checkbox" {% if dv.TrangThaiHienThi %}checked{% endif %} disabled>
                 </td>
 
                 <!-- HÀNH ĐỘNG -->
-                <td style="text-align:center;">
-                    <a href="{% url 'staff_service_edit' dv.MaDichVu %}" style="color:#3182ce; font-weight:600;">Sửa</a>
-                    <span style="color:#cbd5e0; margin:0 8px;">|</span>
-                    <a href="{% url 'staff_service_delete' dv.MaDichVu %}" style="color:#e53e3e; font-weight:600;"
-                       onclick="return confirm('Xóa dịch vụ «{{ dv.TenDichVu|truncatechars:25 }}»?')">Xóa</a>
+                <td style="text-align:center; display:flex; justify-content:center; gap:12px; align-items:center;">
+
+                    <!-- SỬA – màu xanh nước biển -->
+                    <a href="{% url 'staff_service_edit' dv.MaDichVu %}"
+                       style="color:#0066FF; font-weight:600; text-decoration:none;">
+                        Sửa
+                    </a>
+
+                    <!-- XÓA – CHỈ MANAGER -->
+                    {% if request.user.nhanvien.VaiTro == "MANAGER" %}
+                        <span style="color:#cbd5e0;">|</span>
+
+                        <a href="{% url 'staff_service_delete' dv.MaDichVu %}"
+                           style="color:#e53e3e; font-weight:600; text-decoration:none;"
+                           onclick="return confirm('Xóa dịch vụ «{{ dv.TenDichVu|truncatechars:25 }}»?')">
+                            Xóa
+                        </a>
+                    {% endif %}
                 </td>
             </tr>
+
         {% empty %}
             <tr>
                 <td colspan="7" style="text-align:center; padding:50px 0; color:#718096; font-size:16px;">
@@ -136,23 +157,18 @@
     </table>
 </div>
 
-<form id="bulk-delete-form" method="post" style="display:none;">{% csrf_token %}</form>
-
 <style>
     .custom-checkbox {
-        width: 14px !important; height: 14px !important; cursor: pointer; accent-color: #28a745; margin: 0;
+        width: 14px !important;
+        height: 14px !important;
+        cursor: pointer;
+        accent-color: #28a745;
+        margin: 0;
     }
-    th, td { padding: 8px 12px !important; vertical-align: middle !important; }
-
-    .status-badge {
-        display: inline-block; min-width: 54px; padding: 2px 8px; border-radius: 999px;
-        font-size: 10.5px !important; font-weight: 600; text-align: center; text-transform: none;
-    }
-    .status-published { background:#d4edda; color:#155724; }
-    .status-hidden     { background:#e2e8f0; color:#718096; }
 </style>
 
 <script>
+    {% if request.user.nhanvien.VaiTro == "MANAGER" %}
     const selectAll = document.getElementById('select-all');
     const checkboxes = document.querySelectorAll('.service-checkbox');
     const bulkBtn = document.getElementById('bulk-delete-btn');
@@ -180,6 +196,7 @@
     });
 
     updateBulkButton();
+    {% endif %}
 </script>
 
 {% endblock %}

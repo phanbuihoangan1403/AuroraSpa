@@ -24,27 +24,46 @@
             <option value="1" {% if request.GET.status == "1" %}selected{% endif %}>Đăng</option>
             <option value="0" {% if request.GET.status == "0" %}selected{% endif %}>Nháp</option>
         </select>
-        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
-        {% if request.GET.date %}<input type="hidden" name="date" value="{{ request.GET.date }}">{% endif %}
+
+        {% if q %}
+            <input type="hidden" name="q" value="{{ q }}">
+        {% endif %}
+
+        {% if request.GET.date %}
+            <input type="hidden" name="date" value="{{ request.GET.date }}">
+        {% endif %}
     </form>
 
     <!-- Lọc theo ngày -->
     <form method="get" style="margin:0;">
         <input type="date" name="date" value="{{ request.GET.date }}" onchange="this.form.submit()"
                style="padding:9px 12px; border-radius:8px; border:1px solid #cbd5e0; font-size:14px; min-width:125px; cursor:pointer;">
-        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
-        {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
+
+        {% if q %}
+            <input type="hidden" name="q" value="{{ q }}">
+        {% endif %}
+
+        {% if request.GET.status %}
+            <input type="hidden" name="status" value="{{ request.GET.status }}">
+        {% endif %}
     </form>
 
     <!-- Tìm kiếm -->
     <form method="get" style="display:flex; gap:8px; align-items:center; margin:0;">
         <input type="text" name="q" value="{{ q }}" placeholder="Tìm tiêu đề..."
                style="padding:9px 14px; border-radius:8px; border:1px solid #cbd5e0; min-width:180px; font-size:14px;">
+
         <button type="submit" class="btn btn-outline" style="padding:9px 18px; border-radius:8px; white-space:nowrap;">
             Tìm
         </button>
-        {% if request.GET.status %}<input type="hidden" name="status" value="{{ request.GET.status }}">{% endif %}
-        {% if request.GET.date %}<input type="hidden" name="date" value="{{ request.GET.date }}">{% endif %}
+
+        {% if request.GET.status %}
+            <input type="hidden" name="status" value="{{ request.GET.status }}">
+        {% endif %}
+
+        {% if request.GET.date %}
+            <input type="hidden" name="date" value="{{ request.GET.date }}">
+        {% endif %}
     </form>
 
     <!-- Tạo bài viết -->
@@ -56,15 +75,16 @@
     </a>
 
     <!-- Xóa nhiều -->
-    <form method="post" id="bulk-delete-form" style="margin:0;">
+    {% if request.user.nhanvien.VaiTro == "MANAGER" %}
+    <form id="bulk-delete-form" method="post" style="margin:0;">
         {% csrf_token %}
         <button type="submit" name="bulk_delete" class="btn btn-danger"
-                style="background:#e53e3e; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600;
-                       opacity:0.5; cursor:not-allowed; white-space:nowrap;"
+                style="background:#e53e3e; color:white; border:none; padding:9px 22px; border-radius:8px; font-weight:600; opacity:0.5; cursor:not-allowed; white-space:nowrap;"
                 id="bulk-delete-btn" disabled>
             Xóa blog đã chọn
         </button>
     </form>
+    {% endif %}
 
 </div>
 
@@ -73,8 +93,17 @@
     <table style="width:100%;table-layout:fixed;border-collapse:collapse;">
         <thead style="background:#f8fafc;">
             <tr>
-                <th style="width:50px;text-align:center;"><input type="checkbox" id="select-all" class="custom-checkbox"></th>
-                <th style="width:80px;text-align:center;">Mã BV</th> <!-- Đã bỏ in đậm ở tbody -->
+                <th style="width:50px;text-align:center;">
+
+                    <!-- HIỂN THỊ CHECKBOX CHO TẤT CẢ, NHƯNG DISABLED NẾU KHÔNG PHẢI MANAGER -->
+                    <input type="checkbox"
+                           id="select-all"
+                           class="custom-checkbox"
+                           {% if request.user.nhanvien.VaiTro != "MANAGER" %}disabled{% endif %}>
+
+                </th>
+
+                <th style="width:80px;text-align:center;">Mã BV</th>
                 <th style="text-align:left;padding-left:12px;">Tiêu đề</th>
                 <th style="width:110px;text-align:center;">Hiển thị</th>
                 <th style="width:150px;text-align:center;">Cập nhật</th>
@@ -86,11 +115,17 @@
         <tbody>
         {% for blog in blogs %}
             <tr style="height:56px;border-bottom:1px solid #e2e8f0;">
+
+                <!-- CHECKBOX CHO TẤT CẢ, DISABLED NẾU KHÔNG PHẢI MANAGER -->
                 <td style="text-align:center;">
-                    <input type="checkbox" name="blog_ids" value="{{ blog.MaBaiViet }}" class="custom-checkbox blog-checkbox" form="bulk-delete-form">
+                    <input type="checkbox"
+                           name="blog_ids"
+                           value="{{ blog.MaBaiViet }}"
+                           class="custom-checkbox blog-checkbox"
+                           form="bulk-delete-form"
+                           {% if request.user.nhanvien.VaiTro != "MANAGER" %}disabled{% endif %}>
                 </td>
 
-                <!-- *** ID KHÔNG IN ĐẬM NỮA *** -->
                 <td style="text-align:center;color:#4a5568;">{{ blog.MaBaiViet }}</td>
 
                 <td style="padding-left:12px;">
@@ -103,54 +138,93 @@
                     <input type="checkbox" class="custom-checkbox" {% if blog.TrangThaiHienThi == 1 %}checked{% endif %} disabled>
                 </td>
 
-                <td style="text-align:center;font-size:13.5px;color:#718096;">{{ blog.NgayCapNhat|date:"H:i d/m/Y" }}</td>
+                <td style="text-align:center;font-size:13.5px;color:#718096;">
+                    {{ blog.NgayCapNhat|date:"H:i d/m/Y" }}
+                </td>
 
                 <td style="text-align:center;color:#4a5568;">
                     {{ blog.MaNhanVien.user.get_full_name|default:blog.MaNhanVien.user.username }}
                 </td>
 
                 <td style="text-align:center;">
-                    <a href="{% url 'staff_blog_edit' blog.MaBaiViet %}" style="color:#3182ce;font-weight:600;">Sửa</a>
-                    <span style="color:#cbd5e0;margin:0 8px;">|</span>
-                    <a href="{% url 'staff_blog_delete' blog.MaBaiViet %}" style="color:#e53e3e;font-weight:600;"
-                       onclick="return confirm('Xóa blog «{{ blog.TieuDeBaiViet|truncatechars:30 }}»?')">
-                        Xóa
+                    <a href="{% url 'staff_blog_edit' blog.MaBaiViet %}"
+                       style="color:#007BFF; font-weight:600; margin-right:10px;">
+                        Sửa
                     </a>
+
+                    {% if request.user.nhanvien.VaiTro == "MANAGER" %}
+                        <span style="color:#cbd5e0;">|</span>
+                        <a href="{% url 'staff_blog_delete' blog.MaBaiViet %}"
+                           style="color:#e53e3e; font-weight:600; margin-left:10px;"
+                           onclick="return confirm('Xóa blog «{{ blog.TieuDeBaiViet|truncatechars:30 }}»?')">
+                            Xóa
+                        </a>
+                    {% endif %}
+                </td>
+
+            </tr>
+
+        {% empty %}
+            <tr>
+                <td colspan="7" style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">
+                    Chưa có blog nào.
                 </td>
             </tr>
-        {% empty %}
-            <tr><td colspan="7" style="text-align:center;padding:50px 0;color:#718096;font-size:16px;">Chưa có blog nào.</td></tr>
         {% endfor %}
         </tbody>
     </table>
 </div>
 
-<form id="bulk-delete-form" method="post" style="display:none;">{% csrf_token %}</form>
-
 <style>
-    .custom-checkbox{width:14px!important;height:14px!important;cursor:pointer;accent-color:#28a745;margin:0}
-    th,td{padding:8px 12px!important;vertical-align:middle!important}
-    .btn-danger:hover:not(:disabled){background:#c53030!important;transform:translateY(-2px);box-shadow:0 6px 20px rgba(229,62,62,0.4)}
+    .custom-checkbox {
+        width:14px!important;
+        height:14px!important;
+        cursor:pointer;
+        accent-color:#28a745;
+        margin:0
+    }
+    th,td {
+        padding:8px 12px!important;
+        vertical-align:middle!important
+    }
+    .btn-danger:hover:not(:disabled){
+        background:#c53030!important;
+        transform:translateY(-2px);
+        box-shadow:0 6px 20px rgba(229,62,62,0.4)
+    }
 </style>
 
 <script>
-    const selectAll=document.getElementById('select-all');
-    const checkboxes=document.querySelectorAll('.blog-checkbox');
-    const bulkBtn=document.getElementById('bulk-delete-btn');
-    function updateBulkButton(){
-        const count=document.querySelectorAll('.blog-checkbox:checked').length;
-        bulkBtn.disabled=count===0;
-        bulkBtn.style.opacity=count>0?'1':'0.5';
-        bulkBtn.style.cursor=count>0?'pointer':'not-allowed';
-        bulkBtn.textContent=count>0?`Xóa ${count} blog đã chọn`:'Xóa blog đã chọn';
+    {% if request.user.nhanvien.VaiTro == "MANAGER" %}
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.blog-checkbox');
+    const bulkBtn = document.getElementById('bulk-delete-btn');
+
+    function updateBulkButton() {
+        const count = document.querySelectorAll('.blog-checkbox:checked').length;
+        bulkBtn.disabled = count === 0;
+        bulkBtn.style.opacity = count > 0 ? '1' : '0.5';
+        bulkBtn.style.cursor = count > 0 ? 'pointer' : 'not-allowed';
+        bulkBtn.textContent = count > 0 ? `Xóa ${count} blog đã chọn` : 'Xóa blog đã chọn';
     }
-    selectAll?.addEventListener('change',e=>{checkboxes.forEach(c=>c.checked=e.target.checked);updateBulkButton();});
-    checkboxes.forEach(c=>c.addEventListener('change',updateBulkButton));
-    document.getElementById('bulk-delete-form').addEventListener('submit',e=>{
-        const count=document.querySelectorAll('.blog-checkbox:checked').length;
-        if(!confirm(`XÓA ${count} blog đã chọn?\nHành động này không thể hoàn tác!`))e.preventDefault();
+
+    selectAll?.addEventListener('change', e => {
+        checkboxes.forEach(c => c.checked = e.target.checked);
+        updateBulkButton();
     });
+
+    checkboxes.forEach(c => c.addEventListener('change', updateBulkButton));
+
+    document.getElementById('bulk-delete-form').addEventListener('submit', e => {
+        const count = document.querySelectorAll('.blog-checkbox:checked').length;
+        if (!confirm(`XÓA ${count} blog đã chọn?\nHành động này không thể hoàn tác!`)) {
+            e.preventDefault();
+        }
+    });
+
     updateBulkButton();
+    {% endif %}
 </script>
 
 {% endblock %}
+
