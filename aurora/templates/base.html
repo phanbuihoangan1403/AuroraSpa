@@ -352,33 +352,6 @@
 </footer>
 
     <script>
-        function showPage(pageId) {
-            const contents = document.querySelectorAll('.tab-content');
-            contents.forEach(content => content.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-
-            // Manage active class for "Lịch hẹn"
-            const lichHenLink = document.querySelector('.lich-hen');
-            if (pageId === 'dat-lich' || pageId === 'lich-su') {
-                lichHenLink.classList.add('active');
-            } else {
-                lichHenLink.classList.remove('active');
-            }
-        }
-        // function openModal(modalType) {
-        //     if (modalType.startsWith('detail')) {
-        //         document.getElementById('detailModal').classList.add('active');
-        //     } else if (modalType.startsWith('cancel')) {
-        //         document.getElementById('cancelModal').classList.add('active');
-        //     } else if (modalType.startsWith('edit')) {
-        //         document.getElementById('editModal').classList.add('active');
-        //     }
-        // }
-        function closeModal() {
-            document.getElementById('detailModal').classList.remove('active');
-            document.getElementById('cancelModal').classList.remove('active');
-            document.getElementById('editModal').classList.remove('active');
-        }
 
         function getCookie(name) {
           let cookieValue = null;

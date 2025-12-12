@@ -15,11 +15,7 @@
         margin: 0;
     }
 
-    /* Date Picker Custom */
-    .date-input-wrapper {
-        position: relative;
-        display: inline-block;
-    }
+
 
     .date-input {
         padding: 6px 10px 6px 32px;
@@ -481,17 +477,6 @@
             <input type="text" name="q" value="{{ q }}" placeholder="Tìm theo Mã KH hoặc Tên..."
                    style="padding:9px 14px; border-radius:8px; border:1px solid #cbd5e0; min-width:180px; font-size:14px;">
 
-            <div class="date-input-wrapper">
-                <svg class="date-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <input type="text" id="dateRange" name="date_range" class="date-input" placeholder="mm/dd/yyyy"
-                       style="padding:9px 14px 9px 38px; border-radius:8px; border:1px solid #cbd5e0; min-width:200px; font-size:14px; cursor:pointer; background:white;"
-                       readonly>
-            </div>
 
             <button type="submit" class="btn btn-outline">Tìm</button>
         </form>
@@ -544,7 +529,7 @@
                 <th>Tên khách hàng</th>
                 <th style="width:140px;text-align:center;">Điểm hiện tại</th>
                 <th style="width:80px;text-align:center;">Số GD</th>
-                <th style="width:160px;text-align:center;">Cập nhật gần nhất</th>
+                <th style="width:160px;text-align:center;">Bắt đầu tích điểm</th>
                 <th style="width:140px;text-align:center;">Hành động</th>
             </tr>
         </thead>
@@ -670,12 +655,7 @@
     let currentCustomerName = null;
     let currentCustomerPoints = 0;
 
-    // Initialize date picker
-    flatpickr("#dateRange", {
-        mode: "range",
-        dateFormat: "m/d/Y",
-        locale: "vn"
-    });
+
 
     // Checkbox & Bulk Actions
     const selectAll = document.getElementById('select-all');

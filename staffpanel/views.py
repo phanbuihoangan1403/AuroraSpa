@@ -1,14 +1,6 @@
+from django.shortcuts import render
 
-
-from django.db.models import Q, Count
-from django.views.decorators.http import require_POST, require_GET
-
-from aurora.models import (
-    NhanVien, FAQ, Blog, DichVu, LichHen,
-    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu
-)
-from .models import NhatKyHoatDong
-
+# Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
@@ -16,6 +8,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.db import transaction, models
 from django.db.models import F
+from django.views.decorators.http import require_POST
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
@@ -26,11 +19,12 @@ from aurora.models import (
 )
 from django.db.models import F, Count
 from django.http import HttpResponseForbidden, JsonResponse
+from django.views.decorators.http import require_GET
 from .models import NhatKyHoatDong
 from .forms import (
     StaffLoginForm, StaffRegisterForm,UserProfileForm,StaffProfileForm,
     FAQForm, BlogForm, DichVuForm, LichHenForm,
-    KhachHangForm, CategoryForm, DiemTichLuyForm
+    KhachHangForm, DiemTichLuyForm
 )
 from .permissions import manager_required, content_required, reception_required, staff_required
 # ====================== THÊM 2 DÒNG IMPORT AJAX ======================
@@ -560,6 +554,27 @@ def staff_service_delete(request, pk):
 
 
 # ========== LỊCH HẸN (RECEPTION + MANAGER) ==========
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import login, logout
+from django.contrib import messages
+from django.http import JsonResponse
+from django.db import transaction
+from django.db.models import Q, Count
+from django.views.decorators.http import require_POST, require_GET
+
+from aurora.models import (
+    NhanVien, FAQ, Blog, DichVu, LichHen,
+    KhachHang, DiemTichLuy, LichSuTichDiem, DanhMucDichVu
+)
+from .models import NhatKyHoatDong
+from .forms import (
+    StaffLoginForm, StaffRegisterForm, UserProfileForm, StaffProfileForm,
+    FAQForm, BlogForm, DichVuForm, LichHenForm,
+    KhachHangForm,CategoryForm ,DiemTichLuyForm
+)
+from .permissions import manager_required, content_required, reception_required, staff_required
+
+
 # ====================== TẠO LỊCH MỚI ======================
 # TẠO MỚI
 @reception_required
@@ -795,42 +810,72 @@ def ajax_get_services(request):
     return JsonResponse(list(services), safe=False)
 
 
+# @require_GET
+# def ajax_available_times(request):
+#     selected_date = request.GET.get('date')
+#
+#     if not selected_date:
+#         return JsonResponse({'error': 'Chưa chọn ngày'}, status=400)
+#
+#     MAX_SLOT = 4  # chỉ lấy những khung đã đủ 4+
+#     available_time_response = []
+#     # Tất cả khung giờ
+#     all_times = KhungGio.objects.all()
+#
+#     # Đếm số lịch hẹn từng khung giờ trong ngày
+#     from django.db.models import Count
+#     booked = (
+#         LichHen.objects
+#         .filter(NgayHen=selected_date)
+#         .values('KhungGio')
+#         .annotate(count=Count('KhungGio'))
+#         .filter(count__gte=MAX_SLOT)
+#     )
+#
+#     # Lấy danh sách khung giờ đã đầy (4 trở lên)
+#     full_times = {item['KhungGio'] for item in booked}
+#
+#     # Chỉ trả về những khung còn dưới 4 người
+#     available_times = [t for t in all_times if t not in full_times]
+#
+#     for slot in available_times:
+#         available_time_response.append({
+#                 'id': slot.MaKhungGio,
+#                 'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
+#                 "max_slot": MAX_SLOT,
+#             })
+#
+#     return JsonResponse({'available_times': available_time_response})
+
 @require_GET
 def ajax_available_times(request):
     selected_date = request.GET.get('date')
-
     if not selected_date:
         return JsonResponse({'error': 'Chưa chọn ngày'}, status=400)
 
-    MAX_SLOT = 4  # chỉ lấy những khung đã đủ 4+
-    available_time_response = []
-    # Tất cả khung giờ
-    all_times = KhungGio.objects.all()
+    MAX_SLOT = 4
 
-    # Đếm số lịch hẹn từng khung giờ trong ngày
-    from django.db.models import Count
-    booked = (
-        LichHen.objects
-        .filter(NgayHen=selected_date)
-        .values('KhungGio')
-        .annotate(count=Count('KhungGio'))
-        .filter(count__gte=MAX_SLOT) 
-    )
+    # Đếm số lịch hẹn theo từng khung giờ
+    booked = LichHen.objects.filter(NgayHen=selected_date) \
+        .values('KhungGio') \
+        .annotate(count=Count('KhungGio')) \
+        .filter(count__gte=MAX_SLOT)
 
-    # Lấy danh sách khung giờ đã đầy (4 trở lên)
-    full_times = {item['KhungGio'] for item in booked}
+    # Lấy danh sách ID khung giờ đã đầy
+    full_slot_ids = {item['KhungGio'] for item in booked}
 
-    # Chỉ trả về những khung còn dưới 4 người
-    available_times = [t for t in all_times if t not in full_times]
+    # Lấy tất cả khung giờ, LOẠI BỎ những cái đã đầy
+    available_times = KhungGio.objects.exclude(MaKhungGio__in=full_slot_ids)
 
+    response = []
     for slot in available_times:
-        available_time_response.append({
-                'id': slot.MaKhungGio,
-                'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
-                "max_slot": MAX_SLOT,
-            })
+        response.append({
+            'id': slot.MaKhungGio,
+            'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
+            "max_slot": MAX_SLOT,
+        })
 
-    return JsonResponse({'available_times': available_time_response})
+    return JsonResponse({'available_times': response})
 
 # ========== KHÁCH HÀNG + ĐIỂM TÍCH LŨY (RECEPTION + MANAGER) ==========
 
@@ -864,7 +909,7 @@ def staff_customer_list(request):
     return render(request, 'staffpanel/customer_list.html', {
         'customers': customers,
         'q': q,
-        'customer_type': customer_type,# để giữ giá trị đã chọn
+        'customer_type': customer_type,   # để giữ giá trị đã chọn
     })
 
 @reception_required
@@ -1043,7 +1088,7 @@ def staff_loyalty_list(request):
             models.Q(MaKhachHang__MaKhachHang__icontains=q) |
             models.Q(MaKhachHang__HoTen__icontains=q)
         )
-    return render(request, 'staffpanel/loyalty_list.html', {'items': items, 'q': q,})
+    return render(request, 'staffpanel/loyalty_list.html', {'items': items, 'q': q})
 
 
 @reception_required

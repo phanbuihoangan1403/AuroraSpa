@@ -7,16 +7,7 @@ from aurora.models import (
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.utils import timezone  # Thêm import này để check ngày
 
-# 7 KHUNG GIỜ CỐ ĐỊNH
-KHUNG_GIO_CHOICES = [
-    ("09:00 - 10:30", "09:00 - 10:30"),
-    ("10:30 - 12:00", "10:30 - 12:00"),
-    ("13:30 - 15:00", "13:30 - 15:00"),
-    ("15:00 - 16:30", "15:00 - 16:30"),
-    ("16:30 - 18:00", "16:30 - 18:00"),
-    ("18:00 - 19:30", "18:00 - 19:30"),
-    ("19:30 - 21:00", "19:30 - 21:00"),
-]
+
 
 
 # ========================================
@@ -185,11 +176,7 @@ class LichHenForm(forms.ModelForm):
         else:
             self.fields['nhan_vien_display'].initial = 'Tự động phân nhân viên'
 
-    def clean_NgayHen(self):  # Thêm ràng buộc ngày không được qua
-        ngay_hen = self.cleaned_data.get('NgayHen')
-        if ngay_hen and ngay_hen < timezone.now().date():
-            raise ValidationError("Không thể chọn ngày đã qua.")
-        return ngay_hen
+
 
 
 # ========================================

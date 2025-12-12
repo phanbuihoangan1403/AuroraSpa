@@ -49,8 +49,14 @@ def save_appointment(request):
             nhan_vien = phan_nhan_vien_tu_dong(
                 ma_danh_muc=MaDanhMuc,
                 ngay_hen=ngay_hen_date,
-                khung_gio=KhungGio
+                # khung_gio=KhungGio
+                khung_gio=khung_gio
             )
+            if not nhan_vien:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Khung giờ này đã đầy (4/4 khách). Vui lòng chọn khung giờ khác!'
+                })
 
             # Tạo lịch hẹn với nhân viên đã được phân (hoặc NULL nếu kín lịch)
             lich_hen = LichHen.objects.create(
@@ -91,42 +97,74 @@ def save_appointment(request):
 ALL_TIME_SLOTS = ["08:00 - 10:00", "10:00 - 12:00", "13:00 - 15:00", "15:00 - 17:00", "17:00 - 19:00", "19:00 - 21:00"]
 
 
+# def available_time_slots(request):
+#     selected_date = request.GET.get('date')
+#
+#     if not selected_date:
+#         return JsonResponse({'error': 'Chưa chọn ngày'}, status=400)
+#
+#     MAX_SLOT = 4  # chỉ lấy những khung đã đủ 4+
+#     available_time_response = []
+#     # Tất cả khung giờ
+#     all_times = KhungGio.objects.all()
+#
+#     # Đếm số lịch hẹn từng khung giờ trong ngày
+#     from django.db.models import Count
+#     booked = (
+#         LichHen.objects
+#         .filter(NgayHen=selected_date)
+#         .values('KhungGio')
+#         .annotate(count=Count('KhungGio'))
+#         .filter(count__gte=MAX_SLOT)
+#     )
+#
+#     # Lấy danh sách khung giờ đã đầy (4 trở lên)
+#     full_times = {item['KhungGio'] for item in booked}
+#
+#     # Chỉ trả về những khung còn dưới 4 người
+#     # available_times = [t for t in all_times if t not in full_times]
+#     available_times = [t for t in all_times if t.MaKhungGio not in full_times]
+#
+#     for slot in available_times:
+#         available_time_response.append({
+#                 'id': slot.MaKhungGio,
+#                 'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
+#                 "max_slot": MAX_SLOT,
+#             })
+#
+#     return JsonResponse({'available_times': available_time_response})
+
+# DÙNG CHO CẢ 2 CHỖ: available_time_slots và ajax_available_times
+from django.db.models import Count
+
 def available_time_slots(request):
     selected_date = request.GET.get('date')
-
     if not selected_date:
         return JsonResponse({'error': 'Chưa chọn ngày'}, status=400)
 
-    MAX_SLOT = 4  # chỉ lấy những khung đã đủ 4+
-    available_time_response = []
-    # Tất cả khung giờ
-    all_times = KhungGio.objects.all()
+    MAX_SLOT = 4
 
-    # Đếm số lịch hẹn từng khung giờ trong ngày
-    from django.db.models import Count
-    booked = (
-        LichHen.objects
-        .filter(NgayHen=selected_date)
-        .values('KhungGio')
-        .annotate(count=Count('KhungGio'))
-        .filter(count__gte=MAX_SLOT) 
-    )
+    # Đếm số lịch hẹn theo từng khung giờ
+    booked = LichHen.objects.filter(NgayHen=selected_date) \
+        .values('KhungGio') \
+        .annotate(count=Count('KhungGio')) \
+        .filter(count__gte=MAX_SLOT)
 
-    # Lấy danh sách khung giờ đã đầy (4 trở lên)
-    full_times = {item['KhungGio'] for item in booked}
+    # Lấy danh sách ID khung giờ đã đầy
+    full_slot_ids = {item['KhungGio'] for item in booked}
 
-    # Chỉ trả về những khung còn dưới 4 người
-    available_times = [t for t in all_times if t not in full_times]
+    # Lấy tất cả khung giờ, LOẠI BỎ những cái đã đầy
+    available_times = KhungGio.objects.exclude(MaKhungGio__in=full_slot_ids)
 
+    response = []
     for slot in available_times:
-        available_time_response.append({
-                'id': slot.MaKhungGio,
-                'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
-                "max_slot": MAX_SLOT,
-            })
+        response.append({
+            'id': slot.MaKhungGio,
+            'display': f"{slot.GioBatDau.strftime('%H:%M')} - {slot.GioKetThuc.strftime('%H:%M')}",
+            "max_slot": MAX_SLOT,
+        })
 
-    return JsonResponse({'available_times': available_time_response})
-
+    return JsonResponse({'available_times': response})
 
 ## 3. Lấy dịch vụ theo danh mục (AJAX)
 def get_service_by_category(request):
@@ -392,9 +430,9 @@ def diem_view(request):
 
     return render(request, "pages/diem.html", context)
 
-#THÊM AJAX VIEW
-class LayDichVuView(View):
-    def get(self, request):
-        dm_id = request.GET.get('danh_muc')
-        dv = DichVu.objects.filter(MaDanhMuc_id=dm_id).values('MaDichVu', 'TenDichVu')
-        return JsonResponse(list(dv), safe=False)
+# #THÊM AJAX VIEW
+# class LayDichVuView(View):
+#     def get(self, request):
+#         dm_id = request.GET.get('danh_muc')
+#         dv = DichVu.objects.filter(MaDanhMuc_id=dm_id).values('MaDichVu', 'TenDichVu')
+#         return JsonResponse(list(dv), safe=False)
